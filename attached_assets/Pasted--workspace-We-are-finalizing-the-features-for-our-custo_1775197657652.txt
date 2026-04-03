@@ -1,0 +1,47 @@
+@workspace We are finalizing the features for our custom OS "MONIX". I have uploaded new assets to the public directory. Please update the relevant components (Zustand store, BootScreen, Desktop, Taskbar, ContextMenu, AppWindow) to achieve the following:
+
+1. Boot Sequence Update (BootScreen.tsx):
+
+Replace any existing boot logic with a full-screen <video> element playing /boot.mp4.
+
+Ensure attributes include autoPlay, muted, playsInline.
+
+When the video finishes (onEnded), seamlessly transition the state to load the Desktop.
+
+2. Global State Updates (Zustand):
+
+Add isLocked (boolean, default: false).
+
+Add taskbarPosition (string: 'top', 'bottom', 'left', 'right', default: 'bottom').
+
+Add currentWallpaper (string). Set the absolute default value to "/wallpaper (1).png". Ensure you create a fallback array of at least 3 other wallpaper paths to cycle through later.
+
+3. Dynamic Taskbar & Settings:
+
+Move the Taskbar to the BOTTOM of the screen by default.
+
+Update its CSS classes to dynamically dock to the top, bottom, left, or right based on the taskbarPosition state.
+
+If the user right-clicks the Taskbar, show a small "Taskbar Settings" popover to let them change this position dynamically.
+
+4. Functional Lock Screen:
+
+Wire up the "Power/Lock" button in the Taskbar to set isLocked = true.
+
+Create a full-screen <LockScreen /> component with a high z-index (e.g., 99999). It should display a blurred version of currentWallpaper, the time, the user avatar, and a password input field. (Hardcode the unlock logic to accept "monix" or any input for now).
+
+5. Advanced Window UI & Close Effects (Framer Motion):
+
+Enhance the window interface: Give all app windows a premium glassmorphism effect and distinct, hoverable XFCE-style control buttons (Minimize, Maximize, Close).
+
+The "End-Effect": Wrap the window rendering logic in Framer Motion's <AnimatePresence>. When a window is closed, it must have an exit animation where it rapidly shrinks (scale: 0.8), fades out (opacity: 0), and blurs slightly.
+
+6. Desktop Context Menu (Wallpapers):
+
+Add a "Change Wallpaper" option to the desktop right-click menu.
+
+Clicking it should cycle to the next image in our wallpaper array and update the currentWallpaper state, immediately changing the Desktop background.
+
+Ensure the right-click menu also retains the functional "Refresh" option.
+
+Please analyze these requirements carefully, ensure the asset paths match, and provide the fully updated code.

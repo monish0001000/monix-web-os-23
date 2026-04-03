@@ -35,23 +35,21 @@ export default function WindowChrome({
   });
   const [maximized, setMaximized] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [hoverBtn, setHoverBtn] = useState<"min" | "max" | "close" | null>(null);
   const dragOffset = useRef({ x: 0, y: 0 });
   const preMaxPos = useRef(pos);
 
   useEffect(() => {
     if (!isDragging) return;
-
     const handleMouseMove = (e: MouseEvent) => {
       if (maximized) return;
       let newX = e.clientX - dragOffset.current.x;
       let newY = e.clientY - dragOffset.current.y;
       newX = Math.max(0, Math.min(newX, window.innerWidth - width));
-      newY = Math.max(28, Math.min(newY, window.innerHeight - height));
+      newY = Math.max(32, Math.min(newY, window.innerHeight - height));
       setPos({ x: newX, y: newY });
     };
-
     const handleMouseUp = () => setIsDragging(false);
-
     window.addEventListener("mousemove", handleMouseMove);
     window.addEventListener("mouseup", handleMouseUp);
     return () => {
@@ -82,15 +80,16 @@ export default function WindowChrome({
     ? {
         position: "fixed",
         left: 0,
-        top: 28,
+        top: 32,
         width: "100vw",
-        height: "calc(100vh - 28px)",
+        height: "calc(100vh - 70px)",
         zIndex,
         display: "flex",
         flexDirection: "column",
         userSelect: "none",
         border: "none",
         boxShadow: "none",
+        borderRadius: 0,
       }
     : {
         position: "absolute",
@@ -102,46 +101,52 @@ export default function WindowChrome({
         display: "flex",
         flexDirection: "column",
         userSelect: "none",
+        borderRadius: 7,
+        overflow: "hidden",
         border: isActive
-          ? "1px solid rgba(0,163,255,0.4)"
-          : "1px solid rgba(255,255,255,0.10)",
+          ? "1px solid rgba(0,163,255,0.35)"
+          : "1px solid rgba(255,255,255,0.08)",
         boxShadow: isActive
-          ? "0 8px 40px rgba(0,0,0,0.85), 0 0 0 1px rgba(0,163,255,0.12)"
-          : "0 8px 32px rgba(0,0,0,0.7)",
+          ? "0 24px 60px rgba(0,0,0,0.9), 0 0 0 1px rgba(0,163,255,0.1), inset 0 1px 0 rgba(255,255,255,0.06)"
+          : "0 12px 40px rgba(0,0,0,0.75)",
       };
+
+  const titleBarBg = isActive
+    ? "linear-gradient(180deg, rgba(60,60,70,0.92) 0%, rgba(38,38,48,0.96) 100%)"
+    : "linear-gradient(180deg, rgba(38,38,45,0.92) 0%, rgba(26,26,32,0.96) 100%)";
 
   return (
     <motion.div
-      initial={{ scale: 0.97, opacity: 0 }}
-      animate={{ scale: 1, opacity: 1 }}
-      exit={{ scale: 0.97, opacity: 0 }}
-      transition={{ duration: 0.12 }}
+      initial={{ scale: 0.95, opacity: 0, filter: "blur(4px)" }}
+      animate={{ scale: 1, opacity: 1, filter: "blur(0px)" }}
+      exit={{ scale: 0.82, opacity: 0, filter: "blur(6px)" }}
+      transition={{ duration: 0.16, ease: "easeOut" }}
       style={windowStyle}
       onMouseDown={onFocus}
     >
-      {/* XFCE Kali title bar */}
+      {/* Title bar */}
       <div
         onMouseDown={handleTitleBarMouseDown}
         onDoubleClick={handleMaximize}
         style={{
-          height: 26,
+          height: 28,
           flexShrink: 0,
           display: "flex",
           alignItems: "center",
-          background: isActive
-            ? "linear-gradient(180deg, #3e3e3e 0%, #2c2c2c 100%)"
-            : "linear-gradient(180deg, #2e2e2e 0%, #222222 100%)",
-          borderBottom: "1px solid rgba(0,0,0,0.7)",
+          background: titleBarBg,
+          borderBottom: "1px solid rgba(0,0,0,0.6)",
+          backdropFilter: "blur(12px)",
           cursor: maximized ? "default" : "move",
-        }}
+          WebkitAppRegion: "drag",
+        } as React.CSSProperties}
       >
-        {/* Icon + Title on LEFT */}
+        {/* Icon + Title */}
         <div
           style={{
             display: "flex",
             alignItems: "center",
             gap: 6,
-            paddingLeft: 8,
+            paddingLeft: 10,
             flex: 1,
             minWidth: 0,
           }}
@@ -151,13 +156,14 @@ export default function WindowChrome({
               width: 13,
               height: 13,
               flexShrink: 0,
-              background: "#00a3ff",
+              background: isActive ? "#00a3ff" : "#555",
               clipPath: "polygon(0 0, 100% 0, 100% 70%, 70% 100%, 0 100%)",
+              transition: "background 0.2s",
             }}
           />
           <span
             style={{
-              color: isActive ? "#ffffff" : "#999999",
+              color: isActive ? "#ffffff" : "#888888",
               fontSize: 11,
               fontWeight: 400,
               letterSpacing: "0.01em",
@@ -166,19 +172,20 @@ export default function WindowChrome({
               textOverflow: "ellipsis",
               whiteSpace: "nowrap",
               fontFamily: "'Ubuntu', sans-serif",
+              transition: "color 0.2s",
             }}
           >
             {title}
           </span>
         </div>
 
-        {/* XFCE window buttons RIGHT: minimize | maximize | close */}
+        {/* Window control buttons */}
         <div
           style={{
             display: "flex",
             alignItems: "center",
-            paddingRight: 4,
-            gap: 1,
+            paddingRight: 5,
+            gap: 2,
             flexShrink: 0,
           }}
         >
@@ -187,20 +194,27 @@ export default function WindowChrome({
             title="Minimize"
             onMouseDown={(e) => e.stopPropagation()}
             onClick={(e) => { e.stopPropagation(); onMinimize(); }}
+            onMouseEnter={() => setHoverBtn("min")}
+            onMouseLeave={() => setHoverBtn(null)}
             style={{
-              width: 19,
+              width: 20,
               height: 18,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              background: "linear-gradient(180deg, #5c5c5c 0%, #464646 100%)",
-              border: "1px solid #222",
-              borderTop: "1px solid rgba(255,255,255,0.18)",
+              background:
+                hoverBtn === "min"
+                  ? "linear-gradient(180deg, #7a7a5a 0%, #5a5a3a 100%)"
+                  : "linear-gradient(180deg, #5c5c5c 0%, #464646 100%)",
+              border: "1px solid rgba(0,0,0,0.5)",
+              borderTop: "1px solid rgba(255,255,255,0.15)",
+              borderRadius: 3,
               cursor: "pointer",
               padding: 0,
+              transition: "background 0.12s",
             }}
           >
-            <Minus size={9} color="#d0d0d0" strokeWidth={2.5} />
+            <Minus size={9} color={hoverBtn === "min" ? "#ffd080" : "#d0d0d0"} strokeWidth={2.5} />
           </button>
 
           {/* Maximize */}
@@ -208,20 +222,27 @@ export default function WindowChrome({
             title={maximized ? "Restore" : "Maximize"}
             onMouseDown={(e) => e.stopPropagation()}
             onClick={handleMaximize}
+            onMouseEnter={() => setHoverBtn("max")}
+            onMouseLeave={() => setHoverBtn(null)}
             style={{
-              width: 19,
+              width: 20,
               height: 18,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              background: "linear-gradient(180deg, #5c5c5c 0%, #464646 100%)",
-              border: "1px solid #222",
-              borderTop: "1px solid rgba(255,255,255,0.18)",
+              background:
+                hoverBtn === "max"
+                  ? "linear-gradient(180deg, #5a7a5a 0%, #3a5a3a 100%)"
+                  : "linear-gradient(180deg, #5c5c5c 0%, #464646 100%)",
+              border: "1px solid rgba(0,0,0,0.5)",
+              borderTop: "1px solid rgba(255,255,255,0.15)",
+              borderRadius: 3,
               cursor: "pointer",
               padding: 0,
+              transition: "background 0.12s",
             }}
           >
-            <Square size={8} color="#d0d0d0" strokeWidth={2} />
+            <Square size={8} color={hoverBtn === "max" ? "#80e080" : "#d0d0d0"} strokeWidth={2} />
           </button>
 
           {/* Close */}
@@ -229,17 +250,25 @@ export default function WindowChrome({
             title="Close"
             onMouseDown={(e) => e.stopPropagation()}
             onClick={(e) => { e.stopPropagation(); onClose(); }}
+            onMouseEnter={() => setHoverBtn("close")}
+            onMouseLeave={() => setHoverBtn(null)}
             style={{
-              width: 19,
+              width: 20,
               height: 18,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              background: "linear-gradient(180deg, #c0392b 0%, #96281b 100%)",
+              background:
+                hoverBtn === "close"
+                  ? "linear-gradient(180deg, #e03b2b 0%, #b02010 100%)"
+                  : "linear-gradient(180deg, #c0392b 0%, #96281b 100%)",
               border: "1px solid #6e1a12",
-              borderTop: "1px solid rgba(255,130,120,0.3)",
+              borderTop: "1px solid rgba(255,130,120,0.25)",
+              borderRadius: 3,
               cursor: "pointer",
               padding: 0,
+              transition: "background 0.12s",
+              boxShadow: hoverBtn === "close" ? "0 0 8px rgba(220,40,40,0.5)" : "none",
             }}
           >
             <X size={9} color="#ffffff" strokeWidth={2.5} />
@@ -247,9 +276,16 @@ export default function WindowChrome({
         </div>
       </div>
 
-      {/* Content */}
+      {/* Content with glassmorphism */}
       <div
-        style={{ flex: 1, overflow: "auto", position: "relative", cursor: "auto" }}
+        style={{
+          flex: 1,
+          overflow: "auto",
+          position: "relative",
+          cursor: "auto",
+          background: "rgba(12,12,16,0.88)",
+          backdropFilter: "blur(8px)",
+        }}
       >
         {children}
       </div>

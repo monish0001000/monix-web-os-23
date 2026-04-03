@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { AnimatePresence } from "framer-motion";
 import TopPanel from "./TopPanel";
+import Taskbar from "./Taskbar";
 import DesktopIcons from "./DesktopIcons";
 import Terminal from "./Terminal";
 import FileExplorer from "./FileExplorer";
@@ -8,7 +9,8 @@ import Trash from "./Trash";
 import GitHubApp from "./GitHubApp";
 import PortfolioApp from "./PortfolioApp";
 import RightClickMenu from "./RightClickMenu";
-import wallpaperImg from "@assets/kali-ferrofluid_1775178957082.jpg";
+import LockScreen from "./LockScreen";
+import { useOSStore } from "@/lib/store";
 
 export interface WindowEntry {
   id: string;
@@ -17,10 +19,10 @@ export interface WindowEntry {
 }
 
 const WINDOW_LABELS: Record<string, string> = {
-  terminal: "Terminal",
-  files: "Files",
-  trash: "Trash",
-  github: "GitHub",
+  terminal:  "Terminal",
+  files:     "Files",
+  trash:     "Trash",
+  github:    "GitHub",
   portfolio: "Portfolio",
 };
 
@@ -32,6 +34,9 @@ export default function Desktop() {
   const [isMobile, setIsMobile] = useState(false);
   const nextZ = useRef(20);
 
+  const currentWallpaper = useOSStore((s) => s.currentWallpaper);
+  const isLocked = useOSStore((s) => s.isLocked);
+
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
     check();
@@ -41,9 +46,7 @@ export default function Desktop() {
 
   const bringToFront = (id: string) => {
     const z = nextZ.current++;
-    setWindows((prev) =>
-      prev.map((w) => (w.id === id ? { ...w, zIndex: z, minimized: false } : w))
-    );
+    setWindows((prev) => prev.map((w) => (w.id === id ? { ...w, zIndex: z, minimized: false } : w)));
     setActiveWindow(id);
   };
 
@@ -51,11 +54,7 @@ export default function Desktop() {
     setWindows((prev) => {
       const existing = prev.find((w) => w.id === id);
       const z = nextZ.current++;
-      if (existing) {
-        return prev.map((w) =>
-          w.id === id ? { ...w, minimized: false, zIndex: z } : w
-        );
-      }
+      if (existing) return prev.map((w) => (w.id === id ? { ...w, minimized: false, zIndex: z } : w));
       return [...prev, { id, minimized: false, zIndex: z }];
     });
     setActiveWindow(id);
@@ -72,9 +71,7 @@ export default function Desktop() {
   };
 
   const handleMinimizeWindow = (id: string) => {
-    setWindows((prev) =>
-      prev.map((w) => (w.id === id ? { ...w, minimized: true } : w))
-    );
+    setWindows((prev) => prev.map((w) => (w.id === id ? { ...w, minimized: true } : w)));
     if (activeWindow === id) {
       const visible = windows.filter((w) => w.id !== id && !w.minimized);
       setActiveWindow(visible.length > 0 ? visible[visible.length - 1].id : "");
@@ -84,13 +81,9 @@ export default function Desktop() {
   const handleTaskbarClick = (id: string) => {
     const win = windows.find((w) => w.id === id);
     if (!win) return;
-    if (win.minimized) {
-      bringToFront(id);
-    } else if (activeWindow === id) {
-      handleMinimizeWindow(id);
-    } else {
-      bringToFront(id);
-    }
+    if (win.minimized) bringToFront(id);
+    else if (activeWindow === id) handleMinimizeWindow(id);
+    else bringToFront(id);
   };
 
   const handleDesktopClick = () => {
@@ -107,9 +100,9 @@ export default function Desktop() {
   const getInitialPosition = (type: string) => {
     if (typeof window === "undefined") return { x: 100, y: 100 };
     const offsets: Record<string, { x: number; y: number }> = {
-      terminal: { x: window.innerWidth / 2 - 350, y: window.innerHeight / 2 - 225 },
-      files:    { x: window.innerWidth / 2 - 300, y: window.innerHeight / 2 - 200 },
-      trash:    { x: window.innerWidth / 2 - 250, y: window.innerHeight / 2 - 175 },
+      terminal:  { x: window.innerWidth / 2 - 350, y: window.innerHeight / 2 - 225 },
+      files:     { x: window.innerWidth / 2 - 300, y: window.innerHeight / 2 - 200 },
+      trash:     { x: window.innerWidth / 2 - 250, y: window.innerHeight / 2 - 175 },
       github:    { x: window.innerWidth / 2 - 340, y: window.innerHeight / 2 - 280 },
       portfolio: { x: window.innerWidth / 2 - 450, y: window.innerHeight / 2 - 290 },
     };
@@ -129,12 +122,12 @@ export default function Desktop() {
       <div className="fixed inset-0 bg-black flex flex-col items-center justify-center p-6 text-center z-[100] font-sans">
         <h2 className="text-2xl font-bold text-white mb-4">Best Viewed on Desktop</h2>
         <p className="text-gray-400 mb-8 max-w-sm">
-          This portfolio is a full Kali Linux OS simulation designed for desktop screens (1366×768+).
+          This portfolio is a full OS simulation designed for desktop screens (1366×768+).
         </p>
         <div className="flex flex-col gap-2 text-sm text-gray-500">
           <p>Monish</p>
-          <a href="https://github.com/monish0001000" target="_blank" rel="noreferrer" className="text-blue-500 hover:underline">
-            github.com/monish0001000
+          <a href="https://github.com/monishpkp" target="_blank" rel="noreferrer" className="text-blue-500 hover:underline">
+            github.com/monishpkp
           </a>
         </div>
       </div>
@@ -145,20 +138,16 @@ export default function Desktop() {
     <div
       className="w-full h-full relative overflow-hidden"
       style={{
-        backgroundImage: `url(${wallpaperImg})`,
+        backgroundImage: `url(${currentWallpaper})`,
         backgroundSize: "cover",
         backgroundPosition: "center",
         backgroundRepeat: "no-repeat",
+        transition: "background-image 0.4s ease",
       }}
       onClick={handleDesktopClick}
       onContextMenu={handleRightClick}
     >
-      <TopPanel
-        openWindows={openWindowList}
-        onOpenWindow={handleOpenWindow}
-        onTaskbarClick={handleTaskbarClick}
-        activeWindowId={activeWindow}
-      />
+      <TopPanel onOpenWindow={handleOpenWindow} />
 
       <DesktopIcons
         onOpenWindow={handleOpenWindow}
@@ -242,6 +231,17 @@ export default function Desktop() {
             onOpenWindow={handleOpenWindow}
           />
         )}
+      </AnimatePresence>
+
+      <Taskbar
+        openWindows={openWindowList}
+        onTaskbarClick={handleTaskbarClick}
+        activeWindowId={activeWindow}
+        onOpenWindow={handleOpenWindow}
+      />
+
+      <AnimatePresence>
+        {isLocked && <LockScreen key="lockscreen" />}
       </AnimatePresence>
     </div>
   );

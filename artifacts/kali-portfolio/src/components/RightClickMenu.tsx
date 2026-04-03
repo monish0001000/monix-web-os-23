@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { toast } from "sonner";
+import { useOSStore } from "@/lib/store";
 
 interface RightClickMenuProps {
   x: number;
@@ -9,7 +10,9 @@ interface RightClickMenuProps {
 }
 
 export default function RightClickMenu({ x, y, onClose, onOpenWindow }: RightClickMenuProps) {
-  
+  const cycleWallpaper = useOSStore((s) => s.cycleWallpaper);
+  const wallpaperIndex = useOSStore((s) => s.wallpaperIndex);
+
   const handleAction = (action: () => void) => {
     action();
     onClose();
@@ -17,48 +20,66 @@ export default function RightClickMenu({ x, y, onClose, onOpenWindow }: RightCli
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: -5 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.12 }}
-      className="absolute bg-[#1e1e1e] border border-white/10 rounded-md shadow-2xl py-1 min-w-[180px] z-[100] font-sans"
-      style={{ left: x, top: y }}
+      initial={{ opacity: 0, y: -5, scale: 0.97 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.97 }}
+      transition={{ duration: 0.1 }}
+      className="absolute font-sans"
+      style={{
+        left: x,
+        top: y,
+        background: "#18181f",
+        border: "1px solid rgba(255,255,255,0.1)",
+        borderRadius: 6,
+        boxShadow: "0 12px 40px rgba(0,0,0,0.85)",
+        padding: "4px 0",
+        minWidth: 190,
+        zIndex: 200,
+      }}
     >
-      <div 
+      <div
         className="px-3 py-1.5 text-sm text-gray-200 hover:bg-blue-600/30 hover:text-white cursor-pointer transition-colors"
-        onClick={() => handleAction(() => onOpenWindow('terminal'))}
+        onClick={() => handleAction(() => onOpenWindow("terminal"))}
       >
         Open Terminal
       </div>
-      
-      <div 
+
+      <div
         className="px-3 py-1.5 text-sm text-gray-200 hover:bg-blue-600/30 hover:text-white cursor-pointer transition-colors"
         onClick={() => handleAction(() => toast("New folder created on desktop."))}
       >
         New Folder
       </div>
-      
-      <div className="border-t border-white/10 my-1"></div>
-      
-      <div 
-        className="px-3 py-1.5 text-sm text-gray-200 hover:bg-blue-600/30 hover:text-white cursor-pointer transition-colors"
-        onClick={() => handleAction(() => toast("Wallpaper settings are disabled in this demo."))}
+
+      <div className="border-t border-white/10 my-1" />
+
+      <div
+        className="px-3 py-1.5 text-sm text-gray-200 hover:bg-blue-600/30 hover:text-white cursor-pointer transition-colors flex items-center justify-between"
+        onClick={() =>
+          handleAction(() => {
+            cycleWallpaper();
+            toast(`Wallpaper changed (${wallpaperIndex + 2 > 5 ? 1 : wallpaperIndex + 2}/5)`);
+          })
+        }
       >
-        Change Wallpaper
+        <span>Change Wallpaper</span>
+        <span style={{ fontSize: 10, color: "rgba(255,255,255,0.35)" }}>
+          {wallpaperIndex + 1}/5
+        </span>
       </div>
-      
-      <div 
+
+      <div
         className="px-3 py-1.5 text-sm text-gray-200 hover:bg-blue-600/30 hover:text-white cursor-pointer transition-colors"
-        onClick={() => handleAction(() => toast("Display settings are optimized for your current view."))}
+        onClick={() => handleAction(() => window.location.reload())}
       >
-        Display Settings
+        Refresh
       </div>
-      
-      <div className="border-t border-white/10 my-1"></div>
-      
-      <div 
+
+      <div className="border-t border-white/10 my-1" />
+
+      <div
         className="px-3 py-1.5 text-sm text-gray-200 hover:bg-blue-600/30 hover:text-white cursor-pointer transition-colors"
-        onClick={() => handleAction(() => toast("Kali Linux OS Simulation v1.0 by Monish."))}
+        onClick={() => handleAction(() => toast("MONIX OS Simulation v1.0 by Monish."))}
       >
         About This System
       </div>

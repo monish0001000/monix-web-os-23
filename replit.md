@@ -25,3 +25,34 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - `pnpm --filter @workspace/api-server run dev` — run API server locally
 
 See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details.
+
+## Artifacts
+
+### Kali Linux Portfolio (`artifacts/kali-portfolio`)
+
+A pixel-perfect Kali Linux OS desktop environment simulation as a portfolio web app.
+
+**Features:**
+- Boot animation with glowing KALI LINUX logo, scrolling kernel messages, and progress bar
+- Full desktop environment with wallpaper gradient (Kali dark blue/black theme)
+- Top panel with real-time clock, battery indicator (Battery Status API), WiFi status
+- Desktop icons: Terminal, Files, Home, GitHub, Trash (double-click to open)
+- Draggable windows with window chrome (close/minimize/maximize buttons)
+- Fully interactive terminal with commands: help, about, portfolio, skills, github, linkedin, email, resume, ls, neofetch, whoami, pwd, clear, exit
+- File Explorer with simulated directory structure and breadcrumb navigation
+- Trash window
+- Right-click context menu on desktop
+- Mobile overlay for small screens
+- Fonts: Ubuntu (sans) + Fira Code (mono)
+- Color palette: Electric blue (#00a3ff) accents on deep black background, green terminal text
+
+**Components:**
+- `src/components/BootScreen.tsx` — Boot animation
+- `src/components/Desktop.tsx` — Main desktop with window management
+- `src/components/TopPanel.tsx` — System tray bar
+- `src/components/DesktopIcons.tsx` — Desktop icon grid
+- `src/components/Terminal.tsx` — Interactive terminal emulator
+- `src/components/FileExplorer.tsx` — File manager window
+- `src/components/Trash.tsx` — Trash window
+- `src/components/RightClickMenu.tsx` — Desktop context menu
+- `src/components/WindowChrome.tsx` — Shared draggable window frame

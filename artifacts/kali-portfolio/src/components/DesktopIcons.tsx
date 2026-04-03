@@ -1,5 +1,4 @@
-import { TerminalSquare, FolderOpen, Home, Trash2 } from "lucide-react";
-import { SiGithub } from "react-icons/si";
+import { Home, Trash2, HardDrive } from "lucide-react";
 
 interface DesktopIconsProps {
   onOpenWindow: (id: string) => void;
@@ -7,51 +6,129 @@ interface DesktopIconsProps {
   onSelectIcon: (id: string | null) => void;
 }
 
-export default function DesktopIcons({ onOpenWindow, selectedIcon, onSelectIcon }: DesktopIconsProps) {
-  const icons = [
-    { id: 'terminal', icon: TerminalSquare, label: 'Terminal', action: () => onOpenWindow('terminal') },
-    { id: 'files', icon: FolderOpen, label: 'Files', action: () => onOpenWindow('files') },
-    { id: 'home', icon: Home, label: 'Home', action: () => onOpenWindow('files') },
-    { 
-      id: 'github', 
-      icon: SiGithub, 
-      label: 'GitHub', 
-      action: () => window.open('https://github.com/monishpkp', '_blank'),
-      isSingleClick: true
-    },
-    { id: 'trash', icon: Trash2, label: 'Trash', action: () => onOpenWindow('trash') },
-  ];
-
+function TrashIcon() {
   return (
-    <div className="absolute top-10 left-4 flex flex-col gap-2 z-10 font-sans">
-      {icons.map((item) => {
+    <svg viewBox="0 0 48 48" width="40" height="40" fill="none">
+      <rect x="12" y="14" width="24" height="28" rx="2" stroke="white" strokeWidth="2" fill="rgba(255,255,255,0.07)" />
+      <path d="M18 14V11a2 2 0 012-2h8a2 2 0 012 2v3" stroke="white" strokeWidth="2" />
+      <line x1="8" y1="14" x2="40" y2="14" stroke="white" strokeWidth="2" strokeLinecap="round" />
+      <line x1="20" y1="20" x2="20" y2="36" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
+      <line x1="24" y1="20" x2="24" y2="36" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
+      <line x1="28" y1="20" x2="28" y2="36" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function FileSystemIcon() {
+  return (
+    <svg viewBox="0 0 48 48" width="40" height="40" fill="none">
+      <circle cx="24" cy="24" r="16" stroke="rgba(255,255,255,0.85)" strokeWidth="1.8" fill="rgba(255,255,255,0.05)" />
+      <circle cx="24" cy="24" r="6" stroke="rgba(255,255,255,0.85)" strokeWidth="1.8" fill="rgba(255,255,255,0.12)" />
+      <circle cx="24" cy="24" r="2" fill="white" opacity="0.9" />
+      <line x1="24" y1="8" x2="24" y2="11" stroke="rgba(255,255,255,0.6)" strokeWidth="1.5" strokeLinecap="round" />
+      <line x1="24" y1="37" x2="24" y2="40" stroke="rgba(255,255,255,0.6)" strokeWidth="1.5" strokeLinecap="round" />
+      <line x1="8" y1="24" x2="11" y2="24" stroke="rgba(255,255,255,0.6)" strokeWidth="1.5" strokeLinecap="round" />
+      <line x1="37" y1="24" x2="40" y2="24" stroke="rgba(255,255,255,0.6)" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function HomeIcon() {
+  return (
+    <div
+      style={{
+        width: 40,
+        height: 40,
+        background: "linear-gradient(135deg, #367BF0 0%, #1a5bc4 100%)",
+        borderRadius: 4,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        boxShadow: "0 2px 8px rgba(54,123,240,0.4)",
+      }}
+    >
+      <Home size={22} color="white" strokeWidth={1.8} />
+    </div>
+  );
+}
+
+const ICONS = [
+  {
+    id: "trash",
+    label: "Trash",
+    icon: <TrashIcon />,
+    action: "open" as const,
+    window: "trash",
+  },
+  {
+    id: "filesystem",
+    label: "File System",
+    icon: <FileSystemIcon />,
+    action: "open" as const,
+    window: "files",
+  },
+  {
+    id: "home",
+    label: "Home",
+    icon: <HomeIcon />,
+    action: "open" as const,
+    window: "files",
+  },
+];
+
+export default function DesktopIcons({
+  onOpenWindow,
+  selectedIcon,
+  onSelectIcon,
+}: DesktopIconsProps) {
+  return (
+    <div
+      className="absolute flex flex-col z-10 font-sans"
+      style={{ top: 38, left: 10, gap: 4 }}
+    >
+      {ICONS.map((item) => {
         const isSelected = selectedIcon === item.id;
-        const Icon = item.icon;
-        
+
         return (
           <div
             key={item.id}
-            className={`flex flex-col items-center gap-1 cursor-pointer p-2 rounded w-16 select-none transition-colors
-              ${isSelected ? 'bg-blue-500/20 border border-blue-400/30' : 'hover:bg-white/10 border border-transparent'}
-            `}
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: 4,
+              cursor: "pointer",
+              padding: "6px 8px 5px",
+              userSelect: "none",
+              width: 72,
+              background: isSelected
+                ? "rgba(54,123,240,0.28)"
+                : "transparent",
+              border: isSelected
+                ? "1px solid rgba(54,123,240,0.5)"
+                : "1px solid transparent",
+              outline: isSelected ? "1px solid rgba(54,123,240,0.2)" : "none",
+            }}
             onClick={(e) => {
               e.stopPropagation();
               onSelectIcon(item.id);
-              if (item.isSingleClick) {
-                item.action();
-              }
             }}
             onDoubleClick={(e) => {
               e.stopPropagation();
-              if (!item.isSingleClick) {
-                item.action();
-              }
+              onOpenWindow(item.window);
             }}
           >
-            <Icon className="w-8 h-8 text-white drop-shadow-md" />
-            <span 
-              className="text-[11px] text-white text-center leading-tight mt-0.5"
-              style={{ textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}
+            {item.icon}
+            <span
+              style={{
+                fontSize: 11,
+                color: "#ffffff",
+                textAlign: "center",
+                lineHeight: 1.2,
+                textShadow: "0 1px 4px rgba(0,0,0,0.9), 0 0 8px rgba(0,0,0,0.7)",
+                wordBreak: "break-word",
+                maxWidth: 64,
+              }}
             >
               {item.label}
             </span>

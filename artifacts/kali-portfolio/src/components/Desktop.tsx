@@ -6,7 +6,7 @@ import Terminal from "./Terminal";
 import FileExplorer from "./FileExplorer";
 import Trash from "./Trash";
 import RightClickMenu from "./RightClickMenu";
-import wallpaperImg from "@assets/kali-red-sticker_1775177522460.jpg";
+import wallpaperImg from "@assets/kali-ferrofluid_1775178957082.jpg";
 
 export default function Desktop() {
   const [openWindows, setOpenWindows] = useState<string[]>([]);
@@ -100,7 +100,7 @@ export default function Desktop() {
       onClick={handleDesktopClick}
       onContextMenu={handleRightClick}
     >
-      <TopPanel activeWindowName={getActiveWindowName()} />
+      <TopPanel activeWindowName={getActiveWindowName()} onOpenWindow={handleOpenWindow} />
       
       <DesktopIcons 
         onOpenWindow={handleOpenWindow}

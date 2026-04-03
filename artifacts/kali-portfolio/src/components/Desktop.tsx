@@ -6,6 +6,7 @@ import Terminal from "./Terminal";
 import FileExplorer from "./FileExplorer";
 import Trash from "./Trash";
 import RightClickMenu from "./RightClickMenu";
+import wallpaperImg from "@assets/kali-red-sticker_1775177522460.jpg";
 
 export default function Desktop() {
   const [openWindows, setOpenWindows] = useState<string[]>([]);
@@ -90,8 +91,11 @@ export default function Desktop() {
   return (
     <div 
       className="w-full h-full relative overflow-hidden"
-      style={{ 
-        background: 'radial-gradient(ellipse at 20% 80%, rgba(0,100,200,0.08) 0%, transparent 40%), radial-gradient(ellipse at 80% 20%, rgba(0,163,255,0.05) 0%, transparent 40%), radial-gradient(ellipse at center, #0a1628 0%, #060d1a 50%, #030509 100%)' 
+      style={{
+        backgroundImage: `url(${wallpaperImg})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
       }}
       onClick={handleDesktopClick}
       onContextMenu={handleRightClick}

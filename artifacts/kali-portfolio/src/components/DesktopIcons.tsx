@@ -140,6 +140,36 @@ function BrowserIcon() {
   );
 }
 
+function SentinelIcon() {
+  return (
+    <svg viewBox="0 0 36 36" width="36" height="36" fill="none">
+      <defs>
+        <linearGradient id="sentBg" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#0a1a2e" />
+          <stop offset="100%" stopColor="#040c18" />
+        </linearGradient>
+        <linearGradient id="sentShield" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#00a3ff" />
+          <stop offset="100%" stopColor="#0060cc" />
+        </linearGradient>
+        <radialGradient id="sentGlow" cx="50%" cy="40%" r="50%">
+          <stop offset="0%" stopColor="#00c4ff" stopOpacity="0.5" />
+          <stop offset="100%" stopColor="#00a3ff" stopOpacity="0" />
+        </radialGradient>
+      </defs>
+      <rect width="36" height="36" rx="5" fill="url(#sentBg)" stroke="#0a3a6a" strokeWidth="0.8"/>
+      <path d="M18 4 L30 9 L30 20 C30 27 18 33 18 33 C18 33 6 27 6 20 L6 9 Z" fill="url(#sentShield)" opacity="0.18"/>
+      <path d="M18 6 L28 10.5 L28 20 C28 26 18 31.5 18 31.5 C18 31.5 8 26 8 20 L8 10.5 Z" fill="none" stroke="url(#sentShield)" strokeWidth="1.4"/>
+      <circle cx="18" cy="18" r="4.5" fill="url(#sentGlow)"/>
+      <circle cx="18" cy="18" r="2.5" fill="#00c4ff"/>
+      <circle cx="18" cy="18" r="1" fill="#80e4ff"/>
+      <line x1="18" y1="13.5" x2="18" y2="10" stroke="#00a3ff" strokeWidth="1" strokeLinecap="round" opacity="0.7"/>
+      <line x1="22.5" y1="18" x2="26" y2="18" stroke="#00a3ff" strokeWidth="1" strokeLinecap="round" opacity="0.7"/>
+      <line x1="13.5" y1="18" x2="10" y2="18" stroke="#00a3ff" strokeWidth="1" strokeLinecap="round" opacity="0.7"/>
+    </svg>
+  );
+}
+
 function PortfolioIcon() {
   return (
     <svg viewBox="0 0 36 36" width="36" height="36" fill="none">
@@ -176,6 +206,7 @@ const ICONS = [
   { id: "github",     label: "GitHub",      icon: <GitHubIcon />,     window: "github"    },
   { id: "portfolio",  label: "Portfolio",   icon: <PortfolioIcon />,  window: "portfolio" },
   { id: "browser",    label: "Browser",     icon: <BrowserIcon />,    window: "browser"   },
+  { id: "sentinel",   label: "Sentinel SOC",icon: <SentinelIcon />,   window: "sentinel"  },
 ];
 
 export default function DesktopIcons({

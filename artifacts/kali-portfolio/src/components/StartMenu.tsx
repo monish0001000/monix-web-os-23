@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import {
   TerminalSquare, FolderOpen, Monitor, Github, Trash2,
-  Lock, Settings, Power, Search, Globe
+  Lock, Settings, Power, Search, Globe, Shield
 } from "lucide-react";
 import { useOSStore } from "@/lib/store";
 
@@ -60,6 +60,13 @@ const APPS = [
     icon: <Settings size={22} strokeWidth={1.6} />,
     color: "#f4c066",
     bg: "rgba(244,192,102,0.1)",
+  },
+  {
+    id: "sentinel",
+    label: "Sentinel SOC",
+    icon: <Shield size={22} strokeWidth={1.6} />,
+    color: "#00c4ff",
+    bg: "rgba(0,163,255,0.1)",
   },
 ];
 

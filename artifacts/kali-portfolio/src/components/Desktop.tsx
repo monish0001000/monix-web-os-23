@@ -9,6 +9,7 @@ import GitHubApp from "./GitHubApp";
 import PortfolioApp from "./PortfolioApp";
 import BrowserApp from "./BrowserApp";
 import WallpaperPicker from "./WallpaperPicker";
+import SentinelApp from "./SentinelApp";
 import RightClickMenu from "./RightClickMenu";
 import { useOSStore } from "@/lib/store";
 
@@ -26,6 +27,7 @@ const WINDOW_LABELS: Record<string, string> = {
   portfolio:       "Portfolio",
   browser:         "Web Browser",
   wallpaperpicker: "Wallpaper Picker",
+  sentinel:        "Sentinel SOC",
 };
 
 interface SelectionBox {
@@ -165,6 +167,7 @@ export default function Desktop() {
       portfolio:       { x: window.innerWidth / 2 - 450, y: window.innerHeight / 2 - 290 },
       browser:         { x: window.innerWidth / 2 - 480, y: window.innerHeight / 2 - 310 },
       wallpaperpicker: { x: window.innerWidth / 2 - 280, y: window.innerHeight / 2 - 230 },
+      sentinel:        { x: window.innerWidth / 2 - 460, y: window.innerHeight / 2 - 300 },
     };
     return offsets[type] ?? { x: 120, y: 60 };
   };
@@ -345,6 +348,19 @@ export default function Desktop() {
             initialX={getInitialPosition("wallpaperpicker").x}
             initialY={getInitialPosition("wallpaperpicker").y}
             zIndex={getWin("wallpaperpicker")!.zIndex}
+          />
+        )}
+
+        {getWin("sentinel") && !getWin("sentinel")!.minimized && (
+          <SentinelApp
+            key="sentinel"
+            onClose={() => handleCloseWindow("sentinel")}
+            onMinimize={() => handleMinimizeWindow("sentinel")}
+            isActive={activeWindow === "sentinel"}
+            onFocus={() => bringToFront("sentinel")}
+            initialX={getInitialPosition("sentinel").x}
+            initialY={getInitialPosition("sentinel").y}
+            zIndex={getWin("sentinel")!.zIndex}
           />
         )}
       </AnimatePresence>

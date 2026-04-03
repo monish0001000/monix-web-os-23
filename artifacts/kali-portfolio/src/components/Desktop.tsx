@@ -101,7 +101,7 @@ export default function Desktop() {
 
   const handleRefresh = useCallback(() => {
     setIsRefreshing(true);
-    setTimeout(() => setIsRefreshing(false), 400);
+    setTimeout(() => setIsRefreshing(false), 150);
   }, []);
 
   const getInitialPosition = (type: string) => {
@@ -159,7 +159,9 @@ export default function Desktop() {
       {/* Desktop icons wrapper with refresh animation */}
       <div
         style={{
-          transition: "opacity 300ms ease, transform 300ms ease",
+          transition: isRefreshing
+            ? "opacity 75ms ease, transform 75ms ease"
+            : "opacity 200ms ease-in, transform 200ms ease-in",
           opacity: isRefreshing ? 0 : 1,
           transform: isRefreshing ? "scale(0.95)" : "scale(1)",
           transformOrigin: "center center",

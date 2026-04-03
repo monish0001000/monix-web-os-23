@@ -1,14 +1,16 @@
 import { create } from "zustand";
-import wp1 from "@assets/wallpaper_(1)_1775219672789.webp";
-import wp2 from "@assets/wallpaper_(2)_1775219672790.webp";
-import wp3 from "@assets/wallpaper_(3)_1775219672791.webp";
-import wp4 from "@assets/wallpaper_(4)_1775219672791.webp";
-import wp5 from "@assets/wallpaper_(5)_1775219718823.webp";
-import wp6 from "@assets/wallpaper_(6)_1775219718824.webp";
-import wp7 from "@assets/wallpaper_(7)_1775219718825.webp";
 
-export const WALLPAPERS: string[] = [wp1, wp2, wp3, wp4, wp5, wp6, wp7];
-export const DEFAULT_WALLPAPER: string = wp1;
+export const WALLPAPERS: string[] = [
+  "/wallpaper_1.webp",
+  "/wallpaper_2.webp",
+  "/wallpaper_3.webp",
+  "/wallpaper_4.webp",
+  "/wallpaper_5.webp",
+  "/wallpaper_6.webp",
+  "/wallpaper_7.webp",
+];
+
+export const DEFAULT_WALLPAPER: string = WALLPAPERS[0];
 
 export type TaskbarPosition = "top" | "bottom" | "left" | "right";
 
@@ -18,12 +20,14 @@ interface OSState {
   currentWallpaper: string;
   wallpaperIndex: number;
   wallpapers: string[];
+  osVolume: number;
 
   setLocked: (locked: boolean) => void;
   setTaskbarPosition: (pos: TaskbarPosition) => void;
   setWallpaper: (path: string) => void;
   cycleWallpaper: () => void;
   resetWallpaper: () => void;
+  setOsVolume: (vol: number) => void;
 }
 
 export const useOSStore = create<OSState>((set) => ({
@@ -32,9 +36,9 @@ export const useOSStore = create<OSState>((set) => ({
   currentWallpaper: DEFAULT_WALLPAPER,
   wallpaperIndex: 0,
   wallpapers: WALLPAPERS,
+  osVolume: 75,
 
   setLocked: (locked) => set({ isLocked: locked }),
-
   setTaskbarPosition: (pos) => set({ taskbarPosition: pos }),
 
   setWallpaper: (path) =>
@@ -51,4 +55,6 @@ export const useOSStore = create<OSState>((set) => ({
 
   resetWallpaper: () =>
     set({ currentWallpaper: DEFAULT_WALLPAPER, wallpaperIndex: 0 }),
+
+  setOsVolume: (vol) => set({ osVolume: Math.max(0, Math.min(100, vol)) }),
 }));

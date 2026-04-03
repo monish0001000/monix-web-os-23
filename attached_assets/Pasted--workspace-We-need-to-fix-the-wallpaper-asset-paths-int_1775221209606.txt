@@ -1,0 +1,37 @@
+@workspace We need to fix the wallpaper asset paths, integrate real Browser APIs for the system tray, refine the taskbar UI, and finalize the blink-fade refresh animation. Please execute these specific updates:
+
+1. Wallpaper Asset Path Fix (Zustand Store & Desktop):
+
+Update the wallpapers array to match the newly uploaded WebP file format in the public directory. Use exact naming conventions if necessary, for example: "/wallpaper_(1)_1775219672789.webp". Ensure currentWallpaper falls back to the first valid path.
+
+2. Context Menu Ordering & Blink-Fade Refresh (ContextMenu.tsx & Desktop.tsx):
+
+In the Right-Click menu, hardcode the order: Option 1 MUST be "Change Wallpaper". Option 2 MUST be "Refresh Desktop".
+
+Blink-Fade Logic: When isRefreshing is true, immediately apply a Windows-style blink fade to the desktop icons wrapper: opacity-0 scale-95 transition-all duration-75. After 150ms, revert to opacity-100 scale-100 transition-all duration-200 ease-in.
+
+3. Real System Tray Data Integration (TopBar.tsx / SystemTray.tsx):
+
+Battery: Use the native navigator.getBattery() API. Display the real system battery percentage and a charging bolt icon if isCharging is true.
+
+WiFi & IP Address: Check navigator.onLine for connection status. Add a useEffect to fetch the user's real public IP address from https://api.ipify.org?format=json. When the user clicks the WiFi icon, the popover should display "Status: Connected" and "IP: [fetched_ip]".
+
+Sound: Create an internal global state osVolume (0 to 100). The sound popover should have a functional slider to adjust this internal OS volume.
+
+4. Taskbar UI Scaling (TopBar.tsx):
+
+The current application icons in the Taskbar are too small. Increase their size and padding so they fit perfectly and fill the taskbar height proportionately (e.g., use w-6 h-6 or w-7 h-7 for the icons, and ensure hover effects have comfortable padding).
+
+5. Advanced Web Browser UI (BrowserApp.tsx):
+
+Ensure the Browser window has a fully functional, dark-themed Chrome-style UI.
+
+Top row: Visual tabs (e.g., "New Tab").
+
+Second row: Back, Forward, Refresh buttons, and a central URL input bar.
+
+Third row: A bookmarks bar with quick links.
+
+The iframe src should handle direct URLs, or route search terms through https://duckduckgo.com/?q=${term}&kp=-2.
+
+Please implement these cleanly and ensure the Zustand store correctly manages the new volume and wallpaper states.

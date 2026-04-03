@@ -16,6 +16,8 @@ export default function RightClickMenu({ x, y, onClose, onOpenWindow, onOpenWall
     onClose();
   };
 
+  const item = "px-3 py-1.5 text-sm text-gray-200 hover:bg-blue-600/30 hover:text-white cursor-pointer transition-colors";
+
   return (
     <motion.div
       initial={{ opacity: 0, y: -4, scale: 0.97 }}
@@ -35,15 +37,36 @@ export default function RightClickMenu({ x, y, onClose, onOpenWindow, onOpenWall
         zIndex: 200,
       }}
     >
+      {/* 1. Change Wallpaper */}
       <div
-        className="px-3 py-1.5 text-sm text-gray-200 hover:bg-blue-600/30 hover:text-white cursor-pointer transition-colors"
+        className={item + " flex items-center justify-between"}
+        onClick={() => handleAction(onOpenWallpaperPicker)}
+      >
+        <span>Change Wallpaper…</span>
+        <span style={{ fontSize: 10, color: "rgba(255,255,255,0.35)" }}>▸</span>
+      </div>
+
+      {/* 2. Refresh Desktop */}
+      <div
+        className={item}
+        onClick={() => handleAction(onRefresh)}
+      >
+        Refresh Desktop
+      </div>
+
+      <div className="border-t border-white/10 my-1" />
+
+      {/* 3. Open Terminal */}
+      <div
+        className={item}
         onClick={() => handleAction(() => onOpenWindow("terminal"))}
       >
         Open Terminal
       </div>
 
+      {/* 4. New Folder */}
       <div
-        className="px-3 py-1.5 text-sm text-gray-200 hover:bg-blue-600/30 hover:text-white cursor-pointer transition-colors"
+        className={item}
         onClick={() => handleAction(() => toast("New folder created on desktop."))}
       >
         New Folder
@@ -51,25 +74,9 @@ export default function RightClickMenu({ x, y, onClose, onOpenWindow, onOpenWall
 
       <div className="border-t border-white/10 my-1" />
 
+      {/* 5. About */}
       <div
-        className="px-3 py-1.5 text-sm text-gray-200 hover:bg-blue-600/30 hover:text-white cursor-pointer transition-colors flex items-center justify-between"
-        onClick={() => handleAction(onOpenWallpaperPicker)}
-      >
-        <span>Change Wallpaper…</span>
-        <span style={{ fontSize: 10, color: "rgba(255,255,255,0.35)" }}>▸</span>
-      </div>
-
-      <div
-        className="px-3 py-1.5 text-sm text-gray-200 hover:bg-blue-600/30 hover:text-white cursor-pointer transition-colors"
-        onClick={() => handleAction(onRefresh)}
-      >
-        Refresh
-      </div>
-
-      <div className="border-t border-white/10 my-1" />
-
-      <div
-        className="px-3 py-1.5 text-sm text-gray-200 hover:bg-blue-600/30 hover:text-white cursor-pointer transition-colors"
+        className={item}
         onClick={() => handleAction(() => toast("MONIX OS Simulation v1.0 by Monish."))}
       >
         About This System

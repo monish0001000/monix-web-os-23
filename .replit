@@ -24,3 +24,8 @@ expertMode = true
 [postMerge]
 path = "scripts/post-merge.sh"
 timeoutMs = 20000
+
+[userenv]
+
+[userenv.shared]
+VITE_GEMINI_API_KEY = "AIzaSyChpPFDGr1WP4cp2qXKF7gon0FwLB5SNh4"

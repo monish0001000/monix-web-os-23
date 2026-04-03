@@ -19,14 +19,14 @@ interface TerminalLine {
 }
 
 const WELCOME_BANNER = [
-  "  _  __    _    _     ___",
-  " | |/ /   / \\  | |   |_ _|",
-  " | ' /   / _ \\ | |    | |",
-  " | . \\  / ___ \\| |___ | |",
-  " |_|\\_\\/_/   \\_\\_____|___|",
+  "__        _______ _     ____ ___  __  __ _____   _ _ ",
+  "\\ \\      / / ____| |   / ___/ _ \\|  \\/  | ____|  | | |",
+  " \\ \\ /\\ / /|  _| | |  | |  | | | | |\\/| |  _|   | | |",
+  "  \\ V  V / | |___| |__| |__| |_| | |  | | |___  |_|_|",
+  "   \\_/\\_/  |_____|_____|\\____\\___/|_|  |_|_____|  (_|_)",
   "",
-  "Welcome!! I'm Monish",
-  "Type 'help' to see available commands.",
+  "  monish@kali:~  |  cybersecurity student & developer",
+  "  Type 'help' to see available commands.",
   ""
 ];
 

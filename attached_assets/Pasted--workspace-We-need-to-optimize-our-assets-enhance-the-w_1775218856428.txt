@@ -1,0 +1,29 @@
+@workspace We need to optimize our assets, enhance the wallpaper picker, and massively upgrade our Web Browser application to mimic an advanced Chrome experience. I have uploaded the new .webp wallpapers to the public directory. Please execute the following updates:
+
+1. WebP Asset Optimization (Zustand Store & Components):
+
+Update the wallpapers array in the state to strictly use the new formats: ["/wallpaper_1.webp", "/wallpaper_2.webp", "/wallpaper_3.webp", "/wallpaper_4.webp", "/wallpaper_5.webp", "/wallpaper_6.webp", "/wallpaper_7.webp"].
+
+Set the default currentWallpaper to "/wallpaper_1.webp". Ensure the Lock Screen and Desktop seamlessly use these optimized paths.
+
+2. Wallpaper Picker Enhancement (WallpaperPicker.tsx):
+
+Add a distinct "Set to Default" button at the top or bottom of the wallpaper grid.
+
+Clicking this button should immediately dispatch the state update to set currentWallpaper to "/wallpaper_1.webp".
+
+3. Advanced Chrome-Like Browser (BrowserApp.tsx):
+
+Advanced UI: Upgrade the top navigation. Add a "Tabs" bar at the very top (just visually showing one active tab named "New Tab" or the current site title). Below that, the URL bar with back/forward/reload buttons. Below the URL bar, add a sleek "Bookmarks Bar" (with links to GitHub, Portfolio, LinkedIn).
+
+The 'New Tab' Illusion: When currentUrl is empty or "monix://home", render a custom React component that looks EXACTLY like the Google Chrome default New Tab page. It must have:
+
+A large Google (or customized MONIX) logo in the center.
+
+A rounded, pill-shaped search bar with a microphone/lens icon placeholder.
+
+A grid of 4-5 circular shortcut icons below the search bar.
+
+Search Engine Routing: When the user types a query in the custom New Tab search bar OR the top URL bar, format it safely to bypass iframe restrictions. If it's a search term (no .com, etc.), set the iframe src to https://duckduckgo.com/?q=${searchTerm}&kp=-2. If it's a valid URL, ensure it has https:// and load it.
+
+Please implement these features seamlessly, ensuring the UI feels premium and authentic.

@@ -1,5 +1,5 @@
 import WindowChrome from "./WindowChrome";
-import { useOSStore } from "@/lib/store";
+import { useOSStore, DEFAULT_WALLPAPER } from "@/lib/store";
 
 interface WallpaperPickerProps {
   onClose: () => void;
@@ -11,7 +11,7 @@ interface WallpaperPickerProps {
 }
 
 export default function WallpaperPicker({ onClose, isActive, onFocus, initialX, initialY, zIndex }: WallpaperPickerProps) {
-  const { wallpapers, currentWallpaper, setWallpaper } = useOSStore();
+  const { wallpapers, currentWallpaper, setWallpaper, resetWallpaper } = useOSStore();
 
   return (
     <WindowChrome
@@ -21,8 +21,8 @@ export default function WallpaperPicker({ onClose, isActive, onFocus, initialX, 
       onFocus={onFocus}
       initialX={initialX}
       initialY={initialY}
-      width={520}
-      height={380}
+      width={540}
+      height={420}
       zIndex={zIndex}
     >
       <div
@@ -33,13 +33,15 @@ export default function WallpaperPicker({ onClose, isActive, onFocus, initialX, 
           padding: 16,
           boxSizing: "border-box",
           overflowY: "auto",
+          display: "flex",
+          flexDirection: "column",
+          gap: 14,
         }}
       >
         <div
           style={{
             fontSize: 11,
             color: "rgba(255,255,255,0.4)",
-            marginBottom: 14,
             letterSpacing: "0.08em",
             textTransform: "uppercase",
             fontFamily: "'Ubuntu', sans-serif",
@@ -59,7 +61,7 @@ export default function WallpaperPicker({ onClose, isActive, onFocus, initialX, 
             const isSelected = currentWallpaper === wp;
             return (
               <div
-                key={wp}
+                key={i}
                 onClick={() => setWallpaper(wp)}
                 title={`Wallpaper ${i + 1}`}
                 style={{
@@ -94,7 +96,6 @@ export default function WallpaperPicker({ onClose, isActive, onFocus, initialX, 
                   }}
                 />
 
-                {/* Selected badge */}
                 {isSelected && (
                   <div
                     style={{
@@ -117,7 +118,6 @@ export default function WallpaperPicker({ onClose, isActive, onFocus, initialX, 
                   </div>
                 )}
 
-                {/* Label */}
                 <div
                   style={{
                     position: "absolute",
@@ -136,6 +136,51 @@ export default function WallpaperPicker({ onClose, isActive, onFocus, initialX, 
               </div>
             );
           })}
+        </div>
+
+        {/* Set to Default button */}
+        <div style={{ display: "flex", justifyContent: "center", paddingTop: 2 }}>
+          <button
+            onClick={() => resetWallpaper()}
+            disabled={currentWallpaper === DEFAULT_WALLPAPER}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              padding: "8px 22px",
+              background: currentWallpaper === DEFAULT_WALLPAPER
+                ? "rgba(255,255,255,0.04)"
+                : "rgba(54,123,240,0.12)",
+              border: currentWallpaper === DEFAULT_WALLPAPER
+                ? "1px solid rgba(255,255,255,0.08)"
+                : "1px solid rgba(54,123,240,0.35)",
+              borderRadius: 6,
+              cursor: currentWallpaper === DEFAULT_WALLPAPER ? "default" : "pointer",
+              fontSize: 12,
+              fontFamily: "'Ubuntu', sans-serif",
+              color: currentWallpaper === DEFAULT_WALLPAPER
+                ? "rgba(255,255,255,0.25)"
+                : "rgba(144,191,255,0.9)",
+              transition: "all 0.15s",
+              letterSpacing: "0.02em",
+            }}
+            onMouseEnter={(e) => {
+              if (currentWallpaper !== DEFAULT_WALLPAPER) {
+                (e.currentTarget as HTMLElement).style.background = "rgba(54,123,240,0.22)";
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (currentWallpaper !== DEFAULT_WALLPAPER) {
+                (e.currentTarget as HTMLElement).style.background = "rgba(54,123,240,0.12)";
+              }
+            }}
+          >
+            <svg viewBox="0 0 14 14" width="13" height="13" fill="none">
+              <path d="M7 1.5A5.5 5.5 0 1 0 12.5 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+              <path d="M9 1h3.5V4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            Set to Default
+          </button>
         </div>
       </div>
     </WindowChrome>

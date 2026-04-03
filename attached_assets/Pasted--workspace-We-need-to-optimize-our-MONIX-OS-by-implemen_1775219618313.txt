@@ -1,0 +1,29 @@
+@workspace We need to optimize our MONIX OS by implementing WebP wallpapers, adding a default reset option, and completely overhauling the Web Browser to mimic an advanced Chrome-like interface. Please update the necessary components (Store, WallpaperPicker, BrowserApp):
+
+1. WebP Wallpaper Integration (Zustand Store):
+
+Update the wallpapers array in the global state to use the exact names of the uploaded WebP files: ["/wallpaper (1).webp", "/wallpaper (2).webp", "/wallpaper (3).webp", "/wallpaper (4).webp", "/wallpaper (5).webp", "/wallpaper (6).webp", "/wallpaper (7).webp"].
+
+Ensure the currentWallpaper defaults to "/wallpaper (1).webp".
+
+2. Wallpaper Picker Upgrade (WallpaperPicker.tsx):
+
+Inside the Wallpaper Picker window, below the image grid, add a sleek "Set to Default" button.
+
+Clicking this button must immediately set the currentWallpaper state back to "/wallpaper (1).webp".
+
+3. Advanced Chrome-like Browser Overhaul (BrowserApp.tsx):
+
+The UI Shell (Top Navigation): Completely redesign the top bar to look exactly like Google Chrome.
+
+Row 1 (Tabs): Add a visual "Tab" bar at the very top (e.g., an active tab showing a Google logo and "New Tab", and a '+' button next to it).
+
+Row 2 (URL Bar): Below the tabs, add Navigation buttons (Back, Forward, Refresh). The URL input field should have a small "SSL Lock" icon on the left. On the right side of the URL bar, add placeholder icons for Extensions (puzzle piece), Bookmarks (star), and a User Profile avatar.
+
+Row 3 (Bookmarks Bar): Add a thin bookmarks bar below the URL row with clickable text links like "GitHub", "Portfolio", "YouTube". (Clicking them should load their URLs in the iframe).
+
+The Engine: Below the Chrome UI header, render the <iframe className="w-full h-full bg-white" sandbox="allow-same-origin allow-scripts allow-forms" />.
+
+Routing Logic: If the user types a search term, route it via https://duckduckgo.com/?q=${term}&kp=-2. If it's a URL, format it with https:// and load it. If the URL is empty or "monix://newtab", render a custom dark-mode "New Tab" React component inside the window instead of the iframe, featuring a Google/MONIX logo and a central search bar.
+
+Please implement these features safely and ensure the browser UI looks premium and authentic.

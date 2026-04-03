@@ -1,0 +1,41 @@
+@workspace We are taking MONIX OS to the next level by implementing a native desktop selection box, draggable icons, a glassmorphic taskbar, and dynamic wallpaper defaults. Please update the necessary components (Desktop.tsx, TopBar.tsx, WallpaperPicker.tsx, and the Zustand Store):
+
+1. Dynamic Default Wallpaper Logic (Zustand Store & WallpaperPicker.tsx):
+
+Store: Add a new state variable defaultWallpaper and initialize it with "/wallpaper_(1)_1775219672789.webp".
+
+Picker UI: In <WallpaperPicker />, have two distinct actions.
+
+When a user clicks a thumbnail, it previews by changing currentWallpaper.
+
+Add a button "Set as System Default". Clicking this updates the defaultWallpaper state to the currently viewed image.
+
+Add a "Restore Default" button that sets currentWallpaper back to whatever is saved in defaultWallpaper.
+
+2. Glassmorphic Taskbar (TopBar.tsx):
+
+Make the Taskbar partially transparent with a blur effect. Update the parent container's Tailwind classes to use bg-black/40 (or bg-[#0f0f0f]/50) and backdrop-blur-md border-t border-white/10.
+
+3. Draggable Desktop Icons (Desktop.tsx):
+
+Wrap the rendered desktop icon components in Framer Motion's <motion.div>.
+
+Add the drag and dragMomentum={false} props so the user can click and drag the icons anywhere on the screen.
+
+Apply dragConstraints to the parent desktop container so icons can't be dragged off-screen.
+
+4. Native Desktop Selection Box (Desktop.tsx):
+
+Implement a classic OS drag-to-select box.
+
+Add state to track the selection box: selectionBox (with startX, startY, endX, endY, and isVisible).
+
+Add onMouseDown, onMouseMove, and onMouseUp handlers to the main Desktop wrapper. CRITICAL: Only trigger the box creation if it is a Left-Click (e.button === 0) and the user is clicking directly on the desktop background (not on an icon or window).
+
+Calculate the left, top, width, and height based on the mouse coordinates.
+
+Render an absolute <div /> representing the box with Tailwind classes: bg-blue-500/30 border border-blue-400 pointer-events-none z-40.
+
+Add className="select-none" to the desktop container to prevent text highlighting while dragging.
+
+Please implement these mechanics safely, ensuring the existing Context Menu (right-click) and Window Management logic remain unbroken.

@@ -28,6 +28,14 @@ const WINDOW_LABELS: Record<string, string> = {
   wallpaperpicker: "Wallpaper Picker",
 };
 
+interface SelectionBox {
+  startX: number;
+  startY: number;
+  endX: number;
+  endY: number;
+  isVisible: boolean;
+}
+
 export default function Desktop() {
   const [windows, setWindows] = useState<WindowEntry[]>([]);
   const [activeWindow, setActiveWindow] = useState<string>("");
@@ -35,7 +43,13 @@ export default function Desktop() {
   const [selectedIcon, setSelectedIcon] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [selectionBox, setSelectionBox] = useState<SelectionBox>({
+    startX: 0, startY: 0, endX: 0, endY: 0, isVisible: false,
+  });
+
   const nextZ = useRef(20);
+  const desktopRef = useRef<HTMLDivElement>(null);
+  const isDraggingSelection = useRef(false);
 
   const currentWallpaper = useOSStore((s) => s.currentWallpaper);
 
@@ -89,8 +103,10 @@ export default function Desktop() {
   };
 
   const handleDesktopClick = () => {
-    setContextMenu(null);
-    setSelectedIcon(null);
+    if (!isDraggingSelection.current) {
+      setContextMenu(null);
+      setSelectedIcon(null);
+    }
   };
 
   const handleRightClick = (e: React.MouseEvent) => {
@@ -104,6 +120,41 @@ export default function Desktop() {
     setTimeout(() => setIsRefreshing(false), 150);
   }, []);
 
+  // ── Selection Box handlers ──
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    // Only on left click directly on the desktop background
+    if (e.button !== 0) return;
+    if (e.target !== e.currentTarget) return;
+
+    isDraggingSelection.current = false;
+    const rect = desktopRef.current?.getBoundingClientRect();
+    if (!rect) return;
+
+    const startX = e.clientX - rect.left;
+    const startY = e.clientY - rect.top;
+
+    setSelectionBox({ startX, startY, endX: startX, endY: startY, isVisible: false });
+
+    const onMouseMove = (me: MouseEvent) => {
+      const endX = me.clientX - rect.left;
+      const endY = me.clientY - rect.top;
+      const moved = Math.abs(endX - startX) > 4 || Math.abs(endY - startY) > 4;
+      if (moved) isDraggingSelection.current = true;
+      setSelectionBox({ startX, startY, endX, endY, isVisible: moved });
+    };
+
+    const onMouseUp = () => {
+      setSelectionBox((prev) => ({ ...prev, isVisible: false }));
+      document.removeEventListener("mousemove", onMouseMove);
+      document.removeEventListener("mouseup", onMouseUp);
+      // Small delay so the click handler can check the flag
+      setTimeout(() => { isDraggingSelection.current = false; }, 50);
+    };
+
+    document.addEventListener("mousemove", onMouseMove);
+    document.addEventListener("mouseup", onMouseUp);
+  };
+
   const getInitialPosition = (type: string) => {
     if (typeof window === "undefined") return { x: 100, y: 100 };
     const offsets: Record<string, { x: number; y: number }> = {
@@ -113,7 +164,7 @@ export default function Desktop() {
       github:          { x: window.innerWidth / 2 - 340, y: window.innerHeight / 2 - 280 },
       portfolio:       { x: window.innerWidth / 2 - 450, y: window.innerHeight / 2 - 290 },
       browser:         { x: window.innerWidth / 2 - 480, y: window.innerHeight / 2 - 310 },
-      wallpaperpicker: { x: window.innerWidth / 2 - 260, y: window.innerHeight / 2 - 200 },
+      wallpaperpicker: { x: window.innerWidth / 2 - 280, y: window.innerHeight / 2 - 230 },
     };
     return offsets[type] ?? { x: 120, y: 60 };
   };
@@ -125,6 +176,12 @@ export default function Desktop() {
   }));
 
   const getWin = (id: string) => windows.find((w) => w.id === id);
+
+  // Compute selection rect
+  const selLeft   = Math.min(selectionBox.startX, selectionBox.endX);
+  const selTop    = Math.min(selectionBox.startY, selectionBox.endY);
+  const selWidth  = Math.abs(selectionBox.endX - selectionBox.startX);
+  const selHeight = Math.abs(selectionBox.endY - selectionBox.startY);
 
   if (isMobile) {
     return (
@@ -145,7 +202,8 @@ export default function Desktop() {
 
   return (
     <div
-      className="w-full h-full relative overflow-hidden"
+      ref={desktopRef}
+      className="w-full h-full relative overflow-hidden select-none"
       style={{
         backgroundImage: `url(${currentWallpaper})`,
         backgroundSize: "cover",
@@ -155,6 +213,7 @@ export default function Desktop() {
       }}
       onClick={handleDesktopClick}
       onContextMenu={handleRightClick}
+      onMouseDown={handleMouseDown}
     >
       {/* Desktop icons wrapper with refresh animation */}
       <div
@@ -176,8 +235,27 @@ export default function Desktop() {
           onOpenWindow={handleOpenWindow}
           selectedIcon={selectedIcon}
           onSelectIcon={setSelectedIcon}
+          dragConstraintsRef={desktopRef}
         />
       </div>
+
+      {/* Selection box */}
+      {selectionBox.isVisible && (
+        <div
+          style={{
+            position: "absolute",
+            left: selLeft,
+            top: selTop,
+            width: selWidth,
+            height: selHeight,
+            background: "rgba(54,123,240,0.15)",
+            border: "1px solid rgba(54,123,240,0.7)",
+            pointerEvents: "none",
+            zIndex: 40,
+            borderRadius: 2,
+          }}
+        />
+      )}
 
       <AnimatePresence>
         {getWin("terminal") && !getWin("terminal")!.minimized && (

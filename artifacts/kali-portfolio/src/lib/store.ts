@@ -20,6 +20,7 @@ interface OSState {
   currentWallpaper: string;
   wallpaperIndex: number;
   wallpapers: string[];
+  defaultWallpaper: string;
   osVolume: number;
 
   setLocked: (locked: boolean) => void;
@@ -27,6 +28,7 @@ interface OSState {
   setWallpaper: (path: string) => void;
   cycleWallpaper: () => void;
   resetWallpaper: () => void;
+  setDefaultWallpaper: (path: string) => void;
   setOsVolume: (vol: number) => void;
 }
 
@@ -36,6 +38,7 @@ export const useOSStore = create<OSState>((set) => ({
   currentWallpaper: DEFAULT_WALLPAPER,
   wallpaperIndex: 0,
   wallpapers: WALLPAPERS,
+  defaultWallpaper: DEFAULT_WALLPAPER,
   osVolume: 75,
 
   setLocked: (locked) => set({ isLocked: locked }),
@@ -54,7 +57,13 @@ export const useOSStore = create<OSState>((set) => ({
     }),
 
   resetWallpaper: () =>
-    set({ currentWallpaper: DEFAULT_WALLPAPER, wallpaperIndex: 0 }),
+    set((state) => ({
+      currentWallpaper: state.defaultWallpaper,
+      wallpaperIndex: state.wallpapers.indexOf(state.defaultWallpaper),
+    })),
+
+  setDefaultWallpaper: (path) =>
+    set({ defaultWallpaper: path, currentWallpaper: path }),
 
   setOsVolume: (vol) => set({ osVolume: Math.max(0, Math.min(100, vol)) }),
 }));

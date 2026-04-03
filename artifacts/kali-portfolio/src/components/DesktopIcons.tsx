@@ -1,7 +1,11 @@
+import { useRef } from "react";
+import { motion } from "framer-motion";
+
 interface DesktopIconsProps {
   onOpenWindow: (id: string) => void;
   selectedIcon: string | null;
   onSelectIcon: (id: string | null) => void;
+  dragConstraintsRef: React.RefObject<HTMLDivElement>;
 }
 
 function TrashIcon() {
@@ -178,6 +182,7 @@ export default function DesktopIcons({
   onOpenWindow,
   selectedIcon,
   onSelectIcon,
+  dragConstraintsRef,
 }: DesktopIconsProps) {
   return (
     <div
@@ -187,14 +192,19 @@ export default function DesktopIcons({
       {ICONS.map((item) => {
         const isSelected = selectedIcon === item.id;
         return (
-          <div
+          <motion.div
             key={item.id}
+            drag
+            dragMomentum={false}
+            dragConstraints={dragConstraintsRef}
+            dragElastic={0}
+            whileDrag={{ scale: 1.06, zIndex: 50, cursor: "grabbing" }}
             style={{
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
               gap: 3,
-              cursor: "pointer",
+              cursor: "grab",
               padding: "5px 7px 4px",
               userSelect: "none",
               width: 66,
@@ -204,6 +214,8 @@ export default function DesktopIcons({
                 : "1px solid transparent",
               outline: isSelected ? "1px solid rgba(54,123,240,0.15)" : "none",
               transition: "background 0.1s, border-color 0.1s",
+              position: "relative",
+              borderRadius: 3,
             }}
             onClick={(e) => {
               e.stopPropagation();
@@ -226,11 +238,12 @@ export default function DesktopIcons({
                 wordBreak: "break-word",
                 maxWidth: 60,
                 fontWeight: 500,
+                pointerEvents: "none",
               }}
             >
               {item.label}
             </span>
-          </div>
+          </motion.div>
         );
       })}
     </div>

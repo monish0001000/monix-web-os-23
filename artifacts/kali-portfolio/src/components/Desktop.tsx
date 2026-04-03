@@ -6,6 +6,7 @@ import Terminal from "./Terminal";
 import FileExplorer from "./FileExplorer";
 import Trash from "./Trash";
 import GitHubApp from "./GitHubApp";
+import PortfolioApp from "./PortfolioApp";
 import RightClickMenu from "./RightClickMenu";
 import wallpaperImg from "@assets/kali-ferrofluid_1775178957082.jpg";
 
@@ -20,6 +21,7 @@ const WINDOW_LABELS: Record<string, string> = {
   files: "Files",
   trash: "Trash",
   github: "GitHub",
+  portfolio: "Portfolio",
 };
 
 export default function Desktop() {
@@ -108,7 +110,8 @@ export default function Desktop() {
       terminal: { x: window.innerWidth / 2 - 350, y: window.innerHeight / 2 - 225 },
       files:    { x: window.innerWidth / 2 - 300, y: window.innerHeight / 2 - 200 },
       trash:    { x: window.innerWidth / 2 - 250, y: window.innerHeight / 2 - 175 },
-      github:   { x: window.innerWidth / 2 - 340, y: window.innerHeight / 2 - 280 },
+      github:    { x: window.innerWidth / 2 - 340, y: window.innerHeight / 2 - 280 },
+      portfolio: { x: window.innerWidth / 2 - 450, y: window.innerHeight / 2 - 290 },
     };
     return offsets[type] ?? { x: 120, y: 120 };
   };
@@ -213,6 +216,19 @@ export default function Desktop() {
             initialX={getInitialPosition("github").x}
             initialY={getInitialPosition("github").y}
             zIndex={getWin("github")!.zIndex}
+          />
+        )}
+
+        {getWin("portfolio") && !getWin("portfolio")!.minimized && (
+          <PortfolioApp
+            key="portfolio"
+            onClose={() => handleCloseWindow("portfolio")}
+            onMinimize={() => handleMinimizeWindow("portfolio")}
+            isActive={activeWindow === "portfolio"}
+            onFocus={() => bringToFront("portfolio")}
+            initialX={getInitialPosition("portfolio").x}
+            initialY={getInitialPosition("portfolio").y}
+            zIndex={getWin("portfolio")!.zIndex}
           />
         )}
       </AnimatePresence>

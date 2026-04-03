@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from "react";
 import { format } from "date-fns";
 import {
-  Volume2, Bell, Lock, Power, Wifi, WifiOff, ChevronDown, BarChart2
+  Volume2, Bell, Power, Wifi, WifiOff, Battery, BatteryCharging,
+  FolderOpen, TerminalSquare, Monitor, Github
 } from "lucide-react";
 import { SiFirefox } from "react-icons/si";
-import { FolderOpen, TerminalSquare } from "lucide-react";
+import { Trash2 } from "lucide-react";
 
 interface OpenWindowInfo {
   id: string;
@@ -54,12 +55,15 @@ function SystemBars() {
   );
 }
 
-const APP_ICONS: Record<string, string> = {
-  terminal: "⬛",
-  files: "📁",
-  trash: "🗑",
-  github: "⬡",
+const TASKBAR_ICON: Record<string, React.ReactNode> = {
+  terminal: <TerminalSquare size={14} color="#c8e6c9" />,
+  files:    <FolderOpen size={14} color="#a8c4f5" />,
+  trash:    <Trash2 size={14} color="#aaaacc" />,
+  github:   <Github size={14} color="#e0e0e0" />,
+  portfolio:<Monitor size={14} color="#90d090" />,
 };
+
+type TrayPopover = "battery" | "network" | "sound" | "notifications" | null;
 
 export default function TopPanel({
   openWindows,
@@ -71,7 +75,9 @@ export default function TopPanel({
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [activeWorkspace, setActiveWorkspace] = useState(1);
   const [showCalendar, setShowCalendar] = useState(false);
+  const [trayPopover, setTrayPopover] = useState<TrayPopover>(null);
   const calRef = useRef<HTMLDivElement>(null);
+  const trayRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 60000);
@@ -91,13 +97,16 @@ export default function TopPanel({
       if (calRef.current && !calRef.current.contains(e.target as Node)) {
         setShowCalendar(false);
       }
+      if (trayRef.current && !trayRef.current.contains(e.target as Node)) {
+        setTrayPopover(null);
+      }
     };
-    if (showCalendar) document.addEventListener("mousedown", handleClick);
+    document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
-  }, [showCalendar]);
+  }, []);
 
   const panelBtnClass =
-    "flex items-center justify-center cursor-pointer px-1 transition-colors hover:bg-white/10 h-full";
+    "flex items-center justify-center cursor-pointer px-1.5 transition-colors hover:bg-white/10 h-full";
 
   const appLaunchers = [
     { id: "files",    icon: <FolderOpen size={15} color="#a8c4f5" />, title: "Thunar File Manager" },
@@ -112,11 +121,31 @@ export default function TopPanel({
   const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).getDay();
   const today = now.getDate();
 
+  const toggleTray = (key: TrayPopover) => {
+    setShowCalendar(false);
+    setTrayPopover((prev) => (prev === key ? null : key));
+  };
+
+  const popoverBase: React.CSSProperties = {
+    position: "fixed",
+    top: 34,
+    background: "#1a1a1f",
+    border: "1px solid rgba(255,255,255,0.12)",
+    padding: "10px 14px",
+    zIndex: 300,
+    minWidth: 180,
+    boxShadow: "0 8px 24px rgba(0,0,0,0.85)",
+    borderRadius: 4,
+    fontSize: 12,
+    color: "rgba(255,255,255,0.85)",
+    fontFamily: "'Ubuntu', sans-serif",
+  };
+
   return (
     <div
       className="fixed top-0 left-0 w-full z-50 select-none font-sans flex items-stretch"
       style={{
-        height: 28,
+        height: 32,
         background: "rgba(10,10,10,0.96)",
         backdropFilter: "blur(4px)",
         borderBottom: "1px solid rgba(255,255,255,0.06)",
@@ -127,20 +156,20 @@ export default function TopPanel({
         {/* Kali App Menu */}
         <div
           className={panelBtnClass}
-          style={{ paddingLeft: 8, paddingRight: 8 }}
+          style={{ paddingLeft: 10, paddingRight: 10 }}
           title="Applications"
         >
           <KaliDragonIcon />
         </div>
 
-        <div style={{ width: 1, height: 16, background: "rgba(255,255,255,0.12)" }} />
+        <div style={{ width: 1, height: 18, background: "rgba(255,255,255,0.12)" }} />
 
         {/* App launchers */}
         {appLaunchers.map((launcher) => (
           <div
             key={launcher.id}
             className={panelBtnClass}
-            style={{ paddingLeft: 6, paddingRight: 6 }}
+            style={{ paddingLeft: 7, paddingRight: 7 }}
             title={launcher.title}
             onClick={() => {
               if (launcher.action) launcher.action();
@@ -151,7 +180,7 @@ export default function TopPanel({
           </div>
         ))}
 
-        <div style={{ width: 1, height: 16, background: "rgba(255,255,255,0.12)", marginLeft: 4 }} />
+        <div style={{ width: 1, height: 18, background: "rgba(255,255,255,0.12)", marginLeft: 4 }} />
 
         {/* Workspace switcher: 1 2 3 4 */}
         <div className="flex items-center h-full px-1 gap-0.5">
@@ -161,7 +190,7 @@ export default function TopPanel({
               onClick={() => setActiveWorkspace(n)}
               style={{
                 width: 22,
-                height: 18,
+                height: 20,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -188,69 +217,66 @@ export default function TopPanel({
         {/* ── TASKBAR: open/minimized windows ── */}
         {openWindows.length > 0 && (
           <>
-            <div style={{ width: 1, height: 16, background: "rgba(255,255,255,0.12)", marginLeft: 4 }} />
+            <div style={{ width: 1, height: 18, background: "rgba(255,255,255,0.12)", marginLeft: 4 }} />
             <div className="flex items-center h-full gap-px px-1" style={{ overflow: "hidden" }}>
               {openWindows.map((win) => {
                 const isActive = activeWindowId === win.id;
+                const icon = TASKBAR_ICON[win.id] ?? <Monitor size={14} color="rgba(255,255,255,0.7)" />;
                 return (
                   <button
                     key={win.id}
                     onClick={() => onTaskbarClick(win.id)}
                     title={win.label}
                     style={{
-                      height: 20,
-                      maxWidth: 120,
-                      minWidth: 60,
-                      paddingLeft: 7,
-                      paddingRight: 7,
-                      fontSize: 11,
-                      fontFamily: "'Ubuntu', sans-serif",
+                      height: 24,
+                      width: 32,
+                      paddingLeft: 0,
+                      paddingRight: 0,
                       cursor: "pointer",
                       display: "flex",
                       alignItems: "center",
-                      gap: 4,
+                      justifyContent: "center",
+                      position: "relative",
                       background: isActive
-                        ? "rgba(54,123,240,0.25)"
+                        ? "rgba(54,123,240,0.3)"
                         : win.minimized
                         ? "rgba(255,255,255,0.04)"
-                        : "rgba(255,255,255,0.08)",
+                        : "rgba(255,255,255,0.1)",
                       border: isActive
-                        ? "1px solid rgba(54,123,240,0.5)"
+                        ? "1px solid rgba(54,123,240,0.55)"
                         : "1px solid rgba(255,255,255,0.1)",
-                      color: isActive
-                        ? "#90bfff"
-                        : win.minimized
-                        ? "rgba(255,255,255,0.4)"
-                        : "rgba(255,255,255,0.75)",
+                      borderRadius: 3,
                       transition: "all 0.1s",
-                      overflow: "hidden",
-                      whiteSpace: "nowrap",
-                      textOverflow: "ellipsis",
                       flexShrink: 0,
                     }}
+                    onMouseEnter={(e) => {
+                      if (!isActive) {
+                        (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.15)";
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isActive) {
+                        (e.currentTarget as HTMLElement).style.background = win.minimized
+                          ? "rgba(255,255,255,0.04)"
+                          : "rgba(255,255,255,0.1)";
+                      }
+                    }}
                   >
-                    {/* Active dot indicator */}
+                    {icon}
                     {isActive && (
                       <div
                         style={{
-                          width: 4,
-                          height: 4,
-                          borderRadius: "50%",
+                          position: "absolute",
+                          bottom: -1,
+                          left: "50%",
+                          transform: "translateX(-50%)",
+                          width: 16,
+                          height: 2,
+                          borderRadius: 1,
                           background: "#367BF0",
-                          flexShrink: 0,
                         }}
                       />
                     )}
-                    <span
-                      style={{
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
-                        fontStyle: win.minimized ? "italic" : "normal",
-                      }}
-                    >
-                      {win.label}
-                    </span>
                   </button>
                 );
               })}
@@ -263,37 +289,156 @@ export default function TopPanel({
       <div style={{ flex: 1 }} />
 
       {/* ── RIGHT SECTION ── */}
-      <div className="flex items-center h-full">
+      <div className="flex items-center h-full" ref={trayRef}>
         <div className={panelBtnClass} style={{ paddingLeft: 6, paddingRight: 6 }} title="System Monitor">
           <SystemBars />
         </div>
 
-        <div style={{ width: 1, height: 16, background: "rgba(255,255,255,0.12)" }} />
+        <div style={{ width: 1, height: 18, background: "rgba(255,255,255,0.12)" }} />
 
-        <div className={panelBtnClass} style={{ paddingLeft: 6, paddingRight: 6 }} title={isOnline ? "Connected" : "Disconnected"}>
+        {/* Network */}
+        <div
+          className={panelBtnClass}
+          style={{
+            paddingLeft: 6,
+            paddingRight: 6,
+            position: "relative",
+            background: trayPopover === "network" ? "rgba(255,255,255,0.12)" : undefined,
+          }}
+          title={isOnline ? "Connected" : "Disconnected"}
+          onClick={() => toggleTray("network")}
+        >
           {isOnline ? (
-            <Wifi size={13} color="#7ec8e3" />
+            <Wifi size={14} color="#7ec8e3" />
           ) : (
-            <WifiOff size={13} color="#f87171" />
+            <WifiOff size={14} color="#f87171" />
+          )}
+          {trayPopover === "network" && (
+            <div style={{ ...popoverBase, right: 0 }}>
+              <div style={{ fontWeight: 600, marginBottom: 6, color: "#7ec8e3" }}>Network</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <Wifi size={13} color={isOnline ? "#7ec8e3" : "#f87171"} />
+                <span>{isOnline ? "Connected" : "No connection"}</span>
+              </div>
+              <div style={{ marginTop: 6, color: "rgba(255,255,255,0.45)", fontSize: 11 }}>
+                {isOnline ? "Ethernet — 1000 Mbps" : "Cable unplugged"}
+              </div>
+            </div>
           )}
         </div>
 
-        <div className={panelBtnClass} style={{ paddingLeft: 5, paddingRight: 5 }} title="Volume">
-          <Volume2 size={13} color="rgba(255,255,255,0.8)" />
+        {/* Sound */}
+        <div
+          className={panelBtnClass}
+          style={{
+            paddingLeft: 6,
+            paddingRight: 6,
+            position: "relative",
+            background: trayPopover === "sound" ? "rgba(255,255,255,0.12)" : undefined,
+          }}
+          title="Volume"
+          onClick={() => toggleTray("sound")}
+        >
+          <Volume2 size={14} color="rgba(255,255,255,0.8)" />
+          {trayPopover === "sound" && (
+            <div style={{ ...popoverBase, right: 0 }}>
+              <div style={{ fontWeight: 600, marginBottom: 6, color: "rgba(255,255,255,0.9)" }}>Sound</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                <Volume2 size={13} color="rgba(255,255,255,0.7)" />
+                <span>Output Volume</span>
+              </div>
+              <input
+                type="range"
+                min={0}
+                max={100}
+                defaultValue={75}
+                onClick={(e) => e.stopPropagation()}
+                style={{ width: "100%", accentColor: "#367BF0", cursor: "pointer" }}
+              />
+              <div style={{ textAlign: "right", fontSize: 11, color: "rgba(255,255,255,0.45)", marginTop: 2 }}>75%</div>
+            </div>
+          )}
         </div>
 
-        <div className={panelBtnClass} style={{ paddingLeft: 5, paddingRight: 5 }} title="Notifications">
-          <Bell size={13} color="rgba(255,255,255,0.8)" />
+        {/* Notifications */}
+        <div
+          className={panelBtnClass}
+          style={{
+            paddingLeft: 6,
+            paddingRight: 6,
+            position: "relative",
+            background: trayPopover === "notifications" ? "rgba(255,255,255,0.12)" : undefined,
+          }}
+          title="Notifications"
+          onClick={() => toggleTray("notifications")}
+        >
+          <Bell size={14} color="rgba(255,255,255,0.8)" />
+          {trayPopover === "notifications" && (
+            <div style={{ ...popoverBase, right: 0 }}>
+              <div style={{ fontWeight: 600, marginBottom: 6, color: "rgba(255,255,255,0.9)" }}>Notifications</div>
+              <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, textAlign: "center", padding: "8px 0" }}>
+                No new notifications
+              </div>
+            </div>
+          )}
         </div>
 
-        <div style={{ width: 1, height: 16, background: "rgba(255,255,255,0.12)" }} />
+        {/* Battery */}
+        <div
+          className={panelBtnClass}
+          style={{
+            paddingLeft: 6,
+            paddingRight: 6,
+            position: "relative",
+            background: trayPopover === "battery" ? "rgba(255,255,255,0.12)" : undefined,
+          }}
+          title="Battery"
+          onClick={() => toggleTray("battery")}
+        >
+          <BatteryCharging size={14} color="#6ee7a0" />
+          {trayPopover === "battery" && (
+            <div style={{ ...popoverBase, right: 0 }}>
+              <div style={{ fontWeight: 600, marginBottom: 6, color: "#6ee7a0" }}>Battery</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                <BatteryCharging size={14} color="#6ee7a0" />
+                <span style={{ color: "#6ee7a0", fontWeight: 600 }}>100% — Charging</span>
+              </div>
+              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>
+                Fully charged
+              </div>
+              <div
+                style={{
+                  marginTop: 8,
+                  height: 6,
+                  background: "rgba(255,255,255,0.1)",
+                  borderRadius: 3,
+                  overflow: "hidden",
+                }}
+              >
+                <div
+                  style={{
+                    height: "100%",
+                    width: "100%",
+                    background: "#6ee7a0",
+                    borderRadius: 3,
+                  }}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div style={{ width: 1, height: 18, background: "rgba(255,255,255,0.12)" }} />
 
         {/* Clock — clickable for calendar */}
         <div
           className={panelBtnClass + " gap-1.5 relative"}
           style={{ paddingLeft: 10, paddingRight: 10, position: "relative" }}
           title="Calendar"
-          onClick={() => setShowCalendar((v) => !v)}
+          onClick={() => {
+            setTrayPopover(null);
+            setShowCalendar((v) => !v);
+          }}
           ref={calRef}
         >
           <span
@@ -311,14 +456,15 @@ export default function TopPanel({
             <div
               style={{
                 position: "fixed",
-                top: 30,
+                top: 34,
                 right: 60,
                 background: "#1e1e1e",
                 border: "1px solid rgba(255,255,255,0.12)",
                 padding: 12,
-                zIndex: 200,
+                zIndex: 300,
                 minWidth: 180,
                 boxShadow: "0 8px 24px rgba(0,0,0,0.8)",
+                borderRadius: 4,
               }}
               onClick={(e) => e.stopPropagation()}
             >
@@ -382,18 +528,14 @@ export default function TopPanel({
           )}
         </div>
 
-        <div style={{ width: 1, height: 16, background: "rgba(255,255,255,0.12)" }} />
-
-        <div className={panelBtnClass} style={{ paddingLeft: 6, paddingRight: 6 }} title="Lock Screen">
-          <Lock size={13} color="rgba(255,255,255,0.75)" />
-        </div>
+        <div style={{ width: 1, height: 18, background: "rgba(255,255,255,0.12)" }} />
 
         <div
           className={panelBtnClass}
           style={{ paddingLeft: 6, paddingRight: 8 }}
           title="Logout / Shutdown"
         >
-          <Power size={13} color="rgba(255,255,255,0.75)" />
+          <Power size={14} color="rgba(255,255,255,0.75)" />
         </div>
       </div>
     </div>

@@ -7,13 +7,24 @@ interface DesktopIconsProps {
 function TrashIcon() {
   return (
     <svg viewBox="0 0 36 36" width="36" height="36" fill="none">
-      <rect x="5" y="9" width="26" height="23" rx="2.5" fill="#4a4a5a" stroke="#6e6e8a" strokeWidth="1.2"/>
-      <rect x="9" y="13" width="18" height="16" rx="1.5" fill="#303040"/>
-      <rect x="8" y="7" width="20" height="3.5" rx="1.5" fill="#5a5a6e" stroke="#7a7a8e" strokeWidth="0.8"/>
-      <rect x="14" y="4.5" width="8" height="3" rx="1.2" fill="#6e6e82" stroke="#8888a0" strokeWidth="0.7"/>
-      <line x1="13" y1="15" x2="13" y2="27" stroke="#8888aa" strokeWidth="1.5" strokeLinecap="round"/>
-      <line x1="18" y1="15" x2="18" y2="27" stroke="#8888aa" strokeWidth="1.5" strokeLinecap="round"/>
-      <line x1="23" y1="15" x2="23" y2="27" stroke="#8888aa" strokeWidth="1.5" strokeLinecap="round"/>
+      <defs>
+        <linearGradient id="trashBody" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#6a6a82" />
+          <stop offset="100%" stopColor="#3a3a50" />
+        </linearGradient>
+        <linearGradient id="trashLid" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#7a7a96" />
+          <stop offset="100%" stopColor="#5a5a72" />
+        </linearGradient>
+      </defs>
+      <rect x="7" y="11" width="22" height="20" rx="2.5" fill="url(#trashBody)" stroke="#8080a0" strokeWidth="0.8"/>
+      <rect x="10" y="14.5" width="16" height="13" rx="1.5" fill="#252538" opacity="0.6"/>
+      <rect x="6.5" y="8" width="23" height="4" rx="2" fill="url(#trashLid)" stroke="#9090b0" strokeWidth="0.7"/>
+      <rect x="13.5" y="5.5" width="9" height="3" rx="1.5" fill="#6a6a88" stroke="#9090b4" strokeWidth="0.6"/>
+      <line x1="13" y1="16" x2="13" y2="28" stroke="#a0a0c0" strokeWidth="1.8" strokeLinecap="round"/>
+      <line x1="18" y1="16" x2="18" y2="28" stroke="#a0a0c0" strokeWidth="1.8" strokeLinecap="round"/>
+      <line x1="23" y1="16" x2="23" y2="28" stroke="#a0a0c0" strokeWidth="1.8" strokeLinecap="round"/>
+      <rect x="15" y="8" width="6" height="4" rx="1" fill="#5a5a78" opacity="0.5"/>
     </svg>
   );
 }
@@ -21,18 +32,31 @@ function TrashIcon() {
 function FileSystemIcon() {
   return (
     <svg viewBox="0 0 36 36" width="36" height="36" fill="none">
-      <ellipse cx="18" cy="18" rx="14" ry="14" fill="#1e3a5f" stroke="#2a5ba8" strokeWidth="1.2"/>
-      <ellipse cx="18" cy="18" rx="10" ry="10" fill="#163055" stroke="#3a7ad4" strokeWidth="1"/>
-      <ellipse cx="18" cy="18" rx="5.5" ry="5.5" fill="#0f2040" stroke="#5090e0" strokeWidth="1"/>
-      <circle cx="18" cy="18" r="2" fill="#70b0ff"/>
-      <line x1="18" y1="4" x2="18" y2="7.5" stroke="#4080cc" strokeWidth="1.5" strokeLinecap="round"/>
-      <line x1="18" y1="28.5" x2="18" y2="32" stroke="#4080cc" strokeWidth="1.5" strokeLinecap="round"/>
-      <line x1="4" y1="18" x2="7.5" y2="18" stroke="#4080cc" strokeWidth="1.5" strokeLinecap="round"/>
-      <line x1="28.5" y1="18" x2="32" y2="18" stroke="#4080cc" strokeWidth="1.5" strokeLinecap="round"/>
-      <line x1="8.3" y1="8.3" x2="10.8" y2="10.8" stroke="#3070bb" strokeWidth="1.2" strokeLinecap="round"/>
-      <line x1="25.2" y1="25.2" x2="27.7" y2="27.7" stroke="#3070bb" strokeWidth="1.2" strokeLinecap="round"/>
-      <line x1="27.7" y1="8.3" x2="25.2" y2="10.8" stroke="#3070bb" strokeWidth="1.2" strokeLinecap="round"/>
-      <line x1="10.8" y1="25.2" x2="8.3" y2="27.7" stroke="#3070bb" strokeWidth="1.2" strokeLinecap="round"/>
+      <defs>
+        <linearGradient id="diskGrad" x1="0.3" y1="0.1" x2="0.7" y2="0.9">
+          <stop offset="0%" stopColor="#2a4a8c" />
+          <stop offset="100%" stopColor="#0f1f4a" />
+        </linearGradient>
+        <radialGradient id="diskShine" cx="40%" cy="35%" r="55%">
+          <stop offset="0%" stopColor="#4a7ee0" stopOpacity="0.6" />
+          <stop offset="100%" stopColor="#0a1a44" stopOpacity="0" />
+        </radialGradient>
+      </defs>
+      <circle cx="18" cy="18" r="15" fill="url(#diskGrad)" stroke="#2a5ab8" strokeWidth="1.2"/>
+      <circle cx="18" cy="18" r="15" fill="url(#diskShine)"/>
+      <circle cx="18" cy="18" r="11" fill="none" stroke="#3a6ad0" strokeWidth="0.8" strokeDasharray="2 3"/>
+      <circle cx="18" cy="18" r="7.5" fill="none" stroke="#2a50a8" strokeWidth="0.8"/>
+      <circle cx="18" cy="18" r="4" fill="#1a3a7a" stroke="#4a80e0" strokeWidth="1"/>
+      <circle cx="18" cy="18" r="2" fill="#5090f0"/>
+      <circle cx="18" cy="18" r="0.8" fill="#90c0ff"/>
+      <line x1="18" y1="3.5" x2="18" y2="7" stroke="#5080d0" strokeWidth="1.5" strokeLinecap="round"/>
+      <line x1="18" y1="29" x2="18" y2="32.5" stroke="#5080d0" strokeWidth="1.5" strokeLinecap="round"/>
+      <line x1="3.5" y1="18" x2="7" y2="18" stroke="#5080d0" strokeWidth="1.5" strokeLinecap="round"/>
+      <line x1="29" y1="18" x2="32.5" y2="18" stroke="#5080d0" strokeWidth="1.5" strokeLinecap="round"/>
+      <line x1="7.8" y1="7.8" x2="10.3" y2="10.3" stroke="#3a60c0" strokeWidth="1.2" strokeLinecap="round"/>
+      <line x1="25.7" y1="25.7" x2="28.2" y2="28.2" stroke="#3a60c0" strokeWidth="1.2" strokeLinecap="round"/>
+      <line x1="28.2" y1="7.8" x2="25.7" y2="10.3" stroke="#3a60c0" strokeWidth="1.2" strokeLinecap="round"/>
+      <line x1="10.3" y1="25.7" x2="7.8" y2="28.2" stroke="#3a60c0" strokeWidth="1.2" strokeLinecap="round"/>
     </svg>
   );
 }
@@ -40,13 +64,31 @@ function FileSystemIcon() {
 function HomeIcon() {
   return (
     <svg viewBox="0 0 36 36" width="36" height="36" fill="none">
-      <rect x="3" y="13" width="30" height="20" rx="2.5" fill="#1a4a8c" stroke="#2a6acc" strokeWidth="1"/>
-      <path d="M2 16L18 4l16 12" fill="#1e5cb0" stroke="#3a7ae0" strokeWidth="1.2" strokeLinejoin="round"/>
-      <rect x="13" y="21" width="10" height="12" rx="1.5" fill="#0f2d5e" stroke="#2a5aa8" strokeWidth="0.8"/>
-      <rect x="7" y="17" width="7" height="7" rx="1.2" fill="#2060c0" stroke="#3a80e0" strokeWidth="0.8"/>
-      <rect x="22" y="17" width="7" height="7" rx="1.2" fill="#2060c0" stroke="#3a80e0" strokeWidth="0.8"/>
-      <rect x="16.5" y="21" width="3" height="5" rx="0.8" fill="#1a4a90"/>
-      <path d="M16 9.5L18 8l2 1.5v4H16V9.5z" fill="#4a90e8" opacity="0.8"/>
+      <defs>
+        <linearGradient id="houseWall" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#2060c8" />
+          <stop offset="100%" stopColor="#0d3a80" />
+        </linearGradient>
+        <linearGradient id="houseRoof" x1="0.2" y1="0" x2="0.8" y2="1">
+          <stop offset="0%" stopColor="#2a74e0" />
+          <stop offset="100%" stopColor="#1250aa" />
+        </linearGradient>
+        <linearGradient id="houseDoor" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#0d2a60" />
+          <stop offset="100%" stopColor="#071a40" />
+        </linearGradient>
+      </defs>
+      <path d="M3 16.5L18 4.5l15 12V32H3V16.5z" fill="url(#houseWall)" stroke="#3a80e8" strokeWidth="0.8" strokeLinejoin="round"/>
+      <path d="M2 17L18 4l16 13" fill="url(#houseRoof)" stroke="#5090f0" strokeWidth="1.2" strokeLinejoin="round"/>
+      <rect x="13.5" y="21.5" width="9" height="10.5" rx="1.2" fill="url(#houseDoor)" stroke="#2460b0" strokeWidth="0.8"/>
+      <rect x="7" y="18" width="6.5" height="7" rx="1.2" fill="#1a50a8" stroke="#3a70d0" strokeWidth="0.7"/>
+      <rect x="22.5" y="18" width="6.5" height="7" rx="1.2" fill="#1a50a8" stroke="#3a70d0" strokeWidth="0.7"/>
+      <line x1="10.25" y1="18" x2="10.25" y2="25" stroke="#4a80d8" strokeWidth="0.6" strokeLinecap="round"/>
+      <line x1="7" y1="21.5" x2="13.5" y2="21.5" stroke="#4a80d8" strokeWidth="0.6" strokeLinecap="round"/>
+      <line x1="25.75" y1="18" x2="25.75" y2="25" stroke="#4a80d8" strokeWidth="0.6" strokeLinecap="round"/>
+      <line x1="22.5" y1="21.5" x2="29" y2="21.5" stroke="#4a80d8" strokeWidth="0.6" strokeLinecap="round"/>
+      <circle cx="21.5" cy="27" r="0.8" fill="#4a80e8"/>
+      <path d="M15.5 7L18 5l2.5 2v4h-5V7z" fill="#70a8f8" opacity="0.7"/>
     </svg>
   );
 }
@@ -68,27 +110,38 @@ function GitHubIcon() {
 function PortfolioIcon() {
   return (
     <svg viewBox="0 0 36 36" width="36" height="36" fill="none">
-      <rect x="2" y="5" width="32" height="22" rx="3" fill="#1a2a1a" stroke="#2a6a2a" strokeWidth="1.2"/>
-      <rect x="4" y="7" width="28" height="18" rx="2" fill="#0a1a0a"/>
-      <rect x="4" y="7" width="28" height="3" rx="2" fill="#1e4a1e"/>
-      <circle cx="8" cy="8.5" r="1" fill="#e05555"/>
-      <circle cx="12" cy="8.5" r="1" fill="#e0a020"/>
-      <circle cx="16" cy="8.5" r="1" fill="#30a030"/>
-      <path d="M6 14h10" stroke="#2a8a2a" strokeWidth="1.2" strokeLinecap="round"/>
-      <path d="M6 17h16" stroke="#248024" strokeWidth="1" strokeLinecap="round"/>
-      <path d="M6 20h12" stroke="#208020" strokeWidth="1" strokeLinecap="round"/>
-      <rect x="10" y="27" width="16" height="2.5" rx="1" fill="#1e4a1e" stroke="#2a6a2a" strokeWidth="0.8"/>
-      <rect x="7" y="29.5" width="22" height="1.5" rx="0.8" fill="#2a5a2a"/>
+      <defs>
+        <linearGradient id="monitorBody" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#1e3a1e" />
+          <stop offset="100%" stopColor="#0d1f0d" />
+        </linearGradient>
+        <linearGradient id="monitorScreen" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#0a1a0a" />
+          <stop offset="100%" stopColor="#030f03" />
+        </linearGradient>
+      </defs>
+      <rect x="2" y="4" width="32" height="22" rx="2.5" fill="url(#monitorBody)" stroke="#2a7a2a" strokeWidth="1.2"/>
+      <rect x="4" y="6" width="28" height="18" rx="1.5" fill="url(#monitorScreen)"/>
+      <rect x="4" y="6" width="28" height="3" rx="1.5" fill="#1a4a1a"/>
+      <circle cx="8" cy="7.5" r="1" fill="#e05555"/>
+      <circle cx="12" cy="7.5" r="1" fill="#e0a020"/>
+      <circle cx="16" cy="7.5" r="1" fill="#30c030"/>
+      <path d="M6 13.5h8" stroke="#00ff00" strokeWidth="1.2" strokeLinecap="round" opacity="0.9"/>
+      <path d="M6 16.5h14" stroke="#00cc00" strokeWidth="1" strokeLinecap="round" opacity="0.8"/>
+      <path d="M6 19.5h10" stroke="#00aa00" strokeWidth="1" strokeLinecap="round" opacity="0.7"/>
+      <text x="21" y="20" fontSize="6" fill="#00ff00" fontFamily="monospace" opacity="0.8">_</text>
+      <rect x="13" y="26" width="10" height="2.5" rx="1" fill="#1a4a1a" stroke="#2a7a2a" strokeWidth="0.8"/>
+      <rect x="9" y="28.5" width="18" height="2" rx="1" fill="#1a3a1a" stroke="#2a6a2a" strokeWidth="0.7"/>
     </svg>
   );
 }
 
 const ICONS = [
-  { id: "trash",      label: "Trash",      icon: <TrashIcon />,     window: "trash"     },
-  { id: "filesystem", label: "File System",icon: <FileSystemIcon />,window: "files"     },
-  { id: "home",       label: "Home",       icon: <HomeIcon />,      window: "files"     },
-  { id: "github",     label: "GitHub",     icon: <GitHubIcon />,    window: "github"    },
-  { id: "portfolio",  label: "Portfolio",  icon: <PortfolioIcon />, window: "portfolio" },
+  { id: "trash",      label: "Trash",      icon: <TrashIcon />,      window: "trash"     },
+  { id: "filesystem", label: "File System", icon: <FileSystemIcon />, window: "files"     },
+  { id: "home",       label: "Home",       icon: <HomeIcon />,       window: "files"     },
+  { id: "github",     label: "GitHub",     icon: <GitHubIcon />,     window: "github"    },
+  { id: "portfolio",  label: "Portfolio",  icon: <PortfolioIcon />,  window: "portfolio" },
 ];
 
 export default function DesktopIcons({
@@ -138,9 +191,11 @@ export default function DesktopIcons({
                 color: "#ffffff",
                 textAlign: "center",
                 lineHeight: 1.2,
-                textShadow: "1px 1px 2px rgba(0,0,0,0.8), 0 0 6px rgba(0,0,0,0.9)",
+                textShadow:
+                  "1px 1px 3px rgba(0,0,0,0.95), 0 0 8px rgba(0,0,0,1), -1px -1px 3px rgba(0,0,0,0.9)",
                 wordBreak: "break-word",
                 maxWidth: 60,
+                fontWeight: 500,
               }}
             >
               {item.label}

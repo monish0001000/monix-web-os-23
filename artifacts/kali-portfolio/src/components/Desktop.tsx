@@ -10,6 +10,7 @@ import PortfolioApp from "./PortfolioApp";
 import BrowserApp from "./BrowserApp";
 import WallpaperPicker from "./WallpaperPicker";
 import SentinelApp from "./SentinelApp";
+import AuraApp from "./AuraApp";
 import RightClickMenu from "./RightClickMenu";
 import { useOSStore } from "@/lib/store";
 
@@ -28,6 +29,7 @@ const WINDOW_LABELS: Record<string, string> = {
   browser:         "Web Browser",
   wallpaperpicker: "Wallpaper Picker",
   sentinel:        "Sentinel SOC",
+  aura:            "AURA AI",
 };
 
 interface SelectionBox {
@@ -168,6 +170,7 @@ export default function Desktop() {
       browser:         { x: window.innerWidth / 2 - 480, y: window.innerHeight / 2 - 310 },
       wallpaperpicker: { x: window.innerWidth / 2 - 280, y: window.innerHeight / 2 - 230 },
       sentinel:        { x: window.innerWidth / 2 - 460, y: window.innerHeight / 2 - 300 },
+      aura:            { x: window.innerWidth / 2 - 380, y: window.innerHeight / 2 - 270 },
     };
     return offsets[type] ?? { x: 120, y: 60 };
   };
@@ -348,6 +351,19 @@ export default function Desktop() {
             initialX={getInitialPosition("wallpaperpicker").x}
             initialY={getInitialPosition("wallpaperpicker").y}
             zIndex={getWin("wallpaperpicker")!.zIndex}
+          />
+        )}
+
+        {getWin("aura") && !getWin("aura")!.minimized && (
+          <AuraApp
+            key="aura"
+            onClose={() => handleCloseWindow("aura")}
+            onMinimize={() => handleMinimizeWindow("aura")}
+            isActive={activeWindow === "aura"}
+            onFocus={() => bringToFront("aura")}
+            initialX={getInitialPosition("aura").x}
+            initialY={getInitialPosition("aura").y}
+            zIndex={getWin("aura")!.zIndex}
           />
         )}
 

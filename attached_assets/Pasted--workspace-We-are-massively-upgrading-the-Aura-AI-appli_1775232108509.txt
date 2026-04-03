@@ -1,0 +1,46 @@
+@workspace We are massively upgrading the "Aura AI" application to function as the core system AI for MONIX OS. It needs a premium splash screen, a purple-themed glassmorphic UI, a 3-dot menu, and real API integration using Google's Gemini free tier. Please update TopBar.tsx and completely rewrite AuraApp.tsx:
+
+1. Taskbar Assist Icon (TopBar.tsx):
+
+Add a highly attractive, glowing colorful icon (use a spark/stars or a stylized 'A' icon) to the Taskbar system tray or app list. Clicking it toggles the Aura AI window.
+
+2. The Splash Screen Intro (AuraApp.tsx):
+
+Introduce a showSplash state (default: true).
+
+If showSplash is true, the window should ONLY display the image "/entry.webp" centered on a dark background.
+
+Use a useEffect with a setTimeout of 2000ms. After 2 seconds, trigger a smooth CSS fade-out transition for the image, and switch showSplash to false to reveal the main app.
+
+3. Window Layout & 3-Dot Menu:
+
+Create an internal state: activeView ('chat' | 'about').
+
+Header: Add a sleek top bar with the title "AURA AI Mode". On the top-right corner, add a 3-dot menu icon. Clicking it opens a small dropdown with two options: "Chat" and "About".
+
+About View: If activeView === 'about', display a beautifully styled, purple-accented text block that says: "AURA AI: The Next-Gen System Intelligence. \n\nDeveloped and Engineered by MONISH."
+
+4. The Chat UI (Google "Ask Anything" Vibe):
+
+If activeView === 'chat', display the chat interface.
+
+Theme: Use deep purple and dark glassmorphism (e.g., bg-purple-900/30, neon purple borders, blurred backdrop).
+
+Message Area: A scrollable container for the chat history. User messages align right (subtle blue/gray), Aura messages align left (deep glowing purple).
+
+Input Area: An attractive, rounded input box at the bottom matching the Chrome "Ask anything" style, with a glowing send button.
+
+5. Real Gemini API Integration:
+
+Implement the chat logic. When the user sends a message, append it to the chat UI and show a "Typing..." indicator.
+
+Create a fetch request to the Gemini API endpoint:
+https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${import.meta.env.VITE_GEMINI_API_KEY}
+
+The payload body should be: { contents: [{ parts: [{ text: userPrompt }] }] }.
+
+Parse the response data.candidates[0].content.parts[0].text and append Aura's reply to the chat.
+
+Add error handling in case the API key is missing or the fetch fails.
+
+Please ensure the Framer Motion window dragging logic remains intact while adding these features.

@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import {
   TerminalSquare, FolderOpen, Monitor, Github, Trash2,
-  Lock, Settings, Power, Search, Globe, Shield
+  Lock, Settings, Power, Search, Globe, Shield, Sparkles
 } from "lucide-react";
 import { useOSStore } from "@/lib/store";
 
@@ -67,6 +67,13 @@ const APPS = [
     icon: <Shield size={22} strokeWidth={1.6} />,
     color: "#00c4ff",
     bg: "rgba(0,163,255,0.1)",
+  },
+  {
+    id: "aura",
+    label: "AURA AI",
+    icon: <Sparkles size={22} strokeWidth={1.6} />,
+    color: "#c084fc",
+    bg: "rgba(168,85,247,0.1)",
   },
 ];
 

@@ -3,7 +3,7 @@ import { format } from "date-fns";
 import {
   Volume2, VolumeX, Bell, BatteryCharging, Battery,
   Wifi, WifiOff, FolderOpen, TerminalSquare, Monitor,
-  Github, Trash2, Power, Globe
+  Github, Trash2, Power, Globe, Sparkles
 } from "lucide-react";
 import { SiFirefox } from "react-icons/si";
 import { useOSStore } from "@/lib/store";
@@ -57,6 +57,8 @@ const TASKBAR_ICON: Record<string, React.ReactNode> = {
   github:    <Github size={17} color="#e0e0e0" />,
   portfolio: <Monitor size={17} color="#90d090" />,
   browser:   <Globe size={17} color="#7ec8e3" />,
+  sentinel:  <Monitor size={17} color="#00c4ff" />,
+  aura:      <Sparkles size={17} color="#c084fc" />,
 };
 
 type TrayPopover = "battery" | "network" | "sound" | "notifications" | null;
@@ -144,6 +146,20 @@ export default function TopPanel({ openWindows = [], onOpenWindow, onTaskbarClic
     { id: "files",   icon: <FolderOpen size={16} color="#a8c4f5" />, title: "File Manager" },
     { id: "firefox", icon: <SiFirefox size={15} color="#ff6611" />, title: "Firefox", action: () => window.open("https://mozilla.org", "_blank") },
     { id: "terminal",icon: <TerminalSquare size={16} color="#c8e6c9" />, title: "Terminal" },
+    {
+      id: "aura",
+      icon: (
+        <div style={{
+          width: 20, height: 20, borderRadius: "50%",
+          background: "linear-gradient(135deg, #7c3aed, #c084fc)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          boxShadow: "0 0 8px rgba(192,132,252,0.7)",
+        }}>
+          <Sparkles size={11} color="#fff" strokeWidth={2} />
+        </div>
+      ),
+      title: "AURA AI",
+    },
   ];
 
   const now = time;

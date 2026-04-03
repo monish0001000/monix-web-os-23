@@ -199,6 +199,31 @@ function PortfolioIcon() {
   );
 }
 
+function AuraIcon() {
+  return (
+    <svg viewBox="0 0 36 36" width="36" height="36" fill="none">
+      <defs>
+        <radialGradient id="auraBg" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#3b1579" />
+          <stop offset="100%" stopColor="#1a0840" />
+        </radialGradient>
+        <radialGradient id="auraGlow" cx="50%" cy="45%" r="55%">
+          <stop offset="0%" stopColor="#c084fc" stopOpacity="0.8" />
+          <stop offset="100%" stopColor="#7c3aed" stopOpacity="0" />
+        </radialGradient>
+      </defs>
+      <rect width="36" height="36" rx="8" fill="url(#auraBg)"/>
+      <circle cx="18" cy="17" r="9" fill="url(#auraGlow)" opacity="0.6"/>
+      <circle cx="18" cy="17" r="6" fill="none" stroke="#a855f7" strokeWidth="1.2" strokeDasharray="2 2" opacity="0.7"/>
+      <path d="M18 10 L20 15 L25 15 L21 18 L23 23 L18 20 L13 23 L15 18 L11 15 L16 15 Z" fill="#c084fc" opacity="0.9"/>
+      <circle cx="18" cy="17" r="2" fill="#e9d5ff"/>
+      <circle cx="25" cy="9" r="1.2" fill="#c084fc" opacity="0.8"/>
+      <circle cx="11" cy="27" r="0.9" fill="#a855f7" opacity="0.6"/>
+      <circle cx="28" cy="24" r="0.8" fill="#c084fc" opacity="0.5"/>
+    </svg>
+  );
+}
+
 const ICONS = [
   { id: "trash",      label: "Trash",       icon: <TrashIcon />,      window: "trash"     },
   { id: "filesystem", label: "File System", icon: <FileSystemIcon />, window: "files"     },
@@ -207,6 +232,7 @@ const ICONS = [
   { id: "portfolio",  label: "Portfolio",   icon: <PortfolioIcon />,  window: "portfolio" },
   { id: "browser",    label: "Browser",     icon: <BrowserIcon />,    window: "browser"   },
   { id: "sentinel",   label: "Sentinel SOC",icon: <SentinelIcon />,   window: "sentinel"  },
+  { id: "aura",       label: "AURA AI",     icon: <AuraIcon />,       window: "aura"      },
 ];
 
 export default function DesktopIcons({

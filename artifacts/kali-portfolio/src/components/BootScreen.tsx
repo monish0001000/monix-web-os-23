@@ -13,43 +13,36 @@ export default function BootScreen({ onComplete }: BootScreenProps) {
     const video = videoRef.current;
     if (!video) return;
 
-    const handleEnded = () => {
-      onComplete();
-    };
+    video.play().catch(() => {});
 
-    video.addEventListener("ended", handleEnded);
-
-    video.play().catch(() => {
-      setTimeout(onComplete, 5000);
-    });
-
-    return () => {
-      video.removeEventListener("ended", handleEnded);
-    };
-  }, [onComplete]);
+    return () => {};
+  }, []);
 
   return (
     <motion.div
-      className="fixed inset-0 bg-black z-50 select-none overflow-hidden"
+      className="fixed inset-0 select-none"
+      style={{ background: "#000000", zIndex: 50 }}
       exit={{ opacity: 0 }}
-      transition={{ duration: 0.4 }}
+      transition={{ duration: 0.3 }}
     >
       <video
         ref={videoRef}
         src={bootVideo}
-        className="w-full h-full object-cover"
+        onEnded={onComplete}
+        style={{
+          position: "absolute",
+          inset: 0,
+          width: "100%",
+          height: "100%",
+          objectFit: "contain",
+          background: "#000000",
+          display: "block",
+        }}
         autoPlay
         muted
         playsInline
         preload="auto"
       />
-
-      <button
-        onClick={onComplete}
-        className="absolute bottom-5 right-6 text-xs text-white/40 hover:text-white/80 font-mono tracking-widest uppercase transition-colors duration-200 focus:outline-none bg-black/30 px-3 py-1 border border-white/10"
-      >
-        Skip
-      </button>
     </motion.div>
   );
 }

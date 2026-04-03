@@ -4,30 +4,49 @@ import { Toaster } from "sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AnimatePresence, motion } from "framer-motion";
 import BootScreen from "./components/BootScreen";
+import LoginScreen from "./components/LoginScreen";
 import Desktop from "./components/Desktop";
 
 const queryClient = new QueryClient();
 
+type Phase = "boot" | "login" | "desktop";
+
 function App() {
-  const [bootComplete, setBootComplete] = useState(false);
+  const [phase, setPhase] = useState<Phase>("boot");
 
   useEffect(() => {
-    document.documentElement.classList.add('dark');
+    document.documentElement.classList.add("dark");
+    document.body.style.background = "#000000";
   }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <div className="w-full h-[100dvh] overflow-hidden bg-black text-foreground font-sans">
+        <div
+          className="w-full h-[100dvh] overflow-hidden font-sans"
+          style={{ background: "#000000" }}
+        >
           <AnimatePresence mode="wait">
-            {!bootComplete ? (
-              <BootScreen key="boot" onComplete={() => setBootComplete(true)} />
-            ) : (
+            {phase === "boot" && (
+              <BootScreen
+                key="boot"
+                onComplete={() => setPhase("login")}
+              />
+            )}
+
+            {phase === "login" && (
+              <LoginScreen
+                key="login"
+                onLogin={() => setPhase("desktop")}
+              />
+            )}
+
+            {phase === "desktop" && (
               <motion.div
                 key="desktop"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ duration: 1 }}
+                transition={{ duration: 0.5 }}
                 className="w-full h-full"
               >
                 <Desktop />

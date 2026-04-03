@@ -7,9 +7,10 @@ interface RightClickMenuProps {
   onClose: () => void;
   onOpenWindow: (id: string) => void;
   onOpenWallpaperPicker: () => void;
+  onRefresh: () => void;
 }
 
-export default function RightClickMenu({ x, y, onClose, onOpenWindow, onOpenWallpaperPicker }: RightClickMenuProps) {
+export default function RightClickMenu({ x, y, onClose, onOpenWindow, onOpenWallpaperPicker, onRefresh }: RightClickMenuProps) {
   const handleAction = (action: () => void) => {
     action();
     onClose();
@@ -60,7 +61,7 @@ export default function RightClickMenu({ x, y, onClose, onOpenWindow, onOpenWall
 
       <div
         className="px-3 py-1.5 text-sm text-gray-200 hover:bg-blue-600/30 hover:text-white cursor-pointer transition-colors"
-        onClick={() => handleAction(() => window.location.reload())}
+        onClick={() => handleAction(onRefresh)}
       >
         Refresh
       </div>

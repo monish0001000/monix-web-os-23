@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { AnimatePresence } from "framer-motion";
 import TopPanel from "./TopPanel";
 import DesktopIcons from "./DesktopIcons";
@@ -32,6 +32,7 @@ export default function Desktop() {
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
   const [selectedIcon, setSelectedIcon] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const nextZ = useRef(20);
 
   const currentWallpaper = useOSStore((s) => s.currentWallpaper);
@@ -96,6 +97,11 @@ export default function Desktop() {
     setSelectedIcon(null);
   };
 
+  const handleRefresh = useCallback(() => {
+    setIsRefreshing(true);
+    setTimeout(() => setIsRefreshing(false), 320);
+  }, []);
+
   const getInitialPosition = (type: string) => {
     if (typeof window === "undefined") return { x: 100, y: 100 };
     const offsets: Record<string, { x: number; y: number }> = {
@@ -147,11 +153,26 @@ export default function Desktop() {
       onClick={handleDesktopClick}
       onContextMenu={handleRightClick}
     >
-      <DesktopIcons
-        onOpenWindow={handleOpenWindow}
-        selectedIcon={selectedIcon}
-        onSelectIcon={setSelectedIcon}
-      />
+      {/* Desktop icons wrapper with refresh animation */}
+      <div
+        style={{
+          transition: "opacity 200ms ease, transform 200ms ease",
+          opacity: isRefreshing ? 0 : 1,
+          transform: isRefreshing ? "scale(0.95)" : "scale(1)",
+          transformOrigin: "center center",
+          width: "100%",
+          height: "100%",
+          position: "absolute",
+          inset: 0,
+          pointerEvents: isRefreshing ? "none" : "auto",
+        }}
+      >
+        <DesktopIcons
+          onOpenWindow={handleOpenWindow}
+          selectedIcon={selectedIcon}
+          onSelectIcon={setSelectedIcon}
+        />
+      </div>
 
       <AnimatePresence>
         {getWin("terminal") && !getWin("terminal")!.minimized && (
@@ -240,6 +261,7 @@ export default function Desktop() {
             onClose={() => setContextMenu(null)}
             onOpenWindow={handleOpenWindow}
             onOpenWallpaperPicker={() => handleOpenWindow("wallpaperpicker")}
+            onRefresh={handleRefresh}
           />
         )}
       </AnimatePresence>

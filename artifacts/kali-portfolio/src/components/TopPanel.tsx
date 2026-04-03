@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { format } from "date-fns";
 import {
   Volume2, Bell, BatteryCharging, Wifi, WifiOff,
-  FolderOpen, TerminalSquare, Monitor, Github, Trash2, Power
+  FolderOpen, TerminalSquare, Monitor, Github, Trash2, Power, Globe
 } from "lucide-react";
 import { SiFirefox } from "react-icons/si";
 import { useOSStore } from "@/lib/store";
@@ -55,6 +55,7 @@ const TASKBAR_ICON: Record<string, React.ReactNode> = {
   trash:     <Trash2 size={14} color="#aaaacc" />,
   github:    <Github size={14} color="#e0e0e0" />,
   portfolio: <Monitor size={14} color="#90d090" />,
+  browser:   <Globe size={14} color="#7ec8e3" />,
 };
 
 type TrayPopover = "battery" | "network" | "sound" | "notifications" | null;

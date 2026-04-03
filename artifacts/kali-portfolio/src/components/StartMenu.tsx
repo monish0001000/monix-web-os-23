@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import {
   TerminalSquare, FolderOpen, Monitor, Github, Trash2,
-  Lock, Settings, Power, Search
+  Lock, Settings, Power, Search, Globe
 } from "lucide-react";
 import { useOSStore } from "@/lib/store";
 
@@ -46,6 +46,13 @@ const APPS = [
     icon: <Trash2 size={22} strokeWidth={1.6} />,
     color: "#aaaacc",
     bg: "rgba(170,170,204,0.1)",
+  },
+  {
+    id: "browser",
+    label: "Browser",
+    icon: <Globe size={22} strokeWidth={1.6} />,
+    color: "#7ec8e3",
+    bg: "rgba(126,200,227,0.1)",
   },
   {
     id: "wallpaperpicker",

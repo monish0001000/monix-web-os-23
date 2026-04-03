@@ -7,6 +7,7 @@ import FileExplorer from "./FileExplorer";
 import Trash from "./Trash";
 import GitHubApp from "./GitHubApp";
 import PortfolioApp from "./PortfolioApp";
+import BrowserApp from "./BrowserApp";
 import WallpaperPicker from "./WallpaperPicker";
 import RightClickMenu from "./RightClickMenu";
 import { useOSStore } from "@/lib/store";
@@ -23,6 +24,7 @@ const WINDOW_LABELS: Record<string, string> = {
   trash:           "Trash",
   github:          "GitHub",
   portfolio:       "Portfolio",
+  browser:         "Web Browser",
   wallpaperpicker: "Wallpaper Picker",
 };
 
@@ -99,7 +101,7 @@ export default function Desktop() {
 
   const handleRefresh = useCallback(() => {
     setIsRefreshing(true);
-    setTimeout(() => setIsRefreshing(false), 320);
+    setTimeout(() => setIsRefreshing(false), 400);
   }, []);
 
   const getInitialPosition = (type: string) => {
@@ -110,6 +112,7 @@ export default function Desktop() {
       trash:           { x: window.innerWidth / 2 - 250, y: window.innerHeight / 2 - 175 },
       github:          { x: window.innerWidth / 2 - 340, y: window.innerHeight / 2 - 280 },
       portfolio:       { x: window.innerWidth / 2 - 450, y: window.innerHeight / 2 - 290 },
+      browser:         { x: window.innerWidth / 2 - 480, y: window.innerHeight / 2 - 310 },
       wallpaperpicker: { x: window.innerWidth / 2 - 260, y: window.innerHeight / 2 - 200 },
     };
     return offsets[type] ?? { x: 120, y: 60 };
@@ -156,7 +159,7 @@ export default function Desktop() {
       {/* Desktop icons wrapper with refresh animation */}
       <div
         style={{
-          transition: "opacity 200ms ease, transform 200ms ease",
+          transition: "opacity 300ms ease, transform 300ms ease",
           opacity: isRefreshing ? 0 : 1,
           transform: isRefreshing ? "scale(0.95)" : "scale(1)",
           transformOrigin: "center center",
@@ -237,6 +240,19 @@ export default function Desktop() {
             initialX={getInitialPosition("portfolio").x}
             initialY={getInitialPosition("portfolio").y}
             zIndex={getWin("portfolio")!.zIndex}
+          />
+        )}
+
+        {getWin("browser") && !getWin("browser")!.minimized && (
+          <BrowserApp
+            key="browser"
+            onClose={() => handleCloseWindow("browser")}
+            onMinimize={() => handleMinimizeWindow("browser")}
+            isActive={activeWindow === "browser"}
+            onFocus={() => bringToFront("browser")}
+            initialX={getInitialPosition("browser").x}
+            initialY={getInitialPosition("browser").y}
+            zIndex={getWin("browser")!.zIndex}
           />
         )}
 

@@ -46,7 +46,7 @@ export default function WindowChrome({
       let newX = e.clientX - dragOffset.current.x;
       let newY = e.clientY - dragOffset.current.y;
       newX = Math.max(0, Math.min(newX, window.innerWidth - width));
-      newY = Math.max(32, Math.min(newY, window.innerHeight - height));
+      newY = Math.max(6, Math.min(newY, window.innerHeight - height - 36));
       setPos({ x: newX, y: newY });
     };
     const handleMouseUp = () => setIsDragging(false);
@@ -80,9 +80,9 @@ export default function WindowChrome({
     ? {
         position: "fixed",
         left: 0,
-        top: 32,
+        top: 0,
         width: "100vw",
-        height: "calc(100vh - 70px)",
+        height: "calc(100vh - 36px)",
         zIndex,
         display: "flex",
         flexDirection: "column",

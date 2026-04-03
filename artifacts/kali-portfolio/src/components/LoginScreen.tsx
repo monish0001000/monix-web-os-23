@@ -1,22 +1,27 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { format } from "date-fns";
-import wallpaperImg from "@assets/kali-ferrofluid_1775178957082.jpg";
+import { useOSStore } from "@/lib/store";
+import wallpaperFallback from "@assets/kali-ferrofluid_1775178957082.jpg";
 
 interface LoginScreenProps {
   onLogin: () => void;
+  isLockMode?: boolean;
 }
 
 const CORRECT_PASSWORD = "2005";
 const USERNAME = "monish";
 
-export default function LoginScreen({ onLogin }: LoginScreenProps) {
+export default function LoginScreen({ onLogin, isLockMode = false }: LoginScreenProps) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState(false);
   const [shake, setShake] = useState(false);
   const [time, setTime] = useState(new Date());
   const [focused, setFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const currentWallpaper = useOSStore((s) => s.currentWallpaper);
+
+  const bgImage = isLockMode ? currentWallpaper : wallpaperFallback;
 
   useEffect(() => {
     const t = setInterval(() => setTime(new Date()), 1000);
@@ -31,57 +36,62 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
   }, []);
 
   const handleSubmit = () => {
-    if (password === CORRECT_PASSWORD || password === "") {
-      setError(false);
-      onLogin();
-    } else {
-      setError(true);
-      setShake(true);
-      setPassword("");
-      setTimeout(() => {
-        setShake(false);
+    if (isLockMode) {
+      if (password === CORRECT_PASSWORD || password === "") {
         setError(false);
-        inputRef.current?.focus();
-      }, 800);
+        onLogin();
+      } else {
+        triggerError();
+      }
+    } else {
+      if (password === CORRECT_PASSWORD || password === "") {
+        setError(false);
+        onLogin();
+      } else {
+        triggerError();
+      }
     }
   };
 
+  const triggerError = () => {
+    setError(true);
+    setShake(true);
+    setPassword("");
+    setTimeout(() => {
+      setShake(false);
+      setError(false);
+      inputRef.current?.focus();
+    }, 800);
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
-      handleSubmit();
-    }
+    if (e.key === "Enter") handleSubmit();
   };
 
   return (
     <motion.div
       className="fixed inset-0 select-none font-sans"
-      style={{ background: "#000000", zIndex: 40 }}
+      style={{ background: "#000000", zIndex: isLockMode ? 99999 : 40 }}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      transition={{ duration: 0.6 }}
+      transition={{ duration: 0.4 }}
     >
-      {/* Blurred wallpaper background */}
+      {/* Blurred background */}
       <div
         style={{
           position: "absolute",
           inset: 0,
-          backgroundImage: `url(${wallpaperImg})`,
+          backgroundImage: `url(${bgImage})`,
           backgroundSize: "cover",
           backgroundPosition: "center",
-          filter: "blur(8px) brightness(0.35)",
+          filter: "blur(16px) brightness(0.35)",
           transform: "scale(1.05)",
         }}
       />
 
       {/* Dark overlay */}
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          background: "rgba(0,0,0,0.55)",
-        }}
-      />
+      <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.5)" }} />
 
       {/* Content */}
       <div
@@ -96,7 +106,7 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
           gap: 0,
         }}
       >
-        {/* Date + Time */}
+        {/* Time */}
         <div style={{ textAlign: "center", marginBottom: 48 }}>
           <div
             style={{
@@ -127,14 +137,9 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
         <motion.div
           animate={shake ? { x: [-10, 10, -8, 8, -4, 4, 0] } : { x: 0 }}
           transition={{ duration: 0.5 }}
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            gap: 16,
-          }}
+          style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 16 }}
         >
-          {/* User avatar */}
+          {/* Avatar */}
           <div
             style={{
               width: 90,
@@ -171,6 +176,11 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
             }}
           >
             {USERNAME}
+            {isLockMode && (
+              <span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginLeft: 8 }}>
+                (locked)
+              </span>
+            )}
           </div>
 
           {/* Password field */}
@@ -196,119 +206,63 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
                 boxShadow: focused ? "0 0 0 2px rgba(54,123,240,0.2)" : "none",
               }}
             >
-              {/* Rendered dots */}
               {password.length > 0 ? (
                 <div style={{ display: "flex", gap: 5, alignItems: "center" }}>
                   {Array.from({ length: password.length }).map((_, i) => (
                     <div
                       key={i}
-                      style={{
-                        width: 7,
-                        height: 7,
-                        borderRadius: "50%",
-                        background: "rgba(255,255,255,0.9)",
-                      }}
+                      style={{ width: 7, height: 7, borderRadius: "50%", background: "rgba(255,255,255,0.9)" }}
                     />
                   ))}
                 </div>
               ) : (
-                <span
-                  style={{
-                    fontSize: 12,
-                    color: "rgba(255,255,255,0.35)",
-                    letterSpacing: "0.03em",
-                  }}
-                >
+                <span style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", letterSpacing: "0.03em" }}>
                   Password
                 </span>
               )}
             </div>
 
-            {/* Hidden real input */}
             <input
               ref={inputRef}
               type="password"
               value={password}
-              onChange={(e) => {
-                setPassword(e.target.value);
-                setError(false);
-              }}
+              onChange={(e) => { setPassword(e.target.value); setError(false); }}
               onKeyDown={handleKeyDown}
               onFocus={() => setFocused(true)}
               onBlur={() => setFocused(false)}
-              style={{
-                position: "absolute",
-                opacity: 0,
-                top: 0,
-                left: 0,
-                width: "100%",
-                height: "100%",
-                cursor: "text",
-              }}
+              style={{ position: "absolute", opacity: 0, top: 0, left: 0, width: "100%", height: "100%", cursor: "text" }}
               autoComplete="off"
               autoFocus
             />
 
-            {/* Arrow / Enter button */}
             <button
               onClick={handleSubmit}
               style={{
-                position: "absolute",
-                right: 6,
-                top: "50%",
-                transform: "translateY(-50%)",
-                width: 24,
-                height: 24,
-                background: "rgba(54,123,240,0.7)",
-                border: "none",
-                borderRadius: 3,
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                color: "white",
+                position: "absolute", right: 6, top: "50%", transform: "translateY(-50%)",
+                width: 24, height: 24, background: "rgba(54,123,240,0.7)",
+                border: "none", borderRadius: 3, cursor: "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center", color: "white",
               }}
             >
               <svg viewBox="0 0 16 16" width="12" height="12" fill="none">
-                <path
-                  d="M3 8h10M9 4l4 4-4 4"
-                  stroke="white"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
+                <path d="M3 8h10M9 4l4 4-4 4" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </button>
           </div>
 
-          {/* Error message */}
           <AnimatePresence>
             {error && (
               <motion.div
-                initial={{ opacity: 0, y: -4 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                style={{
-                  fontSize: 12,
-                  color: "#f87171",
-                  letterSpacing: "0.02em",
-                }}
+                initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                style={{ fontSize: 12, color: "#f87171", letterSpacing: "0.02em" }}
               >
                 Incorrect password. Try again.
               </motion.div>
             )}
           </AnimatePresence>
 
-          {/* Hint */}
-          <div
-            style={{
-              fontSize: 11,
-              color: "rgba(255,255,255,0.25)",
-              marginTop: 4,
-              letterSpacing: "0.03em",
-            }}
-          >
-            Press Enter to log in
+          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.25)", marginTop: 4, letterSpacing: "0.03em" }}>
+            {isLockMode ? "Enter password to unlock" : "Press Enter to log in"}
           </div>
         </motion.div>
       </div>
@@ -316,26 +270,14 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
       {/* Bottom bar */}
       <div
         style={{
-          position: "absolute",
-          bottom: 0,
-          left: 0,
-          right: 0,
-          height: 36,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          paddingLeft: 20,
-          paddingRight: 20,
-          background: "rgba(0,0,0,0.4)",
-          borderTop: "1px solid rgba(255,255,255,0.05)",
+          position: "absolute", bottom: 0, left: 0, right: 0, height: 36,
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          paddingLeft: 20, paddingRight: 20,
+          background: "rgba(0,0,0,0.4)", borderTop: "1px solid rgba(255,255,255,0.05)",
         }}
       >
-        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)" }}>
-          Kali GNU/Linux Rolling
-        </div>
-        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)" }}>
-          monish@kali
-        </div>
+        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)" }}>MONIX OS</div>
+        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)" }}>monish</div>
       </div>
     </motion.div>
   );

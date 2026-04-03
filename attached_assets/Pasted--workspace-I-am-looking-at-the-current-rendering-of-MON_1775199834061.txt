@@ -1,0 +1,35 @@
+@workspace I am looking at the current rendering of MONIX OS, and there are severe visual bugs and logic errors that need fixing. I am using wallpaper (1).png in the public directory. Please execute the following requirements exactly to align with the MONIX vision:
+
+1. Fix Double Taskbar & Consolidated Theme:
+
+We have two redundant panels: the original top panel (TopBar.tsx) and a new bottom one (Taskbar.tsx). The goal was to move the original, not create a new one.
+
+Action: Modify TopBar.tsx (the original top panel) to accept a dynamic position prop ('top' | 'bottom'). It should apply the proper CSS layout classes dynamically based on this prop.
+
+Cleanup: Delete the entire Taskbar.tsx component and all its references.
+
+State Update: In Desktop.tsx, only render the unified <TopBar /> component, passing the position from our Zustand store (defaulting to 'bottom').
+
+2. Fix Wallpaper Rendering:
+
+The desktop wallpaper (/wallpaper (1).png) is not rendering; the screen is pitch black.
+
+Action: Ensure the background image in Desktop.tsx uses the exact filename with brackets and spaces: src="/wallpaper (1).png". Apply critical Tailwind classes: absolute inset-0 w-screen h-screen object-cover -z-50. Verify globals.css has no conflicting black background gradients that might be blocking the image.
+
+3. Correct Lock Screen Logic:
+
+The lock action in the taskbar is creating a new, incorrect lock screen.
+
+Action: Reuse the exact same password-page logic found in LoginScreen.tsx. When the user locks the OS (sets isLocked = true), it must trigger the existing login flow/password UI that appears on first boot, rather than a generic, third-party lock screen. Delete any redundant, newly created lock screen components.
+
+4. Implement Wallpaper Picker Page:
+
+We need a dedicated page/modal to select a wallpaper.
+
+Action: Create a new <WallpaperPicker /> modal component. This modal should populate with small, interactive thumbnails of all available wallpapers (Illustrative paths: /wallpapers/bg1.jpg, /wallpapers/bg2.jpg, and the default /wallpaper (1).png).
+
+Interaction: When a user clicks a thumbnail, it must dispatch an action to the Zustand store to update currentWallpaper with the selected path, immediately changing the desktop background.
+
+Menu Update: In ContextMenu.tsx, the "Change Wallpaper" option must now open this <WallpaperPicker /> modal, rather than just cycling images directly.
+
+Please analyze the workspace and apply these specific structural and functional fixes safely.

@@ -1,0 +1,37 @@
+@workspace I am reviewing the current state of our MONIX OS, and there are critical structural and logical errors that must be fixed. The AI previously created duplicate components rather than updating the existing ones. We need to implement the requested workflow by fixing, not duplicating.
+
+Please execute the following full-file overwrites with the exact logic described:
+
+1. State Management Fix (Zustand Store):
+
+Ensure you are using the correct paths for wallpaper assets. The standard path in public will be "/wallpaper_1.png" (please rename the file wallpaper (1).png in the public directory to wallpaper_1.png to avoid issues with spaces/brackets). The default currentWallpaper should be "/wallpaper_1.png".
+
+Re-verify that isLocked, taskbarPosition, and an array wallpapers (containing paths like "/wallpaper_1.png", "/bg1.jpg", "/bg2.jpg") are correctly defined in the state.
+
+2. Lock Screen Logic Fix (App.tsx and related state logic):
+
+You previously created a separate, new LockScreen component. DELETE that component.
+
+We must REUSE the existing LoginScreen component for lock screen functionality.
+
+In the main application layout (App.tsx), when isLocked is true, render the existing LoginScreen full-screen in front of the desktop. The desktop background should be blurred (backdrop-filter: blur(8px)).
+
+3. Taskbar Correction (TopBar.tsx and App.tsx):
+
+You created a new duplicated top bar at the bottom. DELETE any recently created duplicate.
+
+You must MOVE the original, existing TopBar to the bottom.
+
+In App.tsx, place the <TopBar /> after the desktop content, and update the Tailwind classes on the TopBar parent container to be fixed bottom-0 left-0 w-full z-50 flex justify-between.
+
+Apply a cohesive, premium theme to this taskbar (ensure consistent padding, icon sizing, and a unified dark XFCE aesthetic).
+
+4. Wallpaper picker workflow implementation (ContextMenu.tsx, WallpaperPicker.tsx, Desktop.tsx):
+
+ContextMenu.tsx: Add an option "Change Wallpaper...". Clicking this should not cycle; it should open a new window/modal named <WallpaperPicker />.
+
+WallpaperPicker.tsx (Create this component): This is a small window that loads a grid of thumbnails for all images in the wallpapers state array.
+
+Behavior: Clicking a thumbnail in <WallpaperPicker /> grid must immediately dispatch an action to update the currentWallpaper state to the path of that image. Add a subtle highlight to the currently selected thumbnail.
+
+Acknowledge the duplication errors and provide the updated code for App.tsx, TopBar.tsx, ContextMenu.tsx, WallpaperPicker.tsx (the new file), and the updated Zustand store. Also, remind me to verify that I've renamed wallpaper (1).png to wallpaper_1.png in the public directory.

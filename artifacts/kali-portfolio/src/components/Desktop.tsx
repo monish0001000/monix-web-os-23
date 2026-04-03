@@ -1,15 +1,14 @@
 import { useState, useRef, useEffect } from "react";
 import { AnimatePresence } from "framer-motion";
 import TopPanel from "./TopPanel";
-import Taskbar from "./Taskbar";
 import DesktopIcons from "./DesktopIcons";
 import Terminal from "./Terminal";
 import FileExplorer from "./FileExplorer";
 import Trash from "./Trash";
 import GitHubApp from "./GitHubApp";
 import PortfolioApp from "./PortfolioApp";
+import WallpaperPicker from "./WallpaperPicker";
 import RightClickMenu from "./RightClickMenu";
-import LockScreen from "./LockScreen";
 import { useOSStore } from "@/lib/store";
 
 export interface WindowEntry {
@@ -19,11 +18,12 @@ export interface WindowEntry {
 }
 
 const WINDOW_LABELS: Record<string, string> = {
-  terminal:  "Terminal",
-  files:     "Files",
-  trash:     "Trash",
-  github:    "GitHub",
-  portfolio: "Portfolio",
+  terminal:        "Terminal",
+  files:           "Files",
+  trash:           "Trash",
+  github:          "GitHub",
+  portfolio:       "Portfolio",
+  wallpaperpicker: "Wallpaper Picker",
 };
 
 export default function Desktop() {
@@ -35,7 +35,6 @@ export default function Desktop() {
   const nextZ = useRef(20);
 
   const currentWallpaper = useOSStore((s) => s.currentWallpaper);
-  const isLocked = useOSStore((s) => s.isLocked);
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
@@ -100,13 +99,14 @@ export default function Desktop() {
   const getInitialPosition = (type: string) => {
     if (typeof window === "undefined") return { x: 100, y: 100 };
     const offsets: Record<string, { x: number; y: number }> = {
-      terminal:  { x: window.innerWidth / 2 - 350, y: window.innerHeight / 2 - 225 },
-      files:     { x: window.innerWidth / 2 - 300, y: window.innerHeight / 2 - 200 },
-      trash:     { x: window.innerWidth / 2 - 250, y: window.innerHeight / 2 - 175 },
-      github:    { x: window.innerWidth / 2 - 340, y: window.innerHeight / 2 - 280 },
-      portfolio: { x: window.innerWidth / 2 - 450, y: window.innerHeight / 2 - 290 },
+      terminal:        { x: window.innerWidth / 2 - 350, y: window.innerHeight / 2 - 240 },
+      files:           { x: window.innerWidth / 2 - 300, y: window.innerHeight / 2 - 210 },
+      trash:           { x: window.innerWidth / 2 - 250, y: window.innerHeight / 2 - 175 },
+      github:          { x: window.innerWidth / 2 - 340, y: window.innerHeight / 2 - 280 },
+      portfolio:       { x: window.innerWidth / 2 - 450, y: window.innerHeight / 2 - 290 },
+      wallpaperpicker: { x: window.innerWidth / 2 - 260, y: window.innerHeight / 2 - 200 },
     };
-    return offsets[type] ?? { x: 120, y: 120 };
+    return offsets[type] ?? { x: 120, y: 60 };
   };
 
   const openWindowList = windows.map((w) => ({
@@ -147,8 +147,6 @@ export default function Desktop() {
       onClick={handleDesktopClick}
       onContextMenu={handleRightClick}
     >
-      <TopPanel onOpenWindow={handleOpenWindow} />
-
       <DesktopIcons
         onOpenWindow={handleOpenWindow}
         selectedIcon={selectedIcon}
@@ -220,6 +218,18 @@ export default function Desktop() {
             zIndex={getWin("portfolio")!.zIndex}
           />
         )}
+
+        {getWin("wallpaperpicker") && !getWin("wallpaperpicker")!.minimized && (
+          <WallpaperPicker
+            key="wallpaperpicker"
+            onClose={() => handleCloseWindow("wallpaperpicker")}
+            isActive={activeWindow === "wallpaperpicker"}
+            onFocus={() => bringToFront("wallpaperpicker")}
+            initialX={getInitialPosition("wallpaperpicker").x}
+            initialY={getInitialPosition("wallpaperpicker").y}
+            zIndex={getWin("wallpaperpicker")!.zIndex}
+          />
+        )}
       </AnimatePresence>
 
       <AnimatePresence>
@@ -229,20 +239,17 @@ export default function Desktop() {
             y={contextMenu.y}
             onClose={() => setContextMenu(null)}
             onOpenWindow={handleOpenWindow}
+            onOpenWallpaperPicker={() => handleOpenWindow("wallpaperpicker")}
           />
         )}
       </AnimatePresence>
 
-      <Taskbar
+      <TopPanel
         openWindows={openWindowList}
+        onOpenWindow={handleOpenWindow}
         onTaskbarClick={handleTaskbarClick}
         activeWindowId={activeWindow}
-        onOpenWindow={handleOpenWindow}
       />
-
-      <AnimatePresence>
-        {isLocked && <LockScreen key="lockscreen" />}
-      </AnimatePresence>
     </div>
   );
 }

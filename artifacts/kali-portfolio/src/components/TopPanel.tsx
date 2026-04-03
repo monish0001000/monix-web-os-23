@@ -1,15 +1,22 @@
 import { useState, useEffect, useRef } from "react";
 import { format } from "date-fns";
 import {
-  Volume2, Bell, Lock, Power, Wifi, WifiOff,
-  Monitor, ChevronDown, BarChart2
+  Volume2, Bell, Lock, Power, Wifi, WifiOff, ChevronDown, BarChart2
 } from "lucide-react";
 import { SiFirefox } from "react-icons/si";
 import { FolderOpen, TerminalSquare } from "lucide-react";
 
+interface OpenWindowInfo {
+  id: string;
+  label: string;
+  minimized: boolean;
+}
+
 interface TopPanelProps {
-  activeWindowName: string;
+  openWindows: OpenWindowInfo[];
   onOpenWindow: (id: string) => void;
+  onTaskbarClick: (id: string) => void;
+  activeWindowId: string;
 }
 
 function KaliDragonIcon() {
@@ -47,36 +54,31 @@ function SystemBars() {
   );
 }
 
-export default function TopPanel({ activeWindowName, onOpenWindow }: TopPanelProps) {
+const APP_ICONS: Record<string, string> = {
+  terminal: "⬛",
+  files: "📁",
+  trash: "🗑",
+  github: "⬡",
+};
+
+export default function TopPanel({
+  openWindows,
+  onOpenWindow,
+  onTaskbarClick,
+  activeWindowId,
+}: TopPanelProps) {
   const [time, setTime] = useState(new Date());
   const [isOnline, setIsOnline] = useState(navigator.onLine);
-  const [batteryLevel, setBatteryLevel] = useState<number>(85);
   const [activeWorkspace, setActiveWorkspace] = useState(1);
   const [showCalendar, setShowCalendar] = useState(false);
   const calRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 60000);
-
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
-
-    const getBattery = async () => {
-      if ("getBattery" in navigator) {
-        try {
-          const nav = navigator as any;
-          const battery = await nav.getBattery();
-          setBatteryLevel(Math.round(battery.level * 100));
-          battery.addEventListener("levelchange", () => {
-            setBatteryLevel(Math.round(battery.level * 100));
-          });
-        } catch (e) {}
-      }
-    };
-    getBattery();
-
     return () => {
       clearInterval(timer);
       window.removeEventListener("online", handleOnline);
@@ -98,22 +100,10 @@ export default function TopPanel({ activeWindowName, onOpenWindow }: TopPanelPro
     "flex items-center justify-center cursor-pointer px-1 transition-colors hover:bg-white/10 h-full";
 
   const appLaunchers = [
-    {
-      id: "files",
-      icon: <FolderOpen size={15} color="#a8c4f5" />,
-      title: "Thunar File Manager",
-    },
-    {
-      id: "firefox",
-      icon: <SiFirefox size={14} color="#ff6611" />,
-      title: "Firefox",
-      action: () => window.open("https://mozilla.org", "_blank"),
-    },
-    {
-      id: "terminal",
-      icon: <TerminalSquare size={14} color="#c8e6c9" />,
-      title: "Terminal",
-    },
+    { id: "files",    icon: <FolderOpen size={15} color="#a8c4f5" />, title: "Thunar File Manager" },
+    { id: "firefox",  icon: <SiFirefox size={14} color="#ff6611" />,  title: "Firefox",
+      action: () => window.open("https://mozilla.org", "_blank") },
+    { id: "terminal", icon: <TerminalSquare size={14} color="#c8e6c9" />, title: "Terminal" },
   ];
 
   const now = time;
@@ -133,7 +123,7 @@ export default function TopPanel({ activeWindowName, onOpenWindow }: TopPanelPro
       }}
     >
       {/* ── LEFT SECTION ── */}
-      <div className="flex items-center h-full">
+      <div className="flex items-center h-full" style={{ minWidth: 0 }}>
         {/* Kali App Menu */}
         <div
           className={panelBtnClass}
@@ -143,7 +133,6 @@ export default function TopPanel({ activeWindowName, onOpenWindow }: TopPanelPro
           <KaliDragonIcon />
         </div>
 
-        {/* Separator */}
         <div style={{ width: 1, height: 16, background: "rgba(255,255,255,0.12)" }} />
 
         {/* App launchers */}
@@ -162,33 +151,7 @@ export default function TopPanel({ activeWindowName, onOpenWindow }: TopPanelPro
           </div>
         ))}
 
-        {/* Separator */}
         <div style={{ width: 1, height: 16, background: "rgba(255,255,255,0.12)", marginLeft: 4 }} />
-
-        {/* Active window name or display dropdown */}
-        <div
-          className={panelBtnClass + " gap-1"}
-          style={{ paddingLeft: 8, paddingRight: 6, maxWidth: 140 }}
-          title="Window selector"
-        >
-          <Monitor size={11} color="rgba(255,255,255,0.6)" />
-          <span
-            style={{
-              fontSize: 11,
-              color: "rgba(255,255,255,0.75)",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-              maxWidth: 90,
-            }}
-          >
-            {activeWindowName || "Desktop"}
-          </span>
-          <ChevronDown size={9} color="rgba(255,255,255,0.4)" />
-        </div>
-
-        {/* Separator */}
-        <div style={{ width: 1, height: 16, background: "rgba(255,255,255,0.12)" }} />
 
         {/* Workspace switcher: 1 2 3 4 */}
         <div className="flex items-center h-full px-1 gap-0.5">
@@ -221,6 +184,79 @@ export default function TopPanel({ activeWindowName, onOpenWindow }: TopPanelPro
             </div>
           ))}
         </div>
+
+        {/* ── TASKBAR: open/minimized windows ── */}
+        {openWindows.length > 0 && (
+          <>
+            <div style={{ width: 1, height: 16, background: "rgba(255,255,255,0.12)", marginLeft: 4 }} />
+            <div className="flex items-center h-full gap-px px-1" style={{ overflow: "hidden" }}>
+              {openWindows.map((win) => {
+                const isActive = activeWindowId === win.id;
+                return (
+                  <button
+                    key={win.id}
+                    onClick={() => onTaskbarClick(win.id)}
+                    title={win.label}
+                    style={{
+                      height: 20,
+                      maxWidth: 120,
+                      minWidth: 60,
+                      paddingLeft: 7,
+                      paddingRight: 7,
+                      fontSize: 11,
+                      fontFamily: "'Ubuntu', sans-serif",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 4,
+                      background: isActive
+                        ? "rgba(54,123,240,0.25)"
+                        : win.minimized
+                        ? "rgba(255,255,255,0.04)"
+                        : "rgba(255,255,255,0.08)",
+                      border: isActive
+                        ? "1px solid rgba(54,123,240,0.5)"
+                        : "1px solid rgba(255,255,255,0.1)",
+                      color: isActive
+                        ? "#90bfff"
+                        : win.minimized
+                        ? "rgba(255,255,255,0.4)"
+                        : "rgba(255,255,255,0.75)",
+                      transition: "all 0.1s",
+                      overflow: "hidden",
+                      whiteSpace: "nowrap",
+                      textOverflow: "ellipsis",
+                      flexShrink: 0,
+                    }}
+                  >
+                    {/* Active dot indicator */}
+                    {isActive && (
+                      <div
+                        style={{
+                          width: 4,
+                          height: 4,
+                          borderRadius: "50%",
+                          background: "#367BF0",
+                          flexShrink: 0,
+                        }}
+                      />
+                    )}
+                    <span
+                      style={{
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                        fontStyle: win.minimized ? "italic" : "normal",
+                      }}
+                    >
+                      {win.label}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </>
+        )}
       </div>
 
       {/* ── SPACER ── */}
@@ -228,15 +264,12 @@ export default function TopPanel({ activeWindowName, onOpenWindow }: TopPanelPro
 
       {/* ── RIGHT SECTION ── */}
       <div className="flex items-center h-full">
-        {/* System load bars */}
         <div className={panelBtnClass} style={{ paddingLeft: 6, paddingRight: 6 }} title="System Monitor">
           <SystemBars />
         </div>
 
-        {/* Separator */}
         <div style={{ width: 1, height: 16, background: "rgba(255,255,255,0.12)" }} />
 
-        {/* Network */}
         <div className={panelBtnClass} style={{ paddingLeft: 6, paddingRight: 6 }} title={isOnline ? "Connected" : "Disconnected"}>
           {isOnline ? (
             <Wifi size={13} color="#7ec8e3" />
@@ -245,20 +278,17 @@ export default function TopPanel({ activeWindowName, onOpenWindow }: TopPanelPro
           )}
         </div>
 
-        {/* Volume */}
-        <div className={panelBtnClass} style={{ paddingLeft: 5, paddingRight: 5 }} title={`Volume`}>
+        <div className={panelBtnClass} style={{ paddingLeft: 5, paddingRight: 5 }} title="Volume">
           <Volume2 size={13} color="rgba(255,255,255,0.8)" />
         </div>
 
-        {/* Notification bell */}
         <div className={panelBtnClass} style={{ paddingLeft: 5, paddingRight: 5 }} title="Notifications">
           <Bell size={13} color="rgba(255,255,255,0.8)" />
         </div>
 
-        {/* Separator */}
         <div style={{ width: 1, height: 16, background: "rgba(255,255,255,0.12)" }} />
 
-        {/* Clock + Time — clickable for calendar */}
+        {/* Clock — clickable for calendar */}
         <div
           className={panelBtnClass + " gap-1.5 relative"}
           style={{ paddingLeft: 10, paddingRight: 10, position: "relative" }}
@@ -352,15 +382,12 @@ export default function TopPanel({ activeWindowName, onOpenWindow }: TopPanelPro
           )}
         </div>
 
-        {/* Separator */}
         <div style={{ width: 1, height: 16, background: "rgba(255,255,255,0.12)" }} />
 
-        {/* Lock screen */}
         <div className={panelBtnClass} style={{ paddingLeft: 6, paddingRight: 6 }} title="Lock Screen">
           <Lock size={13} color="rgba(255,255,255,0.75)" />
         </div>
 
-        {/* Power / logout */}
         <div
           className={panelBtnClass}
           style={{ paddingLeft: 6, paddingRight: 8 }}

@@ -4,8 +4,12 @@ import WindowChrome from "./WindowChrome";
 
 interface FileExplorerProps {
   onClose: () => void;
+  onMinimize?: () => void;
   isActive: boolean;
   onFocus: () => void;
+  initialX?: number;
+  initialY?: number;
+  zIndex?: number;
 }
 
 const FILE_SYSTEM: Record<string, string[]> = {
@@ -16,7 +20,7 @@ const FILE_SYSTEM: Record<string, string[]> = {
   'Projects': ['kali-portfolio/', 'web-app/', 'scripts/']
 };
 
-export default function FileExplorer({ onClose, isActive, onFocus }: FileExplorerProps) {
+export default function FileExplorer({ onClose, onMinimize, isActive, onFocus, initialX, initialY, zIndex }: FileExplorerProps) {
   const [currentFolder, setCurrentFolder] = useState<string>('Home');
   const [path, setPath] = useState<string[]>(['Home']);
 
@@ -70,10 +74,14 @@ export default function FileExplorer({ onClose, isActive, onFocus }: FileExplore
     <WindowChrome
       title="Files - File Manager"
       onClose={onClose}
+      onMinimize={onMinimize}
       isActive={isActive}
       onFocus={onFocus}
+      initialX={initialX}
+      initialY={initialY}
       width={600}
       height={400}
+      zIndex={zIndex}
     >
       <div className="flex h-full bg-[#1c1c1c] font-sans">
         {/* Left Sidebar */}

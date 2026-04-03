@@ -3,8 +3,12 @@ import WindowChrome from "./WindowChrome";
 
 interface TerminalProps {
   onClose: () => void;
+  onMinimize?: () => void;
   isActive: boolean;
   onFocus: () => void;
+  initialX?: number;
+  initialY?: number;
+  zIndex?: number;
 }
 
 type LineType = 'output' | 'input' | 'welcome';
@@ -64,7 +68,7 @@ const SKILLS_TEXT = [
   "  Tools:     Git, Docker, Linux, AWS"
 ];
 
-export default function Terminal({ onClose, isActive, onFocus }: TerminalProps) {
+export default function Terminal({ onClose, onMinimize, isActive, onFocus, initialX, initialY, zIndex }: TerminalProps) {
   const [lines, setLines] = useState<TerminalLine[]>(
     WELCOME_BANNER.map(content => ({ type: 'welcome', content }))
   );
@@ -189,10 +193,14 @@ export default function Terminal({ onClose, isActive, onFocus }: TerminalProps) 
     <WindowChrome
       title="monish@kali: ~"
       onClose={onClose}
+      onMinimize={onMinimize}
       isActive={isActive}
       onFocus={onFocus}
+      initialX={initialX}
+      initialY={initialY}
       width={700}
       height={450}
+      zIndex={zIndex}
     >
       <div 
         ref={containerRef}

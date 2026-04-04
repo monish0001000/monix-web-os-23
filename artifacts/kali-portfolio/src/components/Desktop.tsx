@@ -11,6 +11,9 @@ import BrowserApp from "./BrowserApp";
 import WallpaperPicker from "./WallpaperPicker";
 import SentinelApp from "./SentinelApp";
 import AuraApp from "./AuraApp";
+import CyberChefApp from "./CyberChefApp";
+import CodeStudioApp from "./CodeStudioApp";
+import ThreatModelerApp from "./ThreatModelerApp";
 import RightClickMenu from "./RightClickMenu";
 import { useOSStore } from "@/lib/store";
 
@@ -30,6 +33,9 @@ const WINDOW_LABELS: Record<string, string> = {
   wallpaperpicker: "Wallpaper Picker",
   sentinel:        "Sentinel SOC",
   aura:            "AURA AI",
+  cyberchef:       "CyberChef",
+  codestudio:      "Code Studio",
+  threatmodeler:   "Threat Modeler",
 };
 
 interface SelectionBox {
@@ -171,6 +177,9 @@ export default function Desktop() {
       wallpaperpicker: { x: window.innerWidth / 2 - 280, y: window.innerHeight / 2 - 230 },
       sentinel:        { x: window.innerWidth / 2 - 460, y: window.innerHeight / 2 - 300 },
       aura:            { x: window.innerWidth / 2 - 380, y: window.innerHeight / 2 - 270 },
+      cyberchef:       { x: window.innerWidth / 2 - 500, y: window.innerHeight / 2 - 310 },
+      codestudio:      { x: window.innerWidth / 2 - 490, y: window.innerHeight / 2 - 305 },
+      threatmodeler:   { x: window.innerWidth / 2 - 480, y: window.innerHeight / 2 - 300 },
     };
     return offsets[type] ?? { x: 120, y: 60 };
   };
@@ -373,6 +382,45 @@ export default function Desktop() {
             initialX={getInitialPosition("sentinel").x}
             initialY={getInitialPosition("sentinel").y}
             zIndex={getWin("sentinel")!.zIndex}
+          />
+        )}
+
+        {getWin("cyberchef") && !getWin("cyberchef")!.minimized && (
+          <CyberChefApp
+            key="cyberchef"
+            onClose={() => handleCloseWindow("cyberchef")}
+            onMinimize={() => handleMinimizeWindow("cyberchef")}
+            isActive={activeWindow === "cyberchef"}
+            onFocus={() => bringToFront("cyberchef")}
+            initialX={getInitialPosition("cyberchef").x}
+            initialY={getInitialPosition("cyberchef").y}
+            zIndex={getWin("cyberchef")!.zIndex}
+          />
+        )}
+
+        {getWin("codestudio") && !getWin("codestudio")!.minimized && (
+          <CodeStudioApp
+            key="codestudio"
+            onClose={() => handleCloseWindow("codestudio")}
+            onMinimize={() => handleMinimizeWindow("codestudio")}
+            isActive={activeWindow === "codestudio"}
+            onFocus={() => bringToFront("codestudio")}
+            initialX={getInitialPosition("codestudio").x}
+            initialY={getInitialPosition("codestudio").y}
+            zIndex={getWin("codestudio")!.zIndex}
+          />
+        )}
+
+        {getWin("threatmodeler") && !getWin("threatmodeler")!.minimized && (
+          <ThreatModelerApp
+            key="threatmodeler"
+            onClose={() => handleCloseWindow("threatmodeler")}
+            onMinimize={() => handleMinimizeWindow("threatmodeler")}
+            isActive={activeWindow === "threatmodeler"}
+            onFocus={() => bringToFront("threatmodeler")}
+            initialX={getInitialPosition("threatmodeler").x}
+            initialY={getInitialPosition("threatmodeler").y}
+            zIndex={getWin("threatmodeler")!.zIndex}
           />
         )}
       </AnimatePresence>

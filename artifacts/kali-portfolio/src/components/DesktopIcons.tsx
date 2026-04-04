@@ -224,6 +224,91 @@ function AuraIcon() {
   );
 }
 
+function CyberChefIcon() {
+  return (
+    <svg viewBox="0 0 36 36" width="36" height="36" fill="none">
+      <defs>
+        <linearGradient id="ccBg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#3a1a00" />
+          <stop offset="100%" stopColor="#1a0800" />
+        </linearGradient>
+        <linearGradient id="ccShield" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#ff7a00" />
+          <stop offset="100%" stopColor="#cc4400" />
+        </linearGradient>
+      </defs>
+      <rect width="36" height="36" rx="6" fill="url(#ccBg)" stroke="#6a2800" strokeWidth="0.8"/>
+      <path d="M18 4 L29 8.5 L29 18 C29 24.5 18 32 18 32 C18 32 7 24.5 7 18 L7 8.5 Z" fill="url(#ccShield)" opacity="0.18"/>
+      <path d="M18 5.5 L27.5 9.5 L27.5 18 C27.5 23.5 18 30 18 30 C18 30 8.5 23.5 8.5 18 L8.5 9.5 Z" fill="none" stroke="#ff7a00" strokeWidth="1.3"/>
+      <line x1="24" y1="14" x2="24" y2="21" stroke="#ff9933" strokeWidth="2.5" strokeLinecap="round"/>
+      <line x1="21" y1="11" x2="27" y2="11" stroke="#ff9933" strokeWidth="1.8" strokeLinecap="round"/>
+      <line x1="21" y1="24" x2="27" y2="24" stroke="#ff6600" strokeWidth="1.8" strokeLinecap="round"/>
+      <circle cx="14" cy="18" r="3.5" fill="none" stroke="#ffbb44" strokeWidth="1.4"/>
+      <line x1="14" y1="13.5" x2="14" y2="11" stroke="#ffaa22" strokeWidth="1.5" strokeLinecap="round"/>
+      <line x1="11.5" y1="15.5" x2="9.5" y2="13.5" stroke="#ffaa22" strokeWidth="1.2" strokeLinecap="round"/>
+    </svg>
+  );
+}
+
+function CodeStudioIcon() {
+  return (
+    <svg viewBox="0 0 36 36" width="36" height="36" fill="none">
+      <defs>
+        <linearGradient id="csBg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#001a3a" />
+          <stop offset="100%" stopColor="#000d1f" />
+        </linearGradient>
+        <linearGradient id="csAccent" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stopColor="#00aaff" />
+          <stop offset="100%" stopColor="#0066ff" />
+        </linearGradient>
+      </defs>
+      <rect width="36" height="36" rx="6" fill="url(#csBg)" stroke="#003380" strokeWidth="0.8"/>
+      <rect x="3" y="7" width="30" height="22" rx="2" fill="#001530" stroke="#003a8c" strokeWidth="0.8"/>
+      <rect x="3" y="7" width="30" height="5" rx="2" fill="#002060"/>
+      <circle cx="7.5" cy="9.5" r="1.2" fill="#ff5f5f"/>
+      <circle cx="11.5" cy="9.5" r="1.2" fill="#ffbe2e"/>
+      <circle cx="15.5" cy="9.5" r="1.2" fill="#27c93f"/>
+      <path d="M8 17 L13 20.5 L8 24" stroke="url(#csAccent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+      <line x1="16" y1="24" x2="28" y2="24" stroke="#0066ff" strokeWidth="1.8" strokeLinecap="round" opacity="0.7"/>
+      <line x1="16" y1="20.5" x2="22" y2="20.5" stroke="#00aaff" strokeWidth="1.2" strokeLinecap="round" opacity="0.5"/>
+      <rect x="10" y="28" width="16" height="2" rx="1" fill="#002060" stroke="#003a8c" strokeWidth="0.6"/>
+    </svg>
+  );
+}
+
+function ThreatModelerIcon() {
+  return (
+    <svg viewBox="0 0 36 36" width="36" height="36" fill="none">
+      <defs>
+        <linearGradient id="tmBg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#1a0030" />
+          <stop offset="100%" stopColor="#0a0018" />
+        </linearGradient>
+        <linearGradient id="tmPink" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#e879f9" />
+          <stop offset="100%" stopColor="#a855f7" />
+        </linearGradient>
+      </defs>
+      <rect width="36" height="36" rx="6" fill="url(#tmBg)" stroke="#4a007a" strokeWidth="0.8"/>
+      <circle cx="9" cy="9" r="4" fill="url(#tmPink)" opacity="0.9"/>
+      <circle cx="27" cy="9" r="4" fill="none" stroke="#e879f9" strokeWidth="1.3" opacity="0.8"/>
+      <circle cx="9" cy="27" r="4" fill="none" stroke="#a855f7" strokeWidth="1.3" opacity="0.8"/>
+      <circle cx="27" cy="27" r="4" fill="none" stroke="#e879f9" strokeWidth="1.3" opacity="0.6"/>
+      <circle cx="18" cy="18" r="4.5" fill="none" stroke="#c084fc" strokeWidth="1.5"/>
+      <circle cx="18" cy="18" r="1.5" fill="#e879f9" opacity="0.9"/>
+      <line x1="13" y1="9" x2="14.5" y2="14" stroke="#c084fc" strokeWidth="1.1" strokeLinecap="round" opacity="0.7"/>
+      <line x1="23" y1="9" x2="21.5" y2="14" stroke="#c084fc" strokeWidth="1.1" strokeLinecap="round" opacity="0.7"/>
+      <line x1="9" y1="13" x2="14" y2="14.5" stroke="#a855f7" strokeWidth="1.1" strokeLinecap="round" opacity="0.7"/>
+      <line x1="9" y1="23" x2="14" y2="21.5" stroke="#a855f7" strokeWidth="1.1" strokeLinecap="round" opacity="0.7"/>
+      <line x1="27" y1="13" x2="22" y2="14.5" stroke="#a855f7" strokeWidth="1.1" strokeLinecap="round" opacity="0.7"/>
+      <line x1="27" y1="23" x2="22" y2="21.5" stroke="#a855f7" strokeWidth="1.1" strokeLinecap="round" opacity="0.7"/>
+      <line x1="13" y1="27" x2="14.5" y2="22" stroke="#c084fc" strokeWidth="1.1" strokeLinecap="round" opacity="0.7"/>
+      <line x1="23" y1="27" x2="21.5" y2="22" stroke="#c084fc" strokeWidth="1.1" strokeLinecap="round" opacity="0.7"/>
+    </svg>
+  );
+}
+
 const ICONS = [
   { id: "trash",      label: "Trash",       icon: <TrashIcon />,      window: "trash"     },
   { id: "filesystem", label: "File System", icon: <FileSystemIcon />, window: "files"     },
@@ -231,8 +316,11 @@ const ICONS = [
   { id: "github",     label: "GitHub",      icon: <GitHubIcon />,     window: "github"    },
   { id: "portfolio",  label: "Portfolio",   icon: <PortfolioIcon />,  window: "portfolio" },
   { id: "browser",    label: "Browser",     icon: <BrowserIcon />,    window: "browser"   },
-  { id: "sentinel",   label: "Sentinel SOC",icon: <SentinelIcon />,   window: "sentinel"  },
-  { id: "aura",       label: "AURA AI",     icon: <AuraIcon />,       window: "aura"      },
+  { id: "sentinel",     label: "Sentinel SOC",  icon: <SentinelIcon />,      window: "sentinel"     },
+  { id: "aura",         label: "AURA AI",       icon: <AuraIcon />,          window: "aura"         },
+  { id: "cyberchef",    label: "CyberChef",     icon: <CyberChefIcon />,     window: "cyberchef"    },
+  { id: "codestudio",   label: "Code Studio",   icon: <CodeStudioIcon />,    window: "codestudio"   },
+  { id: "threatmodeler",label: "Threat Modeler",icon: <ThreatModelerIcon />, window: "threatmodeler"},
 ];
 
 export default function DesktopIcons({

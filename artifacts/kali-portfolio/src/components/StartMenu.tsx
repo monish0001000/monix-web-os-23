@@ -1,7 +1,8 @@
 import { motion, AnimatePresence } from "framer-motion";
 import {
   TerminalSquare, FolderOpen, Monitor, Github, Trash2,
-  Lock, Settings, Power, Search, Globe, Shield, Sparkles
+  Lock, Settings, Power, Search, Globe, Shield, Sparkles,
+  FlaskConical, Code2, PenTool
 } from "lucide-react";
 import { useOSStore } from "@/lib/store";
 

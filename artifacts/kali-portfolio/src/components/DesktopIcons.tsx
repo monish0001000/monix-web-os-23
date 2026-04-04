@@ -309,19 +309,92 @@ function ThreatModelerIcon() {
   );
 }
 
-const ICONS = [
+const ICONS_COL1 = [
   { id: "trash",      label: "Trash",       icon: <TrashIcon />,      window: "trash"     },
   { id: "filesystem", label: "File System", icon: <FileSystemIcon />, window: "files"     },
   { id: "home",       label: "Home",        icon: <HomeIcon />,       window: "files"     },
   { id: "github",     label: "GitHub",      icon: <GitHubIcon />,     window: "github"    },
   { id: "portfolio",  label: "Portfolio",   icon: <PortfolioIcon />,  window: "portfolio" },
   { id: "browser",    label: "Browser",     icon: <BrowserIcon />,    window: "browser"   },
-  { id: "sentinel",     label: "Sentinel SOC",  icon: <SentinelIcon />,      window: "sentinel"     },
-  { id: "aura",         label: "AURA AI",       icon: <AuraIcon />,          window: "aura"         },
+  { id: "sentinel",   label: "Sentinel SOC",icon: <SentinelIcon />,   window: "sentinel"  },
+  { id: "aura",       label: "AURA AI",     icon: <AuraIcon />,       window: "aura"      },
+];
+
+const ICONS_COL2 = [
   { id: "cyberchef",    label: "CyberChef",     icon: <CyberChefIcon />,     window: "cyberchef"    },
   { id: "codestudio",   label: "Code Studio",   icon: <CodeStudioIcon />,    window: "codestudio"   },
   { id: "threatmodeler",label: "Threat Modeler",icon: <ThreatModelerIcon />, window: "threatmodeler"},
 ];
+
+function IconItem({
+  item,
+  selectedIcon,
+  onSelectIcon,
+  onOpenWindow,
+  dragConstraintsRef,
+}: {
+  item: { id: string; label: string; icon: React.ReactNode; window: string };
+  selectedIcon: string | null;
+  onSelectIcon: (id: string | null) => void;
+  onOpenWindow: (id: string) => void;
+  dragConstraintsRef: React.RefObject<HTMLDivElement>;
+}) {
+  const isSelected = selectedIcon === item.id;
+  return (
+    <motion.div
+      key={item.id}
+      drag
+      dragMomentum={false}
+      dragConstraints={dragConstraintsRef}
+      dragElastic={0}
+      whileDrag={{ scale: 1.06, zIndex: 50, cursor: "grabbing" }}
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: 3,
+        cursor: "grab",
+        padding: "5px 7px 4px",
+        userSelect: "none",
+        width: 66,
+        background: isSelected ? "rgba(54,123,240,0.28)" : "transparent",
+        border: isSelected
+          ? "1px solid rgba(54,123,240,0.55)"
+          : "1px solid transparent",
+        outline: isSelected ? "1px solid rgba(54,123,240,0.15)" : "none",
+        transition: "background 0.1s, border-color 0.1s",
+        position: "relative",
+        borderRadius: 3,
+      }}
+      onClick={(e) => {
+        e.stopPropagation();
+        onSelectIcon(item.id);
+      }}
+      onDoubleClick={(e) => {
+        e.stopPropagation();
+        onOpenWindow(item.window);
+      }}
+    >
+      {item.icon}
+      <span
+        style={{
+          fontSize: 11,
+          color: "#ffffff",
+          textAlign: "center",
+          lineHeight: 1.2,
+          textShadow:
+            "1px 1px 3px rgba(0,0,0,0.95), 0 0 8px rgba(0,0,0,1), -1px -1px 3px rgba(0,0,0,0.9)",
+          wordBreak: "break-word",
+          maxWidth: 60,
+          fontWeight: 500,
+          pointerEvents: "none",
+        }}
+      >
+        {item.label}
+      </span>
+    </motion.div>
+  );
+}
 
 export default function DesktopIcons({
   onOpenWindow,
@@ -331,66 +404,33 @@ export default function DesktopIcons({
 }: DesktopIconsProps) {
   return (
     <div
-      className="absolute flex flex-col z-10 font-sans"
-      style={{ top: 40, left: 10, gap: 2 }}
+      className="absolute flex flex-row z-10 font-sans"
+      style={{ top: 40, left: 10, gap: 4, alignItems: "flex-start" }}
     >
-      {ICONS.map((item) => {
-        const isSelected = selectedIcon === item.id;
-        return (
-          <motion.div
+      <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+        {ICONS_COL1.map((item) => (
+          <IconItem
             key={item.id}
-            drag
-            dragMomentum={false}
-            dragConstraints={dragConstraintsRef}
-            dragElastic={0}
-            whileDrag={{ scale: 1.06, zIndex: 50, cursor: "grabbing" }}
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              gap: 3,
-              cursor: "grab",
-              padding: "5px 7px 4px",
-              userSelect: "none",
-              width: 66,
-              background: isSelected ? "rgba(54,123,240,0.28)" : "transparent",
-              border: isSelected
-                ? "1px solid rgba(54,123,240,0.55)"
-                : "1px solid transparent",
-              outline: isSelected ? "1px solid rgba(54,123,240,0.15)" : "none",
-              transition: "background 0.1s, border-color 0.1s",
-              position: "relative",
-              borderRadius: 3,
-            }}
-            onClick={(e) => {
-              e.stopPropagation();
-              onSelectIcon(item.id);
-            }}
-            onDoubleClick={(e) => {
-              e.stopPropagation();
-              onOpenWindow(item.window);
-            }}
-          >
-            {item.icon}
-            <span
-              style={{
-                fontSize: 11,
-                color: "#ffffff",
-                textAlign: "center",
-                lineHeight: 1.2,
-                textShadow:
-                  "1px 1px 3px rgba(0,0,0,0.95), 0 0 8px rgba(0,0,0,1), -1px -1px 3px rgba(0,0,0,0.9)",
-                wordBreak: "break-word",
-                maxWidth: 60,
-                fontWeight: 500,
-                pointerEvents: "none",
-              }}
-            >
-              {item.label}
-            </span>
-          </motion.div>
-        );
-      })}
+            item={item}
+            selectedIcon={selectedIcon}
+            onSelectIcon={onSelectIcon}
+            onOpenWindow={onOpenWindow}
+            dragConstraintsRef={dragConstraintsRef}
+          />
+        ))}
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+        {ICONS_COL2.map((item) => (
+          <IconItem
+            key={item.id}
+            item={item}
+            selectedIcon={selectedIcon}
+            onSelectIcon={onSelectIcon}
+            onOpenWindow={onOpenWindow}
+            dragConstraintsRef={dragConstraintsRef}
+          />
+        ))}
+      </div>
     </div>
   );
 }

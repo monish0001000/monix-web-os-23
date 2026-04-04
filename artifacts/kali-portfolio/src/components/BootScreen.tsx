@@ -17,11 +17,21 @@ export default function BootScreen({ onComplete }: BootScreenProps) {
       transition={{ duration: 0.4 }}
     >
       {!hasInteracted ? (
-        <div
-          className="w-screen h-screen bg-black bg-cover bg-center bg-no-repeat cursor-pointer"
-          style={{ backgroundImage: "url('/grub_loader.svg')" }}
-          onClick={() => setHasInteracted(true)}
-        />
+        <>
+          <div
+            className="w-screen h-screen bg-black bg-cover bg-center bg-no-repeat cursor-pointer"
+            style={{ backgroundImage: "url('/grub_loader.svg')" }}
+            onClick={() => setHasInteracted(true)}
+          />
+          <video
+            src={bootVideo}
+            preload="auto"
+            muted
+            playsInline
+            style={{ display: "none", position: "absolute", pointerEvents: "none" }}
+            aria-hidden="true"
+          />
+        </>
       ) : (
         <video
           src={bootVideo}

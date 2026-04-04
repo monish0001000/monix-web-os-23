@@ -1,0 +1,32 @@
+@workspace We have a few critical synchronization and UI issues in MONIX OS that need fixing. Please update the necessary components (BootScreen, Store, AuraApp, and SystemTray/TopBar) with the following logic:
+
+1. Boot Animation Synchronization Fix (BootScreen.tsx):
+
+The boot video is cutting off early. REMOVE any setTimeout logic used for transitioning out of the boot screen.
+
+Ensure the <video> element has the attributes: src="/boot.mp4" autoPlay muted playsInline preload="auto".
+
+Use the native onEnded event on the <video> tag to trigger the state change to the Login Screen. Example: <video onEnded={() => completeBootSequence()} ... />. This guarantees it waits for the exact final frame.
+
+2. Absolute Default Wallpaper (Zustand Store):
+
+Hardcode the initial state of currentWallpaper and defaultWallpaper to exactly "/wallpaper (4).webp" (or whatever the exact path of the 4th image is). Ensure a full page reload ALWAYS boots into this specific wallpaper.
+
+3. Aura AI - Splash Image & API Fix (AuraApp.tsx):
+
+Splash Screen: Use the user's uploaded image (assume "/entry.webp"). Create a state isIntro (default true). Wrap the image in a Framer Motion <motion.div> or use CSS transitions. Show the image for 2500ms, then fade it out smoothly (opacity: 0) and set isIntro to false to reveal the chat interface.
+
+API Fix: The previous pasted code has API errors. Replace the fetch logic with a clean React implementation:
+const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' + import.meta.env.VITE_GEMINI_API_KEY, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: userMessage }] }] }) });
+
+Parse response.json() and safely extract data.candidates[0].content.parts[0].text.
+
+4. Live Spectrogram System Monitor (TopBar.tsx or SystemTray.tsx):
+
+Add a new tiny widget to the taskbar system tray.
+
+Create a React component <Spectrogram /> that visually simulates a live system heartbeat (like a CPU monitor graph).
+
+Use a small SVG or a series of tiny vertical div bars (using flexbox) that randomly scale their heights (transform: scaleY()) every 200ms using a setInterval or CSS @keyframes to mimic a live, moving frequency wave/EKG line. Give it a neon green or cyber-blue color.
+
+Please implement these precisely and ensure no previous window drag functionality is broken.

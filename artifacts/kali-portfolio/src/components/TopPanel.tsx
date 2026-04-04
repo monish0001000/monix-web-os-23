@@ -39,13 +39,47 @@ function KaliDragonIcon({ active }: { active?: boolean }) {
   );
 }
 
-function SystemBars() {
-  const bars = [3, 5, 8, 6, 9, 4, 7];
+const BAR_COUNT = 14;
+function generateBars() {
+  return Array.from({ length: BAR_COUNT }, () => Math.random());
+}
+
+function Spectrogram() {
+  const [bars, setBars] = useState<number[]>(generateBars);
+
+  useEffect(() => {
+    const id = setInterval(() => setBars(generateBars()), 200);
+    return () => clearInterval(id);
+  }, []);
+
   return (
-    <div className="flex items-end gap-px" style={{ height: 14 }}>
-      {bars.map((h, i) => (
-        <div key={i} style={{ width: 2, height: h, background: i > 4 ? "#00a3ff" : "rgba(255,255,255,0.5)" }} />
-      ))}
+    <div
+      className="flex items-end gap-px"
+      style={{ height: 16, width: BAR_COUNT * 3 }}
+      title="System Activity"
+    >
+      {bars.map((v, i) => {
+        const h = Math.max(2, Math.round(v * 14));
+        const isHigh = v > 0.75;
+        const color = isHigh
+          ? "#00ff88"
+          : v > 0.4
+          ? "#00c4ff"
+          : "rgba(0,196,255,0.45)";
+        return (
+          <div
+            key={i}
+            style={{
+              width: 2,
+              height: h,
+              background: color,
+              borderRadius: 1,
+              boxShadow: isHigh ? `0 0 4px ${color}` : "none",
+              transition: "height 0.15s ease, background 0.15s ease",
+            }}
+          />
+        );
+      })}
     </div>
   );
 }
@@ -313,8 +347,8 @@ export default function TopPanel({ openWindows = [], onOpenWindow, onTaskbarClic
 
         {/* ── RIGHT: System Tray ── */}
         <div className="flex items-center h-full" ref={trayRef}>
-          <div className={btnClass} title="System Monitor">
-            <SystemBars />
+          <div className={btnClass} title="System Activity Monitor">
+            <Spectrogram />
           </div>
 
           <div style={{ width: 1, height: 22, background: "rgba(255,255,255,0.1)" }} />

@@ -10,7 +10,7 @@ export const WALLPAPERS: string[] = [
   "/wallpaper_7.webp",
 ];
 
-export const DEFAULT_WALLPAPER: string = WALLPAPERS[0];
+export const DEFAULT_WALLPAPER: string = WALLPAPERS[3];
 
 export type TaskbarPosition = "top" | "bottom" | "left" | "right";
 
@@ -36,7 +36,7 @@ export const useOSStore = create<OSState>((set) => ({
   isLocked: false,
   taskbarPosition: "bottom",
   currentWallpaper: DEFAULT_WALLPAPER,
-  wallpaperIndex: 0,
+  wallpaperIndex: 3,
   wallpapers: WALLPAPERS,
   defaultWallpaper: DEFAULT_WALLPAPER,
   osVolume: 75,

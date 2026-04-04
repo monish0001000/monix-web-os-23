@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
 import bootVideo from "@assets/boot_1775198015682.mp4";
 
@@ -6,6 +7,8 @@ interface BootScreenProps {
 }
 
 export default function BootScreen({ onComplete }: BootScreenProps) {
+  const [hasInteracted, setHasInteracted] = useState(false);
+
   return (
     <motion.div
       className="fixed inset-0 select-none"
@@ -13,24 +16,31 @@ export default function BootScreen({ onComplete }: BootScreenProps) {
       exit={{ opacity: 0 }}
       transition={{ duration: 0.4 }}
     >
-      <video
-        src={bootVideo}
-        autoPlay
-        muted
-        playsInline
-        preload="auto"
-        onEnded={() => onComplete()}
-        onError={() => onComplete()}
-        style={{
-          position: "absolute",
-          inset: 0,
-          width: "100%",
-          height: "100%",
-          objectFit: "cover",
-          background: "#000000",
-          display: "block",
-        }}
-      />
+      {!hasInteracted ? (
+        <div
+          className="w-screen h-screen bg-black bg-cover bg-center bg-no-repeat cursor-pointer"
+          style={{ backgroundImage: "url('/grub_loader.svg')" }}
+          onClick={() => setHasInteracted(true)}
+        />
+      ) : (
+        <video
+          src={bootVideo}
+          autoPlay
+          playsInline
+          preload="auto"
+          onEnded={() => onComplete()}
+          onError={() => onComplete()}
+          style={{
+            position: "absolute",
+            inset: 0,
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+            background: "#000000",
+            display: "block",
+          }}
+        />
+      )}
     </motion.div>
   );
 }

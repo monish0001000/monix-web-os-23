@@ -121,7 +121,7 @@ export default function Desktop() {
 
   const handleRefresh = useCallback(() => {
     setIsRefreshing(true);
-    setTimeout(() => setIsRefreshing(false), 150);
+    setTimeout(() => setIsRefreshing(false), 350);
   }, []);
 
   // ── Selection Box handlers ──
@@ -223,12 +223,8 @@ export default function Desktop() {
     >
       {/* Desktop icons wrapper with refresh animation */}
       <div
+        className={isRefreshing ? "cyber-glitch-refresh" : undefined}
         style={{
-          transition: isRefreshing
-            ? "opacity 75ms ease, transform 75ms ease"
-            : "opacity 200ms ease-in, transform 200ms ease-in",
-          opacity: isRefreshing ? 0 : 1,
-          transform: isRefreshing ? "scale(0.95)" : "scale(1)",
           transformOrigin: "center center",
           width: "100%",
           height: "100%",

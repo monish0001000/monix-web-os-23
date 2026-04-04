@@ -1,0 +1,37 @@
+@workspace We need to refine the desktop interaction physics, upgrade the refresh visual effects, and polish the browser application UI in MONIX OS. Please apply the following targeted updates:
+
+1. Global Desktop Selection Box (Desktop.tsx):
+
+The current drag selection box is catching application windows instead of the empty desktop.
+
+Fix: Attach the onMouseDown, onMouseMove, and onMouseUp handlers directly to the main Desktop wrapper div (the one representing the wallpaper).
+
+Crucial Logic: Inside onMouseDown, strictly check if (e.target === e.currentTarget) before initializing the selection box state. This ensures the box ONLY starts drawing when clicking the empty background, not on icons or open windows. Ensure the blue selection box div has pointer-events-none.
+
+2. Advanced Cyber-Glitch Refresh Effect (Desktop.tsx & globals.css):
+
+Upgrade the isRefreshing animation from a simple opacity fade to a premium digital effect.
+
+Create a custom @keyframes in CSS named cyber-glitch-refresh. It should involve a quick sequence:
+
+0%: normal
+
+20%: opacity: 0.8, transform: scale(0.95) skewX(2deg), filter: hue-rotate(90deg) blur(1px)
+
+50%: opacity: 0.3, transform: scale(0.98) skewX(-2deg), filter: blur(2px)
+
+100%: normal.
+
+Apply this animation class to the desktop icons wrapper when isRefreshing is true. Set the timeout to exactly 350ms to match the animation duration.
+
+3. Premium Chrome Replica UI (BrowserApp.tsx):
+
+Upgrade the Browser window styling.
+
+Tab Bar (Top Row): Create a distinct tab row background (bg-[#202124]). Add a tab shape resembling Chrome (rounded top corners, bg-[#323639] for the active tab). Include a favicon (globe icon), a title "New Tab", and a small 'x' to close the tab. Add a '+' icon next to it.
+
+URL Bar (Second Row): Background bg-[#323639]. Add a distinct, rounded URL input field (bg-[#202124]). Add standard hover effects (lighter gray circles) to the Back, Forward, and Reload buttons.
+
+Ensure the iframe below takes h-[calc(100%-...)] accurately so no scrolling occurs on the main window body itself.
+
+Please implement these without breaking our existing Zustand window management or framer-motion setups.

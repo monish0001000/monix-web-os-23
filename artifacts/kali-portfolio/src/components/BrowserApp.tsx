@@ -306,13 +306,13 @@ export default function BrowserApp({
           style={{
             display: "flex",
             alignItems: "flex-end",
-            background: "#1a1a1f",
-            height: 36,
+            background: "#202124",
+            height: 38,
             flexShrink: 0,
             paddingLeft: 4,
             paddingRight: 4,
             gap: 1,
-            borderBottom: "1px solid rgba(0,0,0,0.4)",
+            borderBottom: "1px solid rgba(0,0,0,0.5)",
           }}
           onMouseDown={(e) => e.stopPropagation()}
         >
@@ -333,10 +333,10 @@ export default function BrowserApp({
                   padding: "0 8px 0 10px",
                   borderRadius: "6px 6px 0 0",
                   cursor: "pointer",
-                  background: isActive ? "#202124" : "transparent",
-                  borderTop: isActive ? "1px solid rgba(255,255,255,0.1)" : "1px solid transparent",
-                  borderLeft: isActive ? "1px solid rgba(255,255,255,0.07)" : "1px solid transparent",
-                  borderRight: isActive ? "1px solid rgba(255,255,255,0.07)" : "1px solid transparent",
+                  background: isActive ? "#323639" : "transparent",
+                  borderTop: isActive ? "1px solid rgba(255,255,255,0.12)" : "1px solid transparent",
+                  borderLeft: isActive ? "1px solid rgba(255,255,255,0.08)" : "1px solid transparent",
+                  borderRight: isActive ? "1px solid rgba(255,255,255,0.08)" : "1px solid transparent",
                   transition: "background 0.1s",
                   position: "relative",
                   alignSelf: "flex-end",
@@ -418,8 +418,8 @@ export default function BrowserApp({
             gap: 4,
             height: 44,
             padding: "0 8px",
-            background: "#202124",
-            borderBottom: "1px solid rgba(255,255,255,0.05)",
+            background: "#323639",
+            borderBottom: "1px solid rgba(0,0,0,0.35)",
             flexShrink: 0,
           }}
           onMouseDown={(e) => e.stopPropagation()}
@@ -464,7 +464,7 @@ export default function BrowserApp({
               alignItems: "center",
               gap: 8,
               height: 32,
-              background: "#303134",
+              background: "#202124",
               border: "1px solid rgba(255,255,255,0.06)",
               borderRadius: 20,
               padding: "0 12px",
@@ -472,11 +472,11 @@ export default function BrowserApp({
               cursor: "text",
             }}
             onFocus={(e) => {
-              e.currentTarget.style.background = "#3c4043";
-              e.currentTarget.style.borderColor = "rgba(138,180,248,0.4)";
+              e.currentTarget.style.background = "#292a2d";
+              e.currentTarget.style.borderColor = "rgba(138,180,248,0.5)";
             }}
             onBlur={(e) => {
-              e.currentTarget.style.background = "#303134";
+              e.currentTarget.style.background = "#202124";
               e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)";
             }}
           >

@@ -135,3 +135,111 @@
     @apply font-sans antialiased bg-background text-foreground;
   }
 }
+
+/* ── AURA AI custom utilities ── */
+@layer utilities {
+  .scrollbar-hide {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  .aura-glow-border {
+    position: relative;
+    z-index: 0;
+  }
+  .aura-glow-border::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    background: linear-gradient(var(--aura-glow-angle, 45deg), #3b82f6, #8b5cf6, #ec4899, #3b82f6);
+    background-size: 200% 200%;
+    z-index: -1;
+    border-radius: inherit;
+    animation: aura-glow-rotate 4s linear infinite;
+    opacity: 0.2;
+    filter: blur(10px);
+    transition: opacity 0.3s ease;
+  }
+  .aura-glow-border:focus-within::before {
+    opacity: 0.5;
+    filter: blur(15px);
+  }
+  @property --aura-glow-angle {
+    syntax: '<angle>';
+    initial-value: 0deg;
+    inherits: false;
+  }
+  @keyframes aura-glow-rotate {
+    0% { --aura-glow-angle: 0deg; }
+    100% { --aura-glow-angle: 360deg; }
+  }
+
+  .aura-text-glow {
+    text-shadow:
+      0 0 10px rgba(168, 85, 247, 0.5),
+      0 0 20px rgba(168, 85, 247, 0.3),
+      0 0 40px rgba(59, 130, 246, 0.15);
+  }
+
+  .aura-bg-wave {
+    position: absolute;
+    width: 150%;
+    height: 150%;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: radial-gradient(
+      circle at center,
+      rgba(59, 130, 246, 0.04) 0%,
+      rgba(139, 92, 246, 0.03) 25%,
+      rgba(236, 72, 153, 0.02) 50%,
+      transparent 70%
+    );
+    border-radius: 45% 48% 43% 47%;
+    animation: aura-wave-morph 15s linear infinite;
+    pointer-events: none;
+  }
+  .aura-bg-wave:nth-child(2) {
+    animation-duration: 20s;
+    animation-direction: reverse;
+    border-radius: 47% 42% 46% 44%;
+    background: radial-gradient(
+      circle at center,
+      rgba(139, 92, 246, 0.04) 0%,
+      rgba(236, 72, 153, 0.03) 30%,
+      transparent 60%
+    );
+    opacity: 0.7;
+  }
+  .aura-bg-wave:nth-child(3) {
+    animation-duration: 25s;
+    border-radius: 43% 46% 42% 48%;
+    opacity: 0.5;
+  }
+  @keyframes aura-wave-morph {
+    0%   { transform: translate(-50%, -50%) rotate(0deg) scale(1); }
+    33%  { border-radius: 48% 43% 47% 45%; }
+    66%  { border-radius: 44% 47% 43% 46%; }
+    100% { transform: translate(-50%, -50%) rotate(360deg) scale(1); }
+  }
+
+  .aura-glass {
+    background: rgba(0,0,0,0.4);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+}
+
+/* ── AURA markdown prose ── */
+.aura-markdown {
+  @apply prose prose-invert max-w-none prose-sm;
+  @apply prose-p:leading-relaxed prose-p:text-zinc-300;
+  @apply prose-headings:text-white prose-headings:font-black prose-headings:tracking-tight;
+  @apply prose-pre:bg-zinc-950/80 prose-pre:border prose-pre:border-white/5 prose-pre:rounded-2xl;
+  @apply prose-code:text-blue-400 prose-code:bg-blue-500/10 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:before:content-none prose-code:after:content-none prose-code:font-mono;
+  @apply prose-strong:text-white prose-strong:font-bold;
+  @apply prose-a:text-blue-400 prose-a:no-underline hover:prose-a:underline;
+}

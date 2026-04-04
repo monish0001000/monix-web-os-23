@@ -1,0 +1,29 @@
+@workspace We need to add three real, fully functional iframe-based applications to the MONIX OS ecosystem. These need to be accessible from both the Desktop icons and the new StartMenuDesktop. Please execute the following:
+
+1. Create the App Components:
+
+Create CyberChefApp.tsx: A window component rendering <iframe src="https://gchq.github.io/CyberChef/" className="w-full h-full border-none bg-white" title="CyberChef" />.
+
+Create CodeStudioApp.tsx: A window component rendering <iframe src="https://stackblitz.com/edit/web-platform?embed=1&file=index.html&hideExplorer=1&theme=dark" className="w-full h-full border-none" title="Code Studio" />.
+
+Create ThreatModelerApp.tsx: A window component rendering <iframe src="https://excalidraw.com/" className="w-full h-full border-none bg-white" title="Threat Modeler" />.
+
+2. Window Management (Store.ts):
+
+Ensure these three new applications are registered in our Zustand store so their open/close/minimize states and z-index can be managed just like the Browser and Aura AI.
+
+3. Desktop Integration (Desktop.tsx):
+
+Add draggable Desktop icons for "CyberChef", "Code Studio", and "Threat Modeler". Use appropriate lucide-react icons (e.g., a Shield/Wrench for CyberChef, Code/Terminal for Code Studio, PenTool for Threat Modeler). Double-clicking them should open their respective windows.
+
+4. Start Menu Integration (StartMenuDesktop.tsx):
+
+Update the menuData constant so these real apps appear in the Start Menu.
+
+Add them to the "Favorites" category.
+
+Also, distribute them into relevant categories: Put "CyberChef" under "Reverse Engineering" or "Information Gathering", put "Code Studio" under "Web Application Analysis", and "Threat Modeler" under "System".
+
+CRITICAL: Ensure the onClick handler in the Start Menu's right panel actually triggers the Zustand store to open these real windows, bypassing any "Simulated" placeholder logic for these specific items.
+
+Please implement this cleanly without breaking the existing framer-motion drag physics or the Start Menu animations.

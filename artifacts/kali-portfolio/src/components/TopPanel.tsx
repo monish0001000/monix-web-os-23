@@ -23,23 +23,6 @@ interface TopPanelProps {
   activeWindowId: string;
 }
 
-function KaliDragonIcon({ active }: { active?: boolean }) {
-  return (
-    <svg viewBox="0 0 24 24" width="18" height="18" fill="none">
-      <path
-        d="M12 2C7.5 2 4 5 4 9c0 2 .8 3.8 2 5l-1 2 2-1c1 .7 2.2 1 3 1 4.5 0 8-3 8-7S16.5 2 12 2z"
-        fill={active ? "#5ea3ff" : "#367BF0"}
-        opacity="0.95"
-      />
-      <path
-        d="M10 8c.5-1 1.5-1.5 2.5-1 1 .5 1.5 1.5 1 2.5-.3.7-1 1.2-1.7 1.3L10 12l1-2.5C10.4 9.2 9.8 8.7 10 8z"
-        fill="white"
-        opacity="0.9"
-      />
-    </svg>
-  );
-}
-
 const BAR_COUNT = 14;
 function generateBars() {
   return Array.from({ length: BAR_COUNT }, () => Math.random());
@@ -105,8 +88,6 @@ export default function TopPanel({ openWindows = [], onOpenWindow, onTaskbarClic
   const [showCalendar, setShowCalendar] = useState(false);
   const [trayPopover, setTrayPopover] = useState<TrayPopover>(null);
   const [showStartMenu, setShowStartMenu] = useState(false);
-  const [showGamesNotif, setShowGamesNotif] = useState(false);
-  const notifTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Battery state
   const [batteryLevel, setBatteryLevel] = useState<number>(100);
@@ -214,13 +195,7 @@ export default function TopPanel({ openWindows = [], onOpenWindow, onTaskbarClic
   const handleLogoClick = () => {
     setTrayPopover(null);
     setShowCalendar(false);
-    const opening = !showStartMenu;
     setShowStartMenu((v) => !v);
-    if (opening) {
-      setShowGamesNotif(true);
-      if (notifTimerRef.current) clearTimeout(notifTimerRef.current);
-      notifTimerRef.current = setTimeout(() => setShowGamesNotif(false), 4500);
-    }
   };
 
   const popoverBase: React.CSSProperties = {
@@ -250,67 +225,6 @@ export default function TopPanel({ openWindows = [], onOpenWindow, onTaskbarClic
         onOpenWindow={(id) => { onOpenWindow(id); setShowStartMenu(false); }}
       />
 
-      {/* Games notification */}
-      <AnimatePresence>
-        {showGamesNotif && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.85, y: 10 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: 6 }}
-            transition={{ type: "spring", stiffness: 420, damping: 28 }}
-            style={{
-              position: "fixed",
-              bottom: 50,
-              left: 8,
-              zIndex: 510,
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-              padding: "9px 14px",
-              background: "rgba(0,0,0,0.82)",
-              backdropFilter: "blur(14px)",
-              WebkitBackdropFilter: "blur(14px)",
-              border: "1px solid rgba(0,255,136,0.5)",
-              borderRadius: 8,
-              boxShadow: "0 0 24px rgba(0,255,136,0.25), 0 0 48px rgba(0,0,0,0.8), inset 0 0 16px rgba(0,255,136,0.04)",
-              cursor: "pointer",
-              userSelect: "none",
-              maxWidth: 240,
-            }}
-            onClick={() => {
-              setShowGamesNotif(false);
-              onOpenWindow("chess");
-              setShowStartMenu(false);
-            }}
-          >
-            <span style={{ fontSize: 18, lineHeight: 1 }}>🎮</span>
-            <div>
-              <div style={{
-                fontSize: 12, fontWeight: 700,
-                color: "#00ff88",
-                textShadow: "0 0 10px rgba(0,255,136,0.7)",
-                letterSpacing: "0.02em",
-              }}>
-                Try Games in MONIX OS!
-              </div>
-              <div style={{ fontSize: 10, color: "rgba(0,255,136,0.5)", marginTop: 1 }}>
-                Play Grandmaster Chess ↗
-              </div>
-            </div>
-            <button
-              onClick={(e) => { e.stopPropagation(); setShowGamesNotif(false); }}
-              style={{
-                marginLeft: 4, background: "none", border: "none",
-                color: "rgba(255,255,255,0.3)", cursor: "pointer", fontSize: 14, lineHeight: 1,
-                padding: "0 2px",
-              }}
-            >
-              ×
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       <div
         className="fixed bottom-0 left-0 w-full z-50 select-none font-sans flex items-stretch justify-between"
         style={{
@@ -325,18 +239,39 @@ export default function TopPanel({ openWindows = [], onOpenWindow, onTaskbarClic
         {/* ── LEFT ── */}
         <div className="flex items-center h-full gap-0">
 
-          {/* Logo */}
+          {/* Logo — MONIX "M" */}
           <div
             className="flex items-center justify-center cursor-pointer h-full transition-colors"
             style={{
               paddingLeft: 10, paddingRight: 10,
-              background: showStartMenu ? "rgba(54,123,240,0.25)" : "transparent",
-              borderRight: showStartMenu ? "1px solid rgba(54,123,240,0.3)" : "1px solid transparent",
+              background: showStartMenu ? "rgba(0,212,255,0.15)" : "transparent",
+              borderRight: showStartMenu ? "1px solid rgba(0,212,255,0.3)" : "1px solid transparent",
             }}
             title="Applications"
             onClick={handleLogoClick}
           >
-            <KaliDragonIcon active={showStartMenu} />
+            <span
+              style={{
+                fontFamily: "'Ubuntu', 'Inter', sans-serif",
+                fontSize: 17,
+                fontWeight: 900,
+                letterSpacing: "-0.02em",
+                background: showStartMenu
+                  ? "linear-gradient(135deg, #00f0ff 0%, #00ff88 100%)"
+                  : "linear-gradient(135deg, #00c4ff 0%, #0080ff 100%)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                backgroundClip: "text",
+                textShadow: "none",
+                filter: showStartMenu
+                  ? "drop-shadow(0 0 6px rgba(0,240,255,0.8))"
+                  : "drop-shadow(0 0 4px rgba(0,196,255,0.5))",
+                lineHeight: 1,
+                userSelect: "none",
+              }}
+            >
+              M
+            </span>
           </div>
 
           <div style={{ width: 1, height: 22, background: "rgba(255,255,255,0.1)" }} />

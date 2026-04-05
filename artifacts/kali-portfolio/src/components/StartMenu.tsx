@@ -76,13 +76,6 @@ const APPS = [
     bg: "rgba(126,200,227,0.1)",
   },
   {
-    id: "wallpaperpicker",
-    label: "Wallpapers",
-    icon: <Settings size={22} strokeWidth={1.6} />,
-    color: "#f4c066",
-    bg: "rgba(244,192,102,0.1)",
-  },
-  {
     id: "sentinel",
     label: "Sentinel SOC",
     icon: <Shield size={22} strokeWidth={1.6} />,

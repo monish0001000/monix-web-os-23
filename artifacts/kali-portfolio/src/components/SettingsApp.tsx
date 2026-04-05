@@ -15,17 +15,91 @@ interface SettingsAppProps {
   onOpenTaskManager?: () => void;
 }
 
-type Tab = "personalization" | "display" | "apps" | "taskbar" | "themes" | "cursor" | "sysinfo";
+type Tab = "personalization" | "taskbar" | "themes" | "cursor";
 
 const TABS: { id: Tab; label: string; icon: React.ReactNode; locked?: boolean }[] = [
   { id: "personalization", label: "Personalization", icon: <Palette size={15} /> },
-  { id: "display",         label: "Display",         icon: <Monitor size={15} /> },
-  { id: "apps",            label: "Apps & Features", icon: <AppWindow size={15} /> },
+  { id: "themes",          label: "Themes & Colors", icon: <Sparkles size={15} />, locked: true },
+  { id: "cursor",          label: "Mouse & Cursor",  icon: <MousePointer2 size={15} />, locked: true },
   { id: "taskbar",         label: "Taskbar",         icon: <LayoutDashboard size={15} />, locked: true },
-  { id: "themes",          label: "Themes & Colors", icon: <Sparkles size={15} /> },
-  { id: "cursor",          label: "Mouse & Cursor",  icon: <MousePointer2 size={15} /> },
-  { id: "sysinfo",         label: "System Info",     icon: <Info size={15} /> },
 ];
+
+function LockedSection({ children, label = "KERNEL LOCKED — IN DEVELOPMENT" }: { children: React.ReactNode; label?: string }) {
+  return (
+    <div style={{ position: "relative" }}>
+      {/* Blurred, grayscale, non-interactive content underneath */}
+      <div style={{ opacity: 0.35, filter: "grayscale(1)", pointerEvents: "none", userSelect: "none" }}>
+        {children}
+      </div>
+
+      {/* Overlay badge */}
+      <div style={{
+        position: "absolute",
+        inset: 0,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 14,
+        background: "rgba(5,5,5,0.55)",
+        backdropFilter: "blur(4px)",
+        borderRadius: 10,
+        border: "1px solid rgba(255,50,50,0.2)",
+        boxShadow: "0 0 40px rgba(255,30,30,0.08), inset 0 0 60px rgba(0,0,0,0.3)",
+        zIndex: 10,
+      }}>
+        <div style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: 10,
+          padding: "24px 36px",
+          background: "linear-gradient(135deg, rgba(255,20,20,0.08), rgba(0,0,0,0.4))",
+          border: "1px solid rgba(255,60,60,0.35)",
+          borderRadius: 12,
+          boxShadow: "0 0 30px rgba(255,30,30,0.15), 0 0 60px rgba(0,0,0,0.5)",
+        }}>
+          <div style={{ fontSize: 28, lineHeight: 1 }}>🔒</div>
+          <div style={{
+            fontFamily: "monospace",
+            fontSize: 11,
+            fontWeight: 900,
+            letterSpacing: "0.18em",
+            color: "#ff4444",
+            textShadow: "0 0 12px rgba(255,60,60,0.8), 0 0 30px rgba(255,30,30,0.4)",
+            textAlign: "center",
+          }}>
+            ACCESS DENIED
+          </div>
+          <div style={{
+            fontFamily: "monospace",
+            fontSize: 9,
+            color: "rgba(255,255,255,0.4)",
+            letterSpacing: "0.12em",
+            textAlign: "center",
+            maxWidth: 240,
+            lineHeight: 1.6,
+          }}>
+            {label}
+          </div>
+          <div style={{
+            padding: "5px 14px",
+            background: "rgba(255,40,40,0.1)",
+            border: "1px solid rgba(255,60,60,0.3)",
+            borderRadius: 20,
+            fontFamily: "monospace",
+            fontSize: 8,
+            color: "rgba(255,100,100,0.7)",
+            letterSpacing: "0.15em",
+            marginTop: 4,
+          }}>
+            REQUIRES MONIX PRO LICENSE
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const ACCENT_COLORS = [
   { label: "Cyber Cyan",    hex: "#00f0ff" },
@@ -1118,12 +1192,21 @@ export default function SettingsApp({
               transition={{ duration: 0.2 }}
             >
               {activeTab === "personalization" && <PersonalizationTab />}
-              {activeTab === "display"         && <DisplayTab />}
-              {activeTab === "apps"            && <AppsTab />}
-              {activeTab === "taskbar"         && <TaskbarTab />}
-              {activeTab === "themes"          && <ThemesTab />}
-              {activeTab === "cursor"          && <CursorTab />}
-              {activeTab === "sysinfo"         && <SystemInfoTab onOpenTaskManager={onOpenTaskManager} />}
+              {activeTab === "themes" && (
+                <LockedSection label="THEMES ENGINE — UNDER ACTIVE DEVELOPMENT">
+                  <ThemesTab />
+                </LockedSection>
+              )}
+              {activeTab === "cursor" && (
+                <LockedSection label="CURSOR CUSTOMIZATION — UNDER ACTIVE DEVELOPMENT">
+                  <CursorTab />
+                </LockedSection>
+              )}
+              {activeTab === "taskbar" && (
+                <LockedSection label="TASKBAR CONFIGURATION — RESTRICTED MODULE">
+                  <TaskbarTab />
+                </LockedSection>
+              )}
             </motion.div>
           </AnimatePresence>
         </div>

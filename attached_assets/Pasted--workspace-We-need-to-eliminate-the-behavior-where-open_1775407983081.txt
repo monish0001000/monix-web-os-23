@@ -1,0 +1,39 @@
+@workspace We need to eliminate the behavior where opening a file opens a new browser tab and exposes the raw Vite path in the URL. We must maintain the "OS illusion" by building a native, lightweight MediaViewerApp.tsx and integrating it into our window manager and Virtual File System (FilesApp.tsx). Act as an Elite OS Frontend Architect and execute this:
+
+1. Create the MediaViewerApp.tsx:
+
+Create a new component for the window manager that accepts props: fileName, fileUrl, and fileType (e.g., 'image', 'video', 'audio').
+
+UI: A sleek, dark cyberpunk container (bg-[#050505], centered content).
+
+Logic: Switch based on fileType:
+
+Image: Render an <img src={fileUrl} alt={fileName} className="max-w-full max-h-full object-contain" />.
+
+Video: Render a <video src={fileUrl} controls autoPlay className="max-w-full max-h-full outline-none" />.
+
+Audio: Render an <audio src={fileUrl} controls autoPlay className="w-full mt-4 outline-none" /> with a cool vinyl or waveform icon above it.
+
+2. Update Window Manager (Store.ts & App.tsx / Desktop.tsx):
+
+Ensure our window management state can pass arbitrary props to spawned windows. When an app is opened, we should be able to pass { fileUrl, fileName, fileType } to it.
+
+Register the MediaViewerApp in the list of available OS apps.
+
+3. Intercept "Open" Action in VFS (FilesApp.tsx):
+
+Locate the handleOpen logic (used when double-clicking a file or clicking "Open" in the right-click menu).
+
+Extension Detection: Extract the file extension from the filename (e.g., .webp, .png, .jpg, .mp4, .mp3).
+
+Routing Logic:
+
+If the extension matches an image, video, or audio format, do NOT use window.open. Instead, dispatch an action to the window manager to open the MediaViewerApp window, passing the file's URL, name, and determined type.
+
+If the file is a text file, document, or unknown, fallback to programmatically triggering a native download (using an <a> tag with the download attribute) so it never leaves the OS tab.
+
+4. Aesthetics:
+
+Ensure the Media Viewer window spawns centered.
+
+The window title bar should dynamically display the fileName (e.g., Viewing: Screenshot (509).webp).

@@ -19,6 +19,18 @@ interface FileExplorerProps {
   initialX?: number;
   initialY?: number;
   zIndex?: number;
+  onOpenMediaViewer?: (fileName: string, fileUrl: string, fileType: string) => void;
+}
+
+// ─── Media type detection from extension ──────────────────────────────────────
+type MediaKind = "image" | "video" | "audio" | "unknown";
+
+function detectMediaType(ext: string | undefined): MediaKind {
+  const e = (ext ?? "").toLowerCase();
+  if (["png","jpg","jpeg","gif","webp","avif","bmp","svg","ico"].includes(e)) return "image";
+  if (["mp4","webm","ogv","mov","avi","mkv","m4v"].includes(e))              return "video";
+  if (["mp3","wav","ogg","flac","aac","m4a","opus"].includes(e))             return "audio";
+  return "unknown";
 }
 
 // ─── VFS Icon helpers ─────────────────────────────────────────────────────────
@@ -67,6 +79,7 @@ interface CtxMenuItem { label: string; icon: React.ReactNode; action: () => void
 // ─── Main component ───────────────────────────────────────────────────────────
 export default function FileExplorer({
   onClose, onMinimize, isActive, onFocus, initialX, initialY, zIndex,
+  onOpenMediaViewer,
 }: FileExplorerProps) {
   const [tab, setTab] = useState<"local" | "cloud">("local");
 
@@ -99,22 +112,35 @@ export default function FileExplorer({
     return () => window.removeEventListener("click", handler);
   }, [ctxMenu]);
 
+  // ── Smart file opener: media → in-OS viewer, else → download ──────────────
+  const openFile = useCallback((node: VFSNode) => {
+    if (!node.url) return;
+    const kind = detectMediaType(node.ext);
+    if (kind !== "unknown") {
+      onOpenMediaViewer?.(node.name, node.url, kind);
+    } else {
+      // Fallback: trigger native download — never leaves the OS tab
+      const a = document.createElement("a");
+      a.href = node.url;
+      a.download = node.name;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    }
+  }, [onOpenMediaViewer]);
+
   // ── VFS navigation ──
   const navigateInto = useCallback((node: VFSNode) => {
     if (node.type === "folder") {
       setNavStack((s) => [...s, node.id]);
-    } else if (node.url) {
-      window.open(node.url, "_blank", "noopener,noreferrer");
+    } else {
+      openFile(node);
     }
-  }, []);
+  }, [openFile]);
 
   const navigateToBreadcrumb = useCallback((idx: number) => {
     setNavStack((s) => s.slice(0, idx + 1));
   }, []);
-
-  const openFileInNewTab = (node: VFSNode) => {
-    if (node.url) window.open(node.url, "_blank", "noopener,noreferrer");
-  };
 
   const downloadFile = async (node: VFSNode) => {
     if (!node.url) return;
@@ -139,8 +165,8 @@ export default function FileExplorer({
     const items: CtxMenuItem[] = node.type === "folder"
       ? [{ label: "Open", icon: <Folder size={11} />, action: () => navigateInto(node) }]
       : [
-          { label: "Open in new tab", icon: <ExternalLink size={11} />, action: () => openFileInNewTab(node) },
-          { label: "Download",        icon: <Download size={11} />,     action: () => downloadFile(node) },
+          { label: "Open",     icon: <ExternalLink size={11} />, action: () => openFile(node) },
+          { label: "Download", icon: <Download size={11} />,     action: () => downloadFile(node) },
         ];
     setCtxMenu({ x: e.clientX, y: e.clientY, items });
   };

@@ -19,12 +19,14 @@ import CykryptApp from "./CykryptApp";
 import TaskManagerApp from "./TaskManagerApp";
 import SettingsApp from "./SettingsApp";
 import RightClickMenu from "./RightClickMenu";
+import MediaViewerApp, { type MediaType } from "./MediaViewerApp";
 import { useOSStore } from "@/lib/store";
 
 export interface WindowEntry {
   id: string;
   minimized: boolean;
   zIndex: number;
+  props?: Record<string, string>;
 }
 
 const WINDOW_LABELS: Record<string, string> = {
@@ -170,6 +172,13 @@ export default function Desktop() {
     setTimeout(() => setIsRefreshing(false), 350);
   }, []);
 
+  const handleOpenMediaViewer = useCallback((fileName: string, fileUrl: string, fileType: string) => {
+    const id = `mediaviewer-${Date.now()}`;
+    const z = nextZ.current++;
+    setWindows((prev) => [...prev, { id, minimized: false, zIndex: z, props: { fileName, fileUrl, fileType } }]);
+    setActiveWindow(id);
+  }, []);
+
   // ── Selection Box handlers ──
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
     // Only on left click directly on the desktop background
@@ -224,13 +233,16 @@ export default function Desktop() {
       cykrypt:         { x: window.innerWidth / 2 - 490, y: window.innerHeight / 2 - 320 },
       taskmanager:     { x: window.innerWidth / 2 - 330, y: window.innerHeight / 2 - 260 },
       settings:        { x: window.innerWidth / 2 - 390, y: window.innerHeight / 2 - 280 },
+      mediaviewer:     { x: window.innerWidth / 2 - 410, y: window.innerHeight / 2 - 280 },
     };
     return offsets[type] ?? { x: 120, y: 60 };
   };
 
   const openWindowList = windows.map((w) => ({
     id: w.id,
-    label: WINDOW_LABELS[w.id] ?? w.id,
+    label: w.id.startsWith("mediaviewer-")
+      ? `Media: ${w.props?.fileName ?? "File"}`
+      : (WINDOW_LABELS[w.id] ?? w.id),
     minimized: w.minimized,
   }));
 
@@ -337,6 +349,7 @@ export default function Desktop() {
             initialX={getInitialPosition("files").x}
             initialY={getInitialPosition("files").y}
             zIndex={getWin("files")!.zIndex}
+            onOpenMediaViewer={handleOpenMediaViewer}
           />
         )}
 
@@ -520,6 +533,22 @@ export default function Desktop() {
             onOpenTaskManager={() => handleOpenWindow("taskmanager")}
           />
         )}
+
+        {windows.filter(w => w.id.startsWith("mediaviewer-") && !w.minimized).map((win) => (
+          <MediaViewerApp
+            key={win.id}
+            onClose={() => handleCloseWindow(win.id)}
+            onMinimize={() => handleMinimizeWindow(win.id)}
+            isActive={activeWindow === win.id}
+            onFocus={() => bringToFront(win.id)}
+            initialX={getInitialPosition("mediaviewer").x}
+            initialY={getInitialPosition("mediaviewer").y}
+            zIndex={win.zIndex}
+            fileName={win.props?.fileName ?? ""}
+            fileUrl={win.props?.fileUrl ?? ""}
+            fileType={(win.props?.fileType ?? "unknown") as MediaType}
+          />
+        ))}
       </AnimatePresence>
 
       <AnimatePresence>

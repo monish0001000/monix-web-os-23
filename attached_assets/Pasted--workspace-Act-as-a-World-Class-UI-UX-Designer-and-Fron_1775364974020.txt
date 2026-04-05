@@ -1,0 +1,63 @@
+@workspace Act as a World-Class UI/UX Designer and Frontend Engineer. I need to build CykryptApp.tsx, a standalone React component for a premium cybersecurity CTF application called "CYKRYPT - CTF Arena" inside our MONIX OS.
+
+Design Language & Aesthetic (CRITICAL):
+
+Vibe: Deep Dark Hacker, Ultra-Premium, Cyberpunk, Elite Dashboard.
+
+Backgrounds: Pitch black to very dark slate (bg-[#050505]). Use subtle radial glow gradients behind elements to create depth.
+
+Surfaces: Use extreme glassmorphism (bg-white/[0.02] backdrop-blur-xl border border-white/[0.05]).
+
+Accents: Neon Cyan (#00f0ff), Hacker Green (#00ff00), and Deep Purple (#8a2be2).
+
+Typography: Use sans-serif for clean readability and monospace for tags, badges, and technical descriptions.
+
+Animations: Use Framer Motion (or advanced CSS transitions) for incredibly smooth hover scales, glowing pulses, and a slight staggering entrance effect for the grid items.
+
+Data to Hardcode:
+
+JavaScript
+const challenges = [
+  { id: 1, title: 'TEMPORAL ENIGMA', difficulty: 'Hard', desc: 'You are presented with an animated analog clock surrounded by a Matrix-style rain effect. The clock appears to be ordinary, but it holds a secret sequence that must be unlocked by interacting with it at specific moments in time.', url: 'https://ctf-web-enigma.vercel.app' },
+  { id: 2, title: 'PIXEL LABYRINTH', difficulty: 'Hard', desc: 'Navigate your mouse through a field of dynamic noise to discover 8 hidden pixels in a specific sequence. Each pixel is invisible until your cursor approaches it, and they must be found in the correct order to reveal the flag.', url: 'https://ctf-web-pixel-labyrinth.vercel.app' },
+  { id: 3, title: 'RHYTHM LOCK', difficulty: 'Medium', desc: 'Unlock the flag by tapping a sequence of musical notes with precise timing intervals. Like a rhythm game, you must press the correct notes at the right tempo to unlock the sequence.', url: 'https://ctf-web-rhythm-lock.vercel.app' },
+  { id: 4, title: 'MEMORY MAZE', difficulty: 'Medium', desc: 'A Simon-says style memory game with 5 increasingly difficult levels. Watch as a pattern of cells lights up in sequence, then recreate the exact same pattern from memory.', url: 'https://ctf-web-memory-maze.vercel.app/' },
+  { id: 5, title: 'COOKIE MANIPULATION', difficulty: 'Easy', desc: 'This challenge tests the participant\'s ability to inspect browser storage and manipulate hex-encoded cookies to escalate privileges.', url: 'https://ctf-web-cookiemanipulation.vercel.app/' },
+  { id: 6, title: 'EMPLOYEE PORTAL (OBSIDIAN VAULT)', difficulty: 'Medium', desc: 'This challenge involves inspecting the sterile client-side JavaScript, discovering hidden comments, and interacting with WebAssembly.', url: 'https://ctf-web-employeeportal.vercel.app/' },
+  { id: 7, title: 'PROTOTYPE POLLUTION', difficulty: 'Hard', desc: 'This challenge involves exploiting a recursive merge function to achieve Prototype Pollution, weaponizing it via a template evaluation gadget.', url: 'https://ctf-web-prototype-pollution.vercel.app/' }
+];
+State Management:
+
+view ('list' | 'detail'), default 'list'.
+
+selectedChallenge (Object | null).
+
+View 1: The Main Hub (view === 'list'):
+
+Hero Header: "CYKRYPT ARENA" with a text-shadow neon glow and a slight CSS glitch effect. A subtle subheader: [ LIVE WEB EXPLOITATION HUB ].
+
+The Grid: A beautifully spaced responsive grid.
+
+Cards (The Masterpiece): >   - Dark glassmorphic panels.
+
+Hover effect: The border glows Cyan, the card lifts slightly (-translate-y-1), and a subtle shadow drops.
+
+Difficulty Badges: Make them look like glowing pills. Easy = Neon Green + glow, Medium = Neon Yellow/Orange + glow, Hard = Crimson/Neon Red + glow.
+
+A highly styled "VIEW MISSION" button with an arrow/terminal icon from lucide-react.
+
+View 2: Mission Briefing (view === 'detail'):
+
+A breathtaking detail panel that slides in or fades in.
+
+Header: Back button (< RETURN TO HUB) with a sleek hover effect, followed by the Challenge Title in massive glowing typography.
+
+Briefing Box: The description should be inside a "Terminal-style" box with a monospaced font, maybe with a fake typing effect or a blinking cursor block at the end.
+
+The Launch Action: A massive, pulsing "INITIALIZE LIVE EXPLOIT" button. It must look like a critical system button (glowing cyan or hacker green).
+
+Functionality: When clicked, it MUST use window.open(selectedChallenge.url, '_blank', 'noopener,noreferrer'). Do NOT use an iframe.
+
+Technical Constraint:
+
+The entire component must be w-full h-full overflow-y-auto with custom styled scrollbars (dark track, cyan thumb) to fit perfectly within an OS window wrapper.

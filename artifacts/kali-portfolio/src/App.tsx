@@ -13,9 +13,17 @@ const queryClient = new QueryClient();
 
 type Phase = "boot" | "login" | "desktop";
 
+function useDisplayFilter() {
+  const brightness = useOSStore((s) => s.brightness);
+  const warmth = useOSStore((s) => s.warmth);
+  const hasFilter = brightness !== 100 || warmth !== 0;
+  return hasFilter ? `brightness(${brightness / 100}) sepia(${warmth / 50})` : undefined;
+}
+
 function AppInner() {
   const [phase, setPhase] = useState<Phase>("boot");
   const isLocked = useOSStore((s) => s.isLocked);
+  const displayFilter = useDisplayFilter();
   const setLocked = useOSStore((s) => s.setLocked);
 
   useEffect(() => {
@@ -46,12 +54,17 @@ function AppInner() {
             transition={{ duration: 0.5 }}
             className="w-full h-full relative"
           >
-            {/* Desktop — blurred when locked */}
+            {/* Desktop — blurred when locked, display-filtered by settings */}
             <motion.div
               className="w-full h-full"
-              animate={{ filter: isLocked ? "blur(8px)" : "blur(0px)" }}
-              transition={{ duration: 0.3 }}
-              style={{ pointerEvents: isLocked ? "none" : "auto" }}
+              style={{
+                filter: [
+                  isLocked ? "blur(8px)" : "",
+                  displayFilter ?? "",
+                ].filter(Boolean).join(" ") || undefined,
+                pointerEvents: isLocked ? "none" : "auto",
+                transition: "filter 0.3s",
+              }}
             >
               <Desktop />
             </motion.div>

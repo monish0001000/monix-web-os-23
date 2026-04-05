@@ -306,6 +306,32 @@ function TaskManagerIcon() {
   );
 }
 
+function SettingsIcon() {
+  return (
+    <svg viewBox="0 0 36 36" width="36" height="36" fill="none">
+      <defs>
+        <linearGradient id="stBg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#001428" />
+          <stop offset="100%" stopColor="#00060f" />
+        </linearGradient>
+        <radialGradient id="stGlow" cx="50%" cy="50%" r="55%">
+          <stop offset="0%" stopColor="#00d4ff" stopOpacity="0.5" />
+          <stop offset="100%" stopColor="#00d4ff" stopOpacity="0" />
+        </radialGradient>
+      </defs>
+      <rect width="36" height="36" rx="6" fill="url(#stBg)" stroke="#002244" strokeWidth="0.8"/>
+      <circle cx="18" cy="18" r="10" fill="url(#stGlow)" opacity="0.3"/>
+      {/* Gear outer */}
+      <path
+        d="M18 10.5 L19.5 8.5 L21.5 9.5 L21.5 11.5 C22.5 11.9 23.4 12.5 24.1 13.2 L26 12.8 L27.3 14.6 L26 16.2 C26.2 16.8 26.3 17.4 26.3 18 C26.3 18.6 26.2 19.2 26 19.8 L27.3 21.4 L26 23.2 L24.1 22.8 C23.4 23.5 22.5 24.1 21.5 24.5 L21.5 26.5 L19.5 27.5 L18 25.5 L16.5 27.5 L14.5 26.5 L14.5 24.5 C13.5 24.1 12.6 23.5 11.9 22.8 L10 23.2 L8.7 21.4 L10 19.8 C9.8 19.2 9.7 18.6 9.7 18 C9.7 17.4 9.8 16.8 10 16.2 L8.7 14.6 L10 12.8 L11.9 13.2 C12.6 12.5 13.5 11.9 14.5 11.5 L14.5 9.5 L16.5 8.5 Z"
+        stroke="#00d4ff" strokeWidth="1.2" fill="none" opacity="0.7"
+      />
+      <circle cx="18" cy="18" r="3.5" stroke="#00d4ff" strokeWidth="1.5" fill="none" opacity="0.9"/>
+      <circle cx="18" cy="18" r="1.5" fill="#00d4ff" opacity="0.85"/>
+    </svg>
+  );
+}
+
 function CykryptIcon() {
   return (
     <svg viewBox="0 0 36 36" width="36" height="36" fill="none">
@@ -377,6 +403,7 @@ const ICONS_COL2 = [
   { id: "threatmodeler",label: "Threat Modeler",icon: <ThreatModelerIcon />,  window: "threatmodeler"},
   { id: "cykrypt",      label: "CYKRYPT",        icon: <CykryptIcon />,        window: "cykrypt"      },
   { id: "taskmanager",  label: "Sys Monitor",   icon: <TaskManagerIcon />,    window: "taskmanager"  },
+  { id: "settings",     label: "Settings",      icon: <SettingsIcon />,       window: "settings"     },
 ];
 
 function IconItem({

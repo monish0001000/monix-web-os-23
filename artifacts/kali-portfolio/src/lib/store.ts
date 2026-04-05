@@ -22,6 +22,8 @@ interface OSState {
   wallpapers: string[];
   defaultWallpaper: string;
   osVolume: number;
+  brightness: number;
+  warmth: number;
 
   setLocked: (locked: boolean) => void;
   setTaskbarPosition: (pos: TaskbarPosition) => void;
@@ -30,6 +32,8 @@ interface OSState {
   resetWallpaper: () => void;
   setDefaultWallpaper: (path: string) => void;
   setOsVolume: (vol: number) => void;
+  setBrightness: (val: number) => void;
+  setWarmth: (val: number) => void;
 }
 
 export const useOSStore = create<OSState>((set) => ({
@@ -40,6 +44,8 @@ export const useOSStore = create<OSState>((set) => ({
   wallpapers: WALLPAPERS,
   defaultWallpaper: DEFAULT_WALLPAPER,
   osVolume: 75,
+  brightness: 100,
+  warmth: 0,
 
   setLocked: (locked) => set({ isLocked: locked }),
   setTaskbarPosition: (pos) => set({ taskbarPosition: pos }),
@@ -66,4 +72,6 @@ export const useOSStore = create<OSState>((set) => ({
     set({ defaultWallpaper: path, currentWallpaper: path }),
 
   setOsVolume: (vol) => set({ osVolume: Math.max(0, Math.min(100, vol)) }),
+  setBrightness: (val) => set({ brightness: Math.max(0, Math.min(150, val)) }),
+  setWarmth: (val) => set({ warmth: Math.max(0, Math.min(50, val)) }),
 }));

@@ -17,6 +17,7 @@ import ThreatModelerApp from "./ThreatModelerApp";
 import ChessApp from "./ChessApp";
 import CykryptApp from "./CykryptApp";
 import TaskManagerApp from "./TaskManagerApp";
+import SettingsApp from "./SettingsApp";
 import RightClickMenu from "./RightClickMenu";
 import { useOSStore } from "@/lib/store";
 
@@ -42,6 +43,7 @@ const WINDOW_LABELS: Record<string, string> = {
   chess:           "Monix Grandmaster Chess",
   cykrypt:         "CYKRYPT — CTF Arena",
   taskmanager:     "System Monitor",
+  settings:        "Settings",
 };
 
 interface SelectionBox {
@@ -189,6 +191,7 @@ export default function Desktop() {
       chess:           { x: window.innerWidth / 2 - 390, y: window.innerHeight / 2 - 265 },
       cykrypt:         { x: window.innerWidth / 2 - 490, y: window.innerHeight / 2 - 320 },
       taskmanager:     { x: window.innerWidth / 2 - 330, y: window.innerHeight / 2 - 260 },
+      settings:        { x: window.innerWidth / 2 - 390, y: window.innerHeight / 2 - 280 },
     };
     return offsets[type] ?? { x: 120, y: 60 };
   };
@@ -469,6 +472,18 @@ export default function Desktop() {
             initialX={getInitialPosition("taskmanager").x}
             initialY={getInitialPosition("taskmanager").y}
             zIndex={getWin("taskmanager")!.zIndex}
+          />
+        )}
+        {getWin("settings") && !getWin("settings")!.minimized && (
+          <SettingsApp
+            key="settings"
+            onClose={() => handleCloseWindow("settings")}
+            onMinimize={() => handleMinimizeWindow("settings")}
+            isActive={activeWindow === "settings"}
+            onFocus={() => bringToFront("settings")}
+            initialX={getInitialPosition("settings").x}
+            initialY={getInitialPosition("settings").y}
+            zIndex={getWin("settings")!.zIndex}
           />
         )}
       </AnimatePresence>

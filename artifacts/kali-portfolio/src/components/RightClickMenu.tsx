@@ -81,6 +81,17 @@ export default function RightClickMenu({ x, y, onClose, onOpenWindow, onOpenWall
       >
         About This System
       </div>
+
+      <div className="border-t border-white/10 my-1" />
+
+      {/* 6. Settings */}
+      <div
+        className={item + " flex items-center gap-2"}
+        onClick={() => handleAction(() => onOpenWindow("settings"))}
+      >
+        <span>⚙️</span>
+        <span>Settings</span>
+      </div>
     </motion.div>
   );
 }

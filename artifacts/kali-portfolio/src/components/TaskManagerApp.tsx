@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { Cpu, MemoryStick, Activity, X } from "lucide-react";
+import { Cpu, MemoryStick, Activity } from "lucide-react";
 import WindowChrome from "./WindowChrome";
 
 interface TaskManagerAppProps {
@@ -79,6 +79,7 @@ export default function TaskManagerApp({
   initialY,
   zIndex,
 }: TaskManagerAppProps) {
+  const [fps, setFps] = useState(60);
   const [cpu, setCpu] = useState(22);
   const [ram, setRam] = useState(4.6);
   const [processes, setProcesses] = useState(
@@ -93,6 +94,24 @@ export default function TaskManagerApp({
 
   const targetCpu = useRef(22);
   const targetRam = useRef(4.6);
+
+  useEffect(() => {
+    let frameCount = 0;
+    let lastTime = performance.now();
+    let rafId: number;
+    const measure = (now: number) => {
+      frameCount++;
+      const elapsed = now - lastTime;
+      if (elapsed >= 1000) {
+        setFps(Math.round((frameCount * 1000) / elapsed));
+        frameCount = 0;
+        lastTime = now;
+      }
+      rafId = requestAnimationFrame(measure);
+    };
+    rafId = requestAnimationFrame(measure);
+    return () => cancelAnimationFrame(rafId);
+  }, []);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -213,8 +232,29 @@ export default function TaskManagerApp({
               </motion.span>
             </div>
             <GaugeBar value={cpu} max={100} color={cpuColor} glowColor={`${cpuColor}66`} />
-            <div style={{ fontSize: 9, color: "rgba(255,255,255,0.25)", letterSpacing: "0.08em" }}>
-              8-CORE · MONIX ARCH X86_64
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div style={{ fontSize: 9, color: "rgba(255,255,255,0.25)", letterSpacing: "0.08em" }}>
+                8-CORE · MONIX ARCH X86_64
+              </div>
+              <motion.div
+                key={fps}
+                initial={{ opacity: 0.5 }}
+                animate={{ opacity: 1 }}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 4,
+                  fontFamily: "monospace",
+                  fontSize: 10,
+                  fontWeight: 700,
+                  color: "#00ff88",
+                  textShadow: "0 0 8px rgba(0,255,136,0.8)",
+                  letterSpacing: "0.05em",
+                }}
+              >
+                <span style={{ fontSize: 8, color: "rgba(0,255,136,0.5)" }}>WEB FPS</span>
+                {fps}
+              </motion.div>
             </div>
           </div>
 

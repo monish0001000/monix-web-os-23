@@ -20,6 +20,13 @@ const SYSTEM_TOOLS = [
     color: "#00ff88",
     bg: "rgba(0,255,136,0.08)",
   },
+  {
+    id: "settings",
+    label: "Settings",
+    icon: <Settings size={22} strokeWidth={1.6} />,
+    color: "#00d4ff",
+    bg: "rgba(0,212,255,0.08)",
+  },
 ];
 
 const GAMES = [

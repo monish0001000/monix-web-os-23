@@ -1,0 +1,49 @@
+@workspace We are building a world-class, premium "Settings" application for MONIX OS, integrating system-wide display filters, and polishing existing core apps. Please act as an Elite UI/UX Designer and System Architect. Execute the following steps:
+
+1. Global State & Filters (Store.ts & Desktop.tsx / App.tsx):
+
+Update our Zustand store to include: brightness (default 100), warmth (default 0), and wallpaper (existing).
+
+In the main OS container (e.g., Desktop.tsx or App.tsx), apply a global CSS filter or overlay based on these values. Example: filter: brightness(${brightness}%) sepia(${warmth}%). Ensure this overlay spans the entire screen but allows pointer events to pass through (pointer-events-none for overlays).
+
+2. Task Manager FPS Patch (TaskManagerApp.tsx):
+
+Update the CPU section to include a real-time "WEB FPS" counter. Use requestAnimationFrame to calculate the current frames per second (e.g., targeting 60 FPS).
+
+Display it prominently next to the CPU percentage with a glowing green neon color.
+
+3. Desktop Context Menu Update:
+
+Update the Desktop's right-click context menu. Add a divider line at the bottom, and add "⚙️ Settings" as the final option. When clicked, it must open the new SettingsApp.
+
+4. The "World-Class" Settings App (SettingsApp.tsx):
+
+Create a new window component. Ensure it has a sidebar layout (Left: Navigation, Right: Content).
+
+Aesthetic: Deep dark cyberpunk (bg-[#050505]). Use extreme glassmorphism (bg-white/[0.03] backdrop-blur-2xl border-white/[0.05]).
+
+Sidebar Tabs: "Personalization", "Display", "System Info". Active tabs should have a glowing cyan left-border and slight gradient background.
+
+Tab 1: Personalization (Wallpapers): Move our existing wallpaper selection logic here. Display sleek, hover-animated thumbnails of available wallpapers. When clicked, update the global store.
+
+Tab 2: Display: >   * Create two highly styled, custom Cyberpunk range sliders.
+
+Slider 1: Brightness (0% to 150%). Accent color: White/Cyan.
+
+Slider 2: Night Mode / Warmth (0% to 50%). Accent color: Orange/Amber.
+
+Update the Zustand store in real-time as the user drags the sliders.
+
+Tab 3: System Info (About): >   * Create a breathtaking "Hacker Terminal" style info sheet.
+
+Huge glowing title: MONIX OS v1.0.0
+
+System Type: WEB-OPERATING SYSTEM
+
+Architecture: React / TypeScript Core
+
+Developer: MONISH (Make this name pulse or glow with a golden/cyan gradient).
+
+Add a mock "Hardware Specs" block showing fake CPU cores and simulated OS uptime.
+
+Ensure the UI transitions smoothly (fade-ins between tabs) and the application registers perfectly in the OS ecosystem.

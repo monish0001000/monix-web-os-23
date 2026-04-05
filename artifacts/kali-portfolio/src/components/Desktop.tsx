@@ -61,7 +61,7 @@ export default function Desktop() {
   const [selectedIcon, setSelectedIcon] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [showGamesTip, setShowGamesTip] = useState(true);
+  const [showGamesTip, setShowGamesTip] = useState(false);
   const [selectionBox, setSelectionBox] = useState<SelectionBox>({
     startX: 0, startY: 0, endX: 0, endY: 0, isVisible: false,
   });
@@ -80,8 +80,23 @@ export default function Desktop() {
   }, []);
 
   useEffect(() => {
-    const t = setTimeout(() => setShowGamesTip(false), 8000);
-    return () => clearTimeout(t);
+    const showT = setTimeout(() => {
+      setShowGamesTip(true);
+      const hideT = setTimeout(() => setShowGamesTip(false), 8000);
+      return () => clearTimeout(hideT);
+    }, 10000);
+    return () => clearTimeout(showT);
+  }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.shiftKey && e.key === "Escape") {
+        e.preventDefault();
+        handleOpenWindow("taskmanager");
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
   }, []);
 
   const bringToFront = (id: string) => {
@@ -490,6 +505,7 @@ export default function Desktop() {
             initialX={getInitialPosition("settings").x}
             initialY={getInitialPosition("settings").y}
             zIndex={getWin("settings")!.zIndex}
+            onOpenTaskManager={() => handleOpenWindow("taskmanager")}
           />
         )}
       </AnimatePresence>

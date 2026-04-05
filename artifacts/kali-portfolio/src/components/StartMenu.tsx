@@ -14,13 +14,6 @@ interface StartMenuProps {
 
 const SYSTEM_TOOLS = [
   {
-    id: "taskmanager",
-    label: "Sys Monitor",
-    icon: <Activity size={22} strokeWidth={1.6} />,
-    color: "#00ff88",
-    bg: "rgba(0,255,136,0.08)",
-  },
-  {
     id: "settings",
     label: "Settings",
     icon: <Settings size={22} strokeWidth={1.6} />,

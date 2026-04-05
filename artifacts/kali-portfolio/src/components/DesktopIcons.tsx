@@ -421,9 +421,9 @@ function ThreatModelerIcon() {
 }
 
 const ICONS_COL1 = [
+  { id: "home",       label: "Home",        icon: <HomeIcon />,       window: "files"     },
   { id: "trash",      label: "Trash",       icon: <TrashIcon />,      window: "trash"     },
   { id: "filesystem", label: "File System", icon: <FileSystemIcon />, window: "files"     },
-  { id: "home",       label: "Home",        icon: <HomeIcon />,       window: "files"     },
   { id: "github",     label: "GitHub",      icon: <GitHubIcon />,     window: "github"    },
   { id: "portfolio",  label: "Portfolio",   icon: <PortfolioIcon />,  window: "portfolio" },
   { id: "browser",    label: "Browser",     icon: <BrowserIcon />,    window: "browser"   },
@@ -437,7 +437,6 @@ const ICONS_COL2 = [
   { id: "codestudio",   label: "Code Studio",   icon: <CodeStudioIcon />,     window: "codestudio"   },
   { id: "threatmodeler",label: "Threat Modeler",icon: <ThreatModelerIcon />,  window: "threatmodeler"},
   { id: "cykrypt",      label: "CYKRYPT",        icon: <CykryptIcon />,        window: "cykrypt"      },
-  { id: "taskmanager",  label: "Sys Monitor",   icon: <TaskManagerIcon />,    window: "taskmanager"  },
   { id: "settings",     label: "Settings",      icon: <SettingsIcon />,       window: "settings"     },
 ];
 

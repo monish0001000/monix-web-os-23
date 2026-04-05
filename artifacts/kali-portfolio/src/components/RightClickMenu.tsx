@@ -37,16 +37,7 @@ export default function RightClickMenu({ x, y, onClose, onOpenWindow, onOpenWall
         zIndex: 200,
       }}
     >
-      {/* 1. Change Wallpaper */}
-      <div
-        className={item + " flex items-center justify-between"}
-        onClick={() => handleAction(onOpenWallpaperPicker)}
-      >
-        <span>Change Wallpaper…</span>
-        <span style={{ fontSize: 10, color: "rgba(255,255,255,0.35)" }}>▸</span>
-      </div>
-
-      {/* 2. Refresh Desktop */}
+      {/* 1. Refresh Desktop */}
       <div
         className={item}
         onClick={() => handleAction(onRefresh)}

@@ -1,0 +1,39 @@
+@workspace We need to fix the global cursor rendering bug and completely overhaul the existing FilesApp to act as a dual-system: a Virtual File System (VFS) and a highly efficient Telegram-backed Cloud Drive using Environment Variables. Please act as a Senior Full-Stack Developer and execute this:
+
+1. Revert & Fix Mouse Cursor (App.tsx & SettingsApp.tsx):
+
+The Bug: The dynamically generated SVG cursor is turning black and buggy.
+
+The Fix: Remove the SVG data URI generation entirely. Revert the global cursor to use strictly native CSS cursor properties (e.g., default, crosshair, text, pointer). Do not attempt to inject custom colors into the cursor. Let it fall back to the user's native host OS cursor styling for maximum stability and performance.
+
+2. The Ultimate FilesApp.tsx Restructure:
+
+Open our existing FilesApp.tsx (or Home.tsx if that's what it's called).
+
+Transform it into a dual-tab application: Tab 1: Local VFS | Tab 2: Cloud Drive.
+
+Aesthetic: Deep dark hacker theme (bg-[#050505]), glassmorphic panels, monospace fonts, with Cyan/Hacker Green accents.
+
+3. Tab 1: Local System (Virtual File System):
+
+Create a robust simulated local file system state. Use a flat array of objects (e.g., { id, name, type: 'folder'|'file', parentId }) and derive the current folder view.
+
+Include default folders: root, projects, tools, top_secret.
+
+UI must support: Double-clicking folders to navigate, a breadcrumb path (e.g., root / projects /), and a clean grid/list view of icons (lucide-react icons like Folder, FileText).
+
+4. Tab 2: Store in Cloud (Telegram Backend):
+
+Upload UI: Create a premium drag-and-drop zone. Text: "DECRYPT & UPLOAD TO SECURE CLOUD". Add a prominent, glowing upload button.
+
+Secure API Logic: When a file is selected, use the native fetch API and FormData to send it to Telegram.
+
+CRITICAL: Use import.meta.env.VITE_TELEGRAM_BOT_TOKEN and import.meta.env.VITE_TELEGRAM_CHAT_ID to construct the endpoint: https://api.telegram.org/bot${import.meta.env.VITE_TELEGRAM_BOT_TOKEN}/sendDocument. Do NOT hardcode the tokens.
+
+Pass the chat_id and the document (the file) in the FormData. Add a caption: 🚨 MONIX OS CLOUD UPLOAD: ${file.name}.
+
+Error Handling & UX: Implement robust try/catch logic. Show a dynamic progress/status message ("Encrypting payload...", "Uploading to secure server..."). If successful, show a glowing green success toast. If it fails, show a red error toast.
+
+Cloud Registry (Simulated Downloads): Below the upload zone, keep a simple local state array (or localStorage) of files successfully uploaded during this session, displayed in a sleek table with a "Cloud Sync Verified" badge.
+
+Please implement this flawlessly, ensuring the UI is highly responsive and the API call is optimized.

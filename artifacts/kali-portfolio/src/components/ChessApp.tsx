@@ -1,5 +1,5 @@
 import WindowChrome from "./WindowChrome";
-import ChessGame from "./ChessGame";
+import MonixChess from "./MonixChess";
 
 interface ChessAppProps {
   onClose: () => void;
@@ -23,12 +23,12 @@ export default function ChessApp({
       onFocus={onFocus}
       initialX={initialX}
       initialY={initialY}
-      width={780}
-      height={530}
+      width={1100}
+      height={700}
       zIndex={zIndex}
     >
-      <div className="w-full h-full overflow-hidden">
-        <ChessGame />
+      <div className="w-full h-full overflow-auto">
+        <MonixChess />
       </div>
     </WindowChrome>
   );

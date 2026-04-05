@@ -1,0 +1,1420 @@
+import {
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+  useMemo,
+  memo,
+} from "react";
+import React from "react";
+import { Chess, Square, PieceSymbol, Color } from "chess.js";
+import {
+  RotateCcw,
+  Lightbulb,
+  Flag,
+  RefreshCw,
+  LogOut,
+  Clock,
+  Trophy,
+  ChevronRight,
+  ChevronLeft,
+  Sun,
+  Moon,
+  ChevronDown,
+  ChevronUp,
+  Search,
+  X,
+} from "lucide-react";
+import AIWorker from "./chess.worker?worker";
+
+// ─── Theme System ────────────────────────────────────────────────────────────────
+type Theme = "dark" | "light";
+
+interface ThemeConfig {
+  // Backgrounds
+  bg: string;
+  surface: string;
+  surfaceBorder: string;
+  panel: string;
+  // Text
+  textPrimary: string;
+  textSecondary: string;
+  textMuted: string;
+  textAccent: string;
+  // Board
+  squareLight: string;
+  squareDark: string;
+  // Accents
+  accent: string;
+  accentDim: string;
+  accentBg: string;
+  accentBorder: string;
+  accentText: string;
+  accentHover: string;
+  // Enemy (black pieces in dark = pink, in light = charcoal)
+  enemy: string;
+  enemyBg: string;
+  // Controls
+  ctrlBorder: string;
+  ctrlText: string;
+  ctrlHoverBorder: string;
+  ctrlHoverText: string;
+  // Piece fills
+  wFill: string;
+  wStroke: string;
+  bFill: string;
+  bStroke: string;
+  // Highlights
+  selectedBg: string;
+  selectedBorder: string;
+  legalDot: string;
+  legalCapture: string;
+  hintFrom: string;
+  hintTo: string;
+  lastMoveBg: string;
+  lastMoveBorder: string;
+  checkBg: string;
+  checkBorder: string;
+  // Grid bg lines
+  gridLine: string;
+  // Timer active/inactive
+  timerActive: string;
+  timerInactive: string;
+}
+
+const DARK_THEME: ThemeConfig = {
+  bg: "#050505",
+  surface: "#0a0a14",
+  surfaceBorder: "#1a1a2e",
+  panel: "#080810",
+  textPrimary: "#e0f0ff",
+  textSecondary: "#7090b0",
+  textMuted: "#304050",
+  textAccent: "#00e5ff",
+  squareLight: "#0d2233",
+  squareDark: "#071525",
+  accent: "#00e5ff",
+  accentDim: "#005566",
+  accentBg: "rgba(0,229,255,0.08)",
+  accentBorder: "rgba(0,229,255,0.5)",
+  accentText: "#00e5ff",
+  accentHover: "rgba(0,229,255,0.15)",
+  enemy: "#ff0080",
+  enemyBg: "rgba(255,0,128,0.08)",
+  ctrlBorder: "#1e2a35",
+  ctrlText: "#607080",
+  ctrlHoverBorder: "#00e5ff88",
+  ctrlHoverText: "#00e5ff",
+  wFill: "#ddeeff",
+  wStroke: "#00e5ff",
+  bFill: "#100820",
+  bStroke: "#ff0080",
+  selectedBg: "rgba(0,229,255,0.25)",
+  selectedBorder: "rgba(0,229,255,0.7)",
+  legalDot: "rgba(0,229,255,0.65)",
+  legalCapture: "rgba(0,229,255,0.55)",
+  hintFrom: "rgba(255,200,0,0.3)",
+  hintTo: "rgba(255,200,0,0.2)",
+  lastMoveBg: "rgba(255,160,0,0.22)",
+  lastMoveBorder: "rgba(255,160,0,0.6)",
+  checkBg: "rgba(255,40,40,0.4)",
+  checkBorder: "#ff2222",
+  gridLine: "rgba(0,229,255,0.03)",
+  timerActive: "#00e5ff",
+  timerInactive: "#203040",
+};
+
+const LIGHT_THEME: ThemeConfig = {
+  bg: "#f0f2f5",
+  surface: "#ffffff",
+  surfaceBorder: "#dde3ec",
+  panel: "#f8fafc",
+  textPrimary: "#1a2535",
+  textSecondary: "#4a6080",
+  textMuted: "#a0b0c0",
+  textAccent: "#1a7fcc",
+  squareLight: "#e8eff7",
+  squareDark: "#b0c8de",
+  accent: "#1a7fcc",
+  accentDim: "#c0daf0",
+  accentBg: "rgba(26,127,204,0.08)",
+  accentBorder: "rgba(26,127,204,0.45)",
+  accentText: "#1a7fcc",
+  accentHover: "rgba(26,127,204,0.14)",
+  enemy: "#1a2535",
+  enemyBg: "rgba(26,37,53,0.07)",
+  ctrlBorder: "#ccd6e0",
+  ctrlText: "#607080",
+  ctrlHoverBorder: "#1a7fcc",
+  ctrlHoverText: "#1a7fcc",
+  wFill: "#f5f8ff",
+  wStroke: "#1a7fcc",
+  bFill: "#1a2535",
+  bStroke: "#0a1220",
+  selectedBg: "rgba(26,127,204,0.2)",
+  selectedBorder: "rgba(26,127,204,0.7)",
+  legalDot: "rgba(26,127,204,0.55)",
+  legalCapture: "rgba(26,127,204,0.5)",
+  hintFrom: "rgba(220,150,0,0.25)",
+  hintTo: "rgba(220,150,0,0.15)",
+  lastMoveBg: "rgba(200,130,0,0.18)",
+  lastMoveBorder: "rgba(200,130,0,0.55)",
+  checkBg: "rgba(220,40,40,0.25)",
+  checkBorder: "#cc2222",
+  gridLine: "rgba(0,0,0,0.03)",
+  timerActive: "#1a7fcc",
+  timerInactive: "#c8d8e8",
+};
+
+// ─── SVG Piece renderer — memoized & theme-aware ─────────────────────────────
+const PieceSVG = memo(function PieceSVG({
+  type,
+  color,
+  th,
+}: {
+  type: PieceSymbol;
+  color: "w" | "b";
+  th: ThemeConfig;
+}) {
+  const fill = color === "w" ? th.wFill : th.bFill;
+  const stroke = color === "w" ? th.wStroke : th.bStroke;
+  const glow = color === "w"
+    ? th === DARK_THEME ? "drop-shadow(0 0 5px rgba(0,229,255,0.7))" : "drop-shadow(0 1px 3px rgba(26,127,204,0.4))"
+    : th === DARK_THEME ? "drop-shadow(0 0 5px rgba(255,0,128,0.7))" : "drop-shadow(0 1px 3px rgba(0,0,0,0.5))";
+
+  const commonProps = {
+    viewBox: "0 0 45 45" as const,
+    style: { width: "100%", height: "100%", filter: glow },
+  };
+
+  const paths: Record<PieceSymbol, React.ReactElement> = {
+    k: (
+      <svg {...commonProps}>
+        <g fill={fill} stroke={stroke} strokeWidth="1.5" strokeLinejoin="round">
+          <path d="M22.5 11.63V6M20 8h5" strokeLinecap="round" />
+          <path d="M22.5 25s4.5-7.5 3-10.5c0 0-1-2.5-3-2.5s-3 2.5-3 2.5c-1.5 3 3 10.5 3 10.5" />
+          <path d="M11.5 37c5.5 3.5 15.5 3.5 21 0v-7s9-4.5 6-10.5c-4-6.5-13.5-3.5-16 4V17s.5-1.5-2-1.5-2 1.5-2 1.5v6.5c-2.5-7.5-12-10.5-16-4-3 6 5 10 5 10V37z" />
+          <path d="M11.5 30c5.5-3 15.5-3 21 0M11.5 33.5c5.5-3 15.5-3 21 0M11.5 37c5.5-3 15.5-3 21 0" strokeLinecap="round" />
+        </g>
+      </svg>
+    ),
+    q: (
+      <svg {...commonProps}>
+        <g fill={fill} stroke={stroke} strokeWidth="1.5" strokeLinejoin="round">
+          <circle cx="6" cy="12" r="2.75" />
+          <circle cx="14" cy="9" r="2.75" />
+          <circle cx="22.5" cy="8" r="2.75" />
+          <circle cx="31" cy="9" r="2.75" />
+          <circle cx="39" cy="12" r="2.75" />
+          <path d="M9 26c8.5-8.5 15.5-8.5 27 0l2.5-12.5L31 25l-.3-14.1-8.2 13.4-8.2-13.5L14 25 6.5 13.5 9 26zM9 26c0 2 1.5 2 2.5 4 1 1.5 1 1 .5 3.5-1.5 1-1.5 2.5-1.5 2.5-1.5 1.5.5 2.5.5 2.5 6.5 1 16.5 1 23 0 0 0 1.5-1 0-2.5 0 0 .5-1.5-1-2.5-.5-2.5-.5-2 .5-3.5 1-2 2.5-2 2.5-4" />
+          <path d="M11.5 30c3.5-1 18.5-1 22 0" strokeLinecap="round" />
+          <path d="M12 33.5c4-1.5 17-1.5 21 0" strokeLinecap="round" />
+        </g>
+      </svg>
+    ),
+    r: (
+      <svg {...commonProps}>
+        <g fill={fill} stroke={stroke} strokeWidth="1.5" strokeLinejoin="round">
+          <path d="M9 39h27v-3H9v3zM12 36v-4h21v4H12zM11 14V9h4v2h5V9h5v2h5V9h4v5" />
+          <path d="M34 14l-3 3H14l-3-3" />
+          <path d="M31 17v12.5H14V17" />
+          <path d="M31 29.5l1.5 2.5h-20l1.5-2.5" />
+          <path d="M11 14h23" strokeLinecap="round" />
+        </g>
+      </svg>
+    ),
+    b: (
+      <svg {...commonProps}>
+        <g fill={fill} stroke={stroke} strokeWidth="1.5" strokeLinejoin="round">
+          <g fill="none" strokeLinecap="round">
+            <path d="M9 36c3.39-.97 10.11.43 13.5-2 3.39 2.43 10.11 1.03 13.5 2" />
+            <path d="M15 32c2.5 2.5 12.5 2.5 15 0 .5-1.5 0-2 0-2 0-2.5-2.5-4-2.5-4 5.5-1.5 6-11.5-5-15.5-11 4-10.5 14-5 15.5 0 0-2.5 1.5-2.5 4 0 0-.5.5 0 2z" />
+            <path d="M25 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z" />
+          </g>
+          <path d="M17.5 26h10M15 30h15" strokeLinecap="round" />
+        </g>
+      </svg>
+    ),
+    n: (
+      <svg {...commonProps}>
+        <g fill={fill} stroke={stroke} strokeWidth="1.5" strokeLinejoin="round">
+          <path d="M22 10c10.5 1 16.5 8 16 29H15c0-9 10-6.5 8-21" />
+          <path d="M24 18c.38 5.12-5.39 6.37-8 9-3 3.5-5 7-4.5 14.5" />
+          <path d="M9.5 25.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0z" />
+          <path d="M14.933 15.75a5 5 0 0 1-2.233 6.59 5 5 0 0 1-6.59-2.233 5 5 0 0 1 2.233-6.59 5 5 0 0 1 6.59 2.233z" strokeWidth="1.5" />
+        </g>
+      </svg>
+    ),
+    p: (
+      <svg {...commonProps}>
+        <g fill={fill} stroke={stroke} strokeWidth="1.5" strokeLinejoin="round">
+          <path d="M22.5 9c-2.21 0-4 1.79-4 4 0 .89.29 1.71.78 2.38C17.33 16.5 16 18.59 16 21c0 2.03.94 3.84 2.41 5.03-3 1.06-7.41 5.55-7.41 13.47h23c0-7.92-4.41-12.41-7.41-13.47 1.47-1.19 2.41-3 2.41-5.03 0-2.41-1.33-4.5-3.28-5.62.49-.67.78-1.49.78-2.38 0-2.21-1.79-4-4-4z" />
+        </g>
+      </svg>
+    ),
+  };
+  return paths[type];
+});
+
+// ─── Difficulty Config ────────────────────────────────────────────────────────
+// Each level builds on the previous: depth increases, randomness drops,
+// evaluation quality improves, and ultimately Monish activates quiescence + full PST.
+// randomRate  = probability of playing a random legal move instead of searching
+// moveNoise   = centipawn noise added to root scores (humanises mid-level AI)
+// usePST      = whether positional tables are used in evaluation
+// useQuiescence = extend search at tactical positions (avoids horizon blunders)
+// aggressive  = bonus weight on queens & rooks (Monish king-hunt style)
+// timeMs      = search time budget for iterative deepening
+const DIFFICULTIES = [
+  // ── Beginner tiers ────────────────────────────────────────────────────────
+  {
+    name: "Easy",
+    depth: 1, timeMs: 150,
+    randomRate: 0.60, moveNoise: 0,
+    usePST: false, useQuiescence: false, aggressive: false,
+    hex: "#4ade80",
+    tip: "Plays randomly 60% of the time",
+  },
+  {
+    name: "Medium",
+    depth: 2, timeMs: 300,
+    randomRate: 0.30, moveNoise: 80,
+    usePST: false, useQuiescence: false, aggressive: false,
+    hex: "#86efac",
+    tip: "Thinks 2 moves ahead with frequent blunders",
+  },
+  {
+    name: "Hard",
+    depth: 2, timeMs: 400,
+    randomRate: 0.10, moveNoise: 50,
+    usePST: true, useQuiescence: false, aggressive: false,
+    hex: "#fbbf24",
+    tip: "Rare blunders, basic positional play",
+  },
+  // ── Intermediate tiers ───────────────────────────────────────────────────
+  {
+    name: "Expert",
+    depth: 3, timeMs: 500,
+    randomRate: 0, moveNoise: 35,
+    usePST: true, useQuiescence: false, aggressive: false,
+    hex: "#f97316",
+    tip: "3-ply search with slight evaluation noise",
+  },
+  {
+    name: "Master",
+    depth: 3, timeMs: 700,
+    randomRate: 0, moveNoise: 12,
+    usePST: true, useQuiescence: false, aggressive: false,
+    hex: "#ef4444",
+    tip: "Solid 3-ply, minimal imprecision",
+  },
+  {
+    name: "Legend",
+    depth: 4, timeMs: 900,
+    randomRate: 0, moveNoise: 0,
+    usePST: true, useQuiescence: false, aggressive: false,
+    hex: "#a855f7",
+    tip: "Clean 4-ply with full positional evaluation",
+  },
+  // ── Elite tiers ──────────────────────────────────────────────────────────
+  {
+    name: "Grandmaster",
+    depth: 4, timeMs: 1200,
+    randomRate: 0, moveNoise: 0,
+    usePST: true, useQuiescence: true, aggressive: false,
+    hex: "#00e5ff",
+    tip: "4-ply + quiescence — won't miss hanging pieces",
+  },
+  {
+    name: "God",
+    depth: 5, timeMs: 1800,
+    randomRate: 0, moveNoise: 0,
+    usePST: true, useQuiescence: true, aggressive: false,
+    hex: "#ff0080",
+    tip: "5-ply deep search with quiescence",
+  },
+  // ── Maximum difficulty ────────────────────────────────────────────────────
+  {
+    name: "Monish",
+    depth: 6, timeMs: 2500,
+    randomRate: 0, moveNoise: 0,
+    usePST: true, useQuiescence: true, aggressive: true,
+    hex: "#ff6600",
+    tip: "Max depth · quiescence · aggressive king-hunting",
+  },
+];
+
+
+type GameMode = "pve" | "pvp";
+type PlayerColor = "w" | "b";
+type GamePhase = "setup" | "playing" | "over" | "review";
+
+interface GameState {
+  phase: GamePhase;
+  mode: GameMode;
+  playerColor: PlayerColor;
+  diffIdx: number;
+  winner: string | null;
+  endReason: "checkmate" | "stalemate" | "draw" | "resign" | null;
+}
+
+// ─── Tooltip wrapper ──────────────────────────────────────────────────────────
+function Tip({ label, children }: { label: string; children: React.ReactNode }) {
+  const [show, setShow] = useState(false);
+  return (
+    <div className="relative" onMouseEnter={() => setShow(true)} onMouseLeave={() => setShow(false)}>
+      {children}
+      {show && (
+        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-[10px] font-mono whitespace-nowrap bg-black/90 text-white border border-gray-700 rounded pointer-events-none z-50">
+          {label}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Timer display ────────────────────────────────────────────────────────────
+function formatTime(secs: number) {
+  const m = Math.floor(secs / 60).toString().padStart(2, "0");
+  const s = (secs % 60).toString().padStart(2, "0");
+  return `${m}:${s}`;
+}
+
+// ─── Captured pieces panel ────────────────────────────────────────────────────
+// Piece values used for material-advantage display only (AI logic lives in the worker)
+const PIECE_VALUES: Record<PieceSymbol, number> = {
+  p: 100, n: 320, b: 330, r: 500, q: 900, k: 20000,
+};
+
+const CapturedPanel = memo(function CapturedPanel({
+  pieces, label, th,
+}: { pieces: PieceSymbol[]; label: string; th: ThemeConfig }) {
+  const grouped = useMemo(() => {
+    const g: Partial<Record<PieceSymbol, number>> = {};
+    pieces.forEach((p) => { g[p] = (g[p] ?? 0) + 1; });
+    return (["q","r","b","n","p"] as PieceSymbol[]).filter((t) => g[t]).map((t) => ({ type: t, count: g[t]! }));
+  }, [pieces]);
+
+  const material = useMemo(() => pieces.reduce((s, p) => s + PIECE_VALUES[p], 0), [pieces]);
+  const pieceColor = label.includes("WHITE") ? "b" : "w";
+
+  return (
+    <div style={{ background: th.surface, border: `1px solid ${th.surfaceBorder}` }} className="rounded-sm p-2.5">
+      <div className="flex items-center justify-between mb-1.5">
+        <span style={{ color: th.textMuted }} className="text-[10px] font-mono tracking-widest uppercase">{label}</span>
+        {material > 0 && (
+          <span style={{ color: th.textAccent }} className="text-[10px] font-mono">+{Math.round(material / 100)}</span>
+        )}
+      </div>
+      <div className="flex flex-wrap gap-1 min-h-[20px]">
+        {grouped.length === 0 ? (
+          <span style={{ color: th.textMuted }} className="text-[10px] font-mono">—</span>
+        ) : (
+          grouped.map(({ type, count }) => (
+            <div key={type} className="flex items-center gap-0.5">
+              <div className="w-4 h-4 shrink-0">
+                <PieceSVG type={type} color={pieceColor} th={th} />
+              </div>
+              {count > 1 && (
+                <span style={{ color: th.textSecondary }} className="text-[9px] font-mono">×{count}</span>
+              )}
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  );
+});
+
+// ─── Square component (memoized) ──────────────────────────────────────────────
+const BoardSquare = memo(function BoardSquare({
+  sq, piece, isSelected, isLegal, isHintFrom, isHintTo, isCheck,
+  isLastMoveFrom, isLastMoveTo,
+  isDragTarget, isDragFrom, onClick, onDragStart, onDragOver, onDrop, onDragEnd,
+  squareBg, th,
+}: {
+  sq: Square; piece: { type: PieceSymbol; color: "w" | "b" } | null;
+  isSelected: boolean; isLegal: boolean; isHintFrom: boolean; isHintTo: boolean;
+  isCheck: boolean; isLastMoveFrom: boolean; isLastMoveTo: boolean;
+  isDragTarget: boolean; isDragFrom: boolean;
+  onClick: () => void; onDragStart: () => void; onDragOver: (e: React.DragEvent) => void;
+  onDrop: () => void; onDragEnd: () => void;
+  squareBg: string; th: ThemeConfig;
+}) {
+  return (
+    <div
+      className="relative cursor-pointer select-none"
+      style={{ backgroundColor: squareBg, aspectRatio: "1" }}
+      onClick={onClick}
+      onDragOver={onDragOver}
+      onDrop={onDrop}
+    >
+      {/* Last move highlight — rendered first so other overlays sit on top */}
+      {(isLastMoveFrom || isLastMoveTo) && !isSelected && (
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background: th.lastMoveBg,
+            border: `1.5px solid ${th.lastMoveBorder}`,
+            // slightly stronger on the destination square
+            opacity: isLastMoveTo ? 1 : 0.75,
+          }}
+        />
+      )}
+
+      {/* Selection / check / hint overlays */}
+      {isSelected && <div className="absolute inset-0 pointer-events-none" style={{ background: th.selectedBg, border: `1.5px solid ${th.selectedBorder}` }} />}
+      {isCheck && <div className="absolute inset-0 pointer-events-none animate-pulse" style={{ background: th.checkBg, border: `2px solid ${th.checkBorder}` }} />}
+      {isHintFrom && <div className="absolute inset-0 pointer-events-none" style={{ background: th.hintFrom, border: `1.5px solid rgba(255,200,0,0.6)` }} />}
+      {isHintTo && <div className="absolute inset-0 pointer-events-none" style={{ background: th.hintTo, border: `1px solid rgba(255,200,0,0.4)` }} />}
+      {isDragTarget && !isSelected && <div className="absolute inset-0 pointer-events-none" style={{ background: th.selectedBg }} />}
+
+      {/* Legal move dot */}
+      {isLegal && !piece && (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div className="w-[30%] h-[30%] rounded-full" style={{ backgroundColor: th.legalDot }} />
+        </div>
+      )}
+      {/* Legal capture ring */}
+      {isLegal && piece && (
+        <div className="absolute inset-0 pointer-events-none" style={{ border: `3px solid ${th.legalCapture}` }} />
+      )}
+
+      {/* Piece */}
+      {piece && (
+        <div
+          className="absolute inset-[4%] select-none"
+          style={{ opacity: isDragFrom ? 0.4 : 1, cursor: "grab", transition: "opacity 0.1s" }}
+          draggable
+          onDragStart={onDragStart}
+          onDragEnd={onDragEnd}
+        >
+          <PieceSVG type={piece.type} color={piece.color} th={th} />
+        </div>
+      )}
+    </div>
+  );
+});
+
+// ─── Review snapshot type ────────────────────────────────────────────────────
+interface ReviewSnap {
+  fen: string;          // board position after this move
+  san: string;          // move in SAN notation
+  moveFrom: Square;     // squares for last-move highlight
+  moveTo: Square;
+  capturedBy: "w" | "b" | null;
+  captured: PieceSymbol | null;
+}
+
+// ─── Main Component ───────────────────────────────────────────────────────────
+export default function MonixChess() {
+  const [theme, setTheme] = useState<Theme>("dark");
+  const th = theme === "dark" ? DARK_THEME : LIGHT_THEME;
+
+  const chessRef = useRef(new Chess());
+  const chess = chessRef.current;
+  const [boardKey, setBoardKey] = useState(0); // trigger re-renders efficiently
+  const [selected, setSelected] = useState<Square | null>(null);
+  const [legalMoves, setLegalMoves] = useState<Square[]>([]);
+  const [hint, setHint] = useState<{ from: Square; to: Square } | null>(null);
+  const [moveHistory, setMoveHistory] = useState<string[]>([]);
+  const [captured, setCaptured] = useState<{ w: PieceSymbol[]; b: PieceSymbol[] }>({ w: [], b: [] });
+  const [checkSquare, setCheckSquare] = useState<Square | null>(null);
+  const [isAiThinking, setIsAiThinking] = useState(false);
+  const [dragFrom, setDragFrom] = useState<Square | null>(null);
+  const [dragOver, setDragOver] = useState<Square | null>(null);
+  const [promotionPending, setPromotionPending] = useState<{ from: Square; to: Square } | null>(null);
+  const [showCheckWarning, setShowCheckWarning] = useState(false);
+  const [logExpanded, setLogExpanded] = useState(false);
+  const historyRef = useRef<HTMLDivElement>(null);
+  const reviewListRef = useRef<HTMLDivElement>(null);
+  const aiTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const aiWorker = useRef<Worker | null>(null);
+
+  // ── Last-move highlighting ────────────────────────────────────────────────
+  const [lastMove, setLastMove] = useState<{ from: Square; to: Square } | null>(null);
+
+  // ── Post-game review state ──────────────────────────────────────────────
+  // Full snapshot captured the moment the game ends
+  const [reviewSnaps, setReviewSnaps] = useState<ReviewSnap[]>([]);
+  // -1 = before any move (initial position); 0..n-1 = after snap[i]
+  const [reviewIdx, setReviewIdx] = useState(-1);
+  const reviewInitialFen = useRef<string>("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+
+
+  useEffect(() => {
+    return () => {
+      if (aiWorker.current) aiWorker.current.terminate();
+    };
+  }, []);
+
+  // Timers (seconds)
+  const [timers, setTimers] = useState({ w: 600, b: 600 }); // 10 min each
+  const timerIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const [gameState, setGameState] = useState<GameState>({
+    phase: "setup",
+    mode: "pve",
+    playerColor: "w",
+    diffIdx: 0,
+    winner: null,
+    endReason: null,
+  });
+
+  // ── Derived ────────────────────────────────────────────────────────────────
+  const diff = DIFFICULTIES[gameState.diffIdx];
+  const isFlipped = gameState.mode === "pve" && gameState.playerColor === "b";
+  const files = isFlipped ? ["h","g","f","e","d","c","b","a"] : ["a","b","c","d","e","f","g","h"];
+  const ranks = isFlipped ? [1,2,3,4,5,6,7,8] : [8,7,6,5,4,3,2,1];
+  const currentTurn = chess.turn();
+
+  // Board to display during review (derived, not stored as state)
+  const reviewBoard = useMemo(() => {
+    if (gameState.phase !== "review") return null;
+    const fen = reviewIdx < 0 ? reviewInitialFen.current : reviewSnaps[reviewIdx]?.fen;
+    if (!fen) return null;
+    try { return new Chess(fen).board(); } catch { return null; }
+  }, [gameState.phase, reviewIdx, reviewSnaps]);
+
+  // ── Timer tick ─────────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (gameState.phase !== "playing") {
+      if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+      return;
+    }
+    timerIntervalRef.current = setInterval(() => {
+      setTimers((t) => {
+        const side = currentTurn;
+        const next = { ...t, [side]: Math.max(0, t[side] - 1) };
+        if (next[side] === 0) {
+          setGameState((gs) => ({ ...gs, phase: "over", winner: side === "w" ? "BLACK" : "WHITE", endReason: "draw" }));
+        }
+        return next;
+      });
+    }, 1000);
+    return () => { if (timerIntervalRef.current) clearInterval(timerIntervalRef.current); };
+  }, [gameState.phase, currentTurn]);
+
+  // ── Sync after every chess mutation ────────────────────────────────────────
+  // lm = last move {from, to} to highlight; pass null to keep existing
+  const syncBoard = useCallback((lm?: { from: Square; to: Square } | null) => {
+    const h = chess.history({ verbose: true });
+    const cap: { w: PieceSymbol[]; b: PieceSymbol[] } = { w: [], b: [] };
+    h.forEach((m) => { if (m.captured) { if (m.color === "w") cap.w.push(m.captured as PieceSymbol); else cap.b.push(m.captured as PieceSymbol); } });
+    setCaptured(cap);
+    setMoveHistory(chess.history());
+    setBoardKey((k) => k + 1);
+    if (lm !== undefined) setLastMove(lm);
+
+    if (chess.inCheck()) {
+      const turn = chess.turn();
+      const b = chess.board();
+      outer: for (let r = 0; r < 8; r++) {
+        for (let c = 0; c < 8; c++) {
+          const p = b[r][c];
+          if (p?.type === "k" && p.color === turn) {
+            setCheckSquare((String.fromCharCode(97 + c) + (8 - r)) as Square);
+            setShowCheckWarning(true);
+            setTimeout(() => setShowCheckWarning(false), 2000);
+            break outer;
+          }
+        }
+      }
+    } else {
+      setCheckSquare(null);
+    }
+  }, [chess]);
+
+  const checkGameOver = useCallback(() => {
+    const isOver = chess.isCheckmate() || chess.isStalemate() || chess.isDraw();
+    if (!isOver) return;
+
+    // ── Snapshot the full game for the review mode ──────────────────────────
+    const verboseHistory = chess.history({ verbose: true });
+    const snaps: ReviewSnap[] = [];
+    const replayGame = new Chess();
+    for (const m of verboseHistory) {
+      replayGame.move(m);
+      snaps.push({
+        fen: replayGame.fen(),
+        san: m.san,
+        moveFrom: m.from as Square,
+        moveTo: m.to as Square,
+        capturedBy: m.captured ? m.color as "w" | "b" : null,
+        captured: m.captured ? (m.captured as PieceSymbol) : null,
+      });
+    }
+    setReviewSnaps(snaps);
+    setReviewIdx(snaps.length - 1); // start at the final position
+
+    if (chess.isCheckmate()) {
+      setGameState((gs) => ({ ...gs, phase: "over", winner: chess.turn() === "w" ? "BLACK" : "WHITE", endReason: "checkmate" }));
+    } else if (chess.isStalemate()) {
+      setGameState((gs) => ({ ...gs, phase: "over", winner: null, endReason: "stalemate" }));
+    } else if (chess.isDraw()) {
+      setGameState((gs) => ({ ...gs, phase: "over", winner: null, endReason: "draw" }));
+    }
+  }, [chess]);
+
+  // ── AI turn detection ──────────────────────────────────────────────────────
+  const isPlayerTurn = useCallback(() => {
+    if (gameState.mode === "pvp") return true;
+    return chess.turn() === gameState.playerColor;
+  }, [chess, gameState]);
+
+  const doAiMove = useCallback(() => {
+    if (chess.isGameOver() || isAiThinking) return;
+    setIsAiThinking(true);
+    setHint(null);
+    const aiColor = (gameState.playerColor === "w" ? "b" : "w") as Color;
+
+    // Reuse or lazily create the worker
+    if (!aiWorker.current) aiWorker.current = new AIWorker();
+
+    // Release thinking lock on worker error (prevents permanent freeze)
+    aiWorker.current.onerror = (err) => {
+      console.error("[AI Worker] Uncaught error:", err.message);
+      setIsAiThinking(false);
+    };
+
+    aiWorker.current.onmessage = (e) => {
+      if (e.data.messageId !== "doAiMove") return;
+      if (e.data.error) {
+        console.error("[AI Worker] Reported error:", e.data.error);
+        setIsAiThinking(false);
+        return;
+      }
+      const move = e.data.move;
+      if (move) {
+        try {
+          chess.move(move);
+          syncBoard({ from: move.from as Square, to: move.to as Square });
+          checkGameOver();
+        } catch (err) {
+          console.error("[AI] Invalid move received from worker:", move, err);
+        }
+      }
+      setIsAiThinking(false);
+    };
+
+    aiWorker.current.postMessage({
+      fen: chess.fen(),
+      depth: diff.depth,
+      aiColor,
+      messageId: "doAiMove",
+      timeMs: diff.timeMs,
+      randomRate: diff.randomRate,
+      moveNoise: diff.moveNoise,
+      usePST: diff.usePST,
+      useQuiescence: diff.useQuiescence,
+      aggressive: diff.aggressive,
+    });
+  }, [chess, diff.depth, gameState.playerColor, isAiThinking, syncBoard, checkGameOver]);
+
+  useEffect(() => {
+    if (gameState.phase === "playing" && gameState.mode === "pve" && !isPlayerTurn() && !chess.isGameOver() && !isAiThinking) {
+      // Small delay so the board renders the player's last move before the AI starts computing
+      const t = setTimeout(() => doAiMove(), 80);
+      return () => clearTimeout(t);
+    }
+    return () => { if (aiTimerRef.current) clearTimeout(aiTimerRef.current); };
+  }, [boardKey, gameState.phase, doAiMove, isAiThinking]);
+
+  useEffect(() => {
+    if (historyRef.current) historyRef.current.scrollTop = historyRef.current.scrollHeight;
+  }, [moveHistory]);
+
+  // ── Move handling ──────────────────────────────────────────────────────────
+  const handleSquareClick = useCallback((sq: Square) => {
+    if (!isPlayerTurn() || isAiThinking || gameState.phase !== "playing") return;
+    if (selected) {
+      if (legalMoves.includes(sq)) {
+        const piece = chess.get(selected);
+        const isPromo = piece?.type === "p" && ((piece.color === "w" && sq[1] === "8") || (piece.color === "b" && sq[1] === "1"));
+        if (isPromo) { setPromotionPending({ from: selected, to: sq }); setSelected(null); setLegalMoves([]); return; }
+        chess.move({ from: selected, to: sq });
+        syncBoard({ from: selected, to: sq }); checkGameOver();
+        setSelected(null); setLegalMoves([]); setHint(null);
+        return;
+      }
+      const piece = chess.get(sq);
+      if (piece && piece.color === chess.turn()) {
+        setSelected(sq);
+        setLegalMoves(chess.moves({ square: sq, verbose: true }).map((m) => m.to as Square));
+        return;
+      }
+      setSelected(null); setLegalMoves([]);
+      return;
+    }
+    const piece = chess.get(sq);
+    if (piece && piece.color === chess.turn()) {
+      setSelected(sq);
+      setLegalMoves(chess.moves({ square: sq, verbose: true }).map((m) => m.to as Square));
+    }
+  }, [chess, selected, legalMoves, isPlayerTurn, isAiThinking, gameState.phase, syncBoard, checkGameOver]);
+
+  const handleDragStart = useCallback((sq: Square) => {
+    if (!isPlayerTurn() || isAiThinking || gameState.phase !== "playing") return;
+    const piece = chess.get(sq);
+    if (!piece || piece.color !== chess.turn()) return;
+    setDragFrom(sq); setSelected(sq);
+    setLegalMoves(chess.moves({ square: sq, verbose: true }).map((m) => m.to as Square));
+  }, [chess, isPlayerTurn, isAiThinking, gameState.phase]);
+
+  const handleDrop = useCallback((sq: Square) => {
+    if (!dragFrom) { setDragFrom(null); setDragOver(null); return; }
+    if (legalMoves.includes(sq)) {
+      const piece = chess.get(dragFrom);
+      const isPromo = piece?.type === "p" && ((piece.color === "w" && sq[1] === "8") || (piece.color === "b" && sq[1] === "1"));
+      if (isPromo) { setPromotionPending({ from: dragFrom, to: sq }); }
+      else { chess.move({ from: dragFrom, to: sq }); syncBoard({ from: dragFrom, to: sq }); checkGameOver(); setHint(null); }
+    }
+    setDragFrom(null); setDragOver(null); setSelected(null); setLegalMoves([]);
+  }, [chess, dragFrom, legalMoves, syncBoard, checkGameOver]);
+
+  const handlePromotion = (piece: PieceSymbol) => {
+    if (!promotionPending) return;
+    chess.move({ from: promotionPending.from, to: promotionPending.to, promotion: piece });
+    syncBoard({ from: promotionPending.from, to: promotionPending.to }); checkGameOver(); setPromotionPending(null);
+  };
+
+  const handleUndo = useCallback(() => {
+    if (isAiThinking) return;
+    chess.undo();
+    if (gameState.mode === "pve") chess.undo();
+    // Recalculate last move from history after undo
+    const h = chess.history({ verbose: true });
+    const prevLm = h.length > 0
+      ? { from: h[h.length - 1].from as Square, to: h[h.length - 1].to as Square }
+      : null;
+    syncBoard(prevLm); setSelected(null); setLegalMoves([]); setHint(null);
+  }, [chess, isAiThinking, gameState.mode, syncBoard]);
+
+  const handleHint = useCallback(() => {
+    if (!isPlayerTurn() || isAiThinking) return;
+
+    if (!aiWorker.current) aiWorker.current = new AIWorker();
+
+    // Release thinking lock on worker error
+    aiWorker.current.onerror = (err) => {
+      console.error("[AI Worker] Hint error:", err.message);
+    };
+
+    aiWorker.current.onmessage = (e) => {
+      if (e.data.messageId !== "handleHint") return;
+      if (e.data.error) {
+        console.error("[AI Worker] Hint reported error:", e.data.error);
+        return;
+      }
+      const m = e.data.move;
+      if (m) setHint({ from: m.from as Square, to: m.to as Square });
+    };
+
+    // Hint always uses clean config (no noise/randomness) for accurate suggestion
+    aiWorker.current.postMessage({
+      fen: chess.fen(),
+      depth: Math.max(diff.depth, 3),
+      aiColor: chess.turn(),
+      messageId: "handleHint",
+      timeMs: 1000,
+      randomRate: 0,
+      moveNoise: 0,
+      usePST: true,
+      useQuiescence: true,
+      aggressive: false,
+    });
+  }, [chess, diff.depth, isPlayerTurn, isAiThinking]);
+
+  const handleResign = useCallback(() => {
+    setGameState((gs) => ({ ...gs, phase: "over", winner: chess.turn() === "w" ? "BLACK" : "WHITE", endReason: "resign" }));
+  }, [chess]);
+
+  const handleReset = useCallback(() => {
+    chess.reset(); syncBoard(null);
+    setSelected(null); setLegalMoves([]); setHint(null); setLastMove(null);
+    setReviewSnaps([]); setReviewIdx(-1);
+    setTimers({ w: 600, b: 600 });
+    setGameState((gs) => ({ ...gs, phase: "playing", winner: null, endReason: null }));
+  }, [chess, syncBoard]);
+
+  const handleQuit = useCallback(() => {
+    chess.reset(); syncBoard(null);
+    setSelected(null); setLegalMoves([]); setHint(null); setLastMove(null);
+    setReviewSnaps([]); setReviewIdx(-1); setTimers({ w: 600, b: 600 });
+    setGameState({ phase: "setup", mode: "pve", playerColor: "w", diffIdx: 0, winner: null, endReason: null });
+  }, [chess, syncBoard]);
+
+  // ── Review navigation ─────────────────────────────────────────────────────
+  const enterReview = useCallback(() => {
+    setGameState((gs) => ({ ...gs, phase: "review" }));
+    setReviewIdx(reviewSnaps.length - 1);
+  }, [reviewSnaps]);
+
+  const exitReview = useCallback(() => {
+    setGameState((gs) => ({ ...gs, phase: "over" }));
+  }, []);
+
+  const reviewPrev = useCallback(() => setReviewIdx((i) => Math.max(-1, i - 1)), []);
+  const reviewNext = useCallback(() => setReviewIdx((i) => Math.min(reviewSnaps.length - 1, i + 1)), [reviewSnaps.length]);
+
+  // Scroll review move list to current index
+  useEffect(() => {
+    if (reviewListRef.current && gameState.phase === "review") {
+      const el = reviewListRef.current.querySelector(`[data-review-idx="${reviewIdx}"]`) as HTMLElement | null;
+      if (el) el.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    }
+  }, [reviewIdx, gameState.phase]);
+
+  const startGame = useCallback(() => {
+    chess.reset(); syncBoard();
+    setSelected(null); setLegalMoves([]); setHint(null); setTimers({ w: 600, b: 600 });
+    setGameState((gs) => ({ ...gs, phase: "playing", winner: null, endReason: null }));
+  }, [chess, syncBoard]);
+
+  // ── Board memoization ──────────────────────────────────────────────────────
+  const boardData = useMemo(() => chess.board(), [boardKey]);
+
+  // ─── SETUP SCREEN ──────────────────────────────────────────────────────────
+  if (gameState.phase === "setup") {
+    return (
+      <div
+        className="min-h-screen flex flex-col items-center justify-center p-4 relative overflow-hidden"
+        style={{ background: th.bg }}
+      >
+        {/* Background grid lines */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          {theme === "dark" && Array.from({ length: 20 }).map((_, i) => (
+            <div key={i} className="absolute w-px top-0 bottom-0" style={{ left: `${(i + 1) * 5}%`, background: th.gridLine }} />
+          ))}
+        </div>
+
+        {/* Theme toggle */}
+        <button
+          onClick={() => setTheme(t => t === "dark" ? "light" : "dark")}
+          style={{ color: th.textSecondary, border: `1px solid ${th.surfaceBorder}`, background: th.surface }}
+          className="absolute top-4 right-4 w-9 h-9 flex items-center justify-center rounded-sm hover:opacity-80 transition-opacity"
+          title="Toggle theme"
+        >
+          {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+        </button>
+
+        <div className="relative z-10 w-full max-w-md">
+          {/* Branding */}
+          <div className="text-center mb-8">
+            <div className="flex items-center justify-center gap-3 mb-1">
+              <div className="h-px w-8 bg-gradient-to-r from-transparent" style={{ backgroundImage: `linear-gradient(to right, transparent, ${th.accent})` }} />
+              <h1 className="text-4xl sm:text-5xl font-black tracking-[0.2em]" style={{ color: th.accent }}>MONIX</h1>
+              <div className="h-px w-8" style={{ backgroundImage: `linear-gradient(to left, transparent, ${th.accent})` }} />
+            </div>
+            <p className="text-[10px] font-mono tracking-[0.5em] uppercase" style={{ color: th.textMuted }}>Chess · Cyber Edition</p>
+          </div>
+
+          <div className="rounded-sm p-5 sm:p-6 space-y-5" style={{ background: th.surface, border: `1px solid ${th.surfaceBorder}` }}>
+            {/* Mode */}
+            <div>
+              <div className="text-[10px] font-mono tracking-widest uppercase mb-2.5" style={{ color: th.textAccent }}>// Mode</div>
+              <div className="grid grid-cols-2 gap-2">
+                {(["pve","pvp"] as GameMode[]).map((m) => (
+                  <button key={m} onClick={() => setGameState((gs) => ({ ...gs, mode: m }))}
+                    className="py-2.5 text-xs font-mono tracking-wider transition-all duration-150"
+                    style={gameState.mode === m
+                      ? { border: `1px solid ${th.accentBorder}`, background: th.accentBg, color: th.accentText }
+                      : { border: `1px solid ${th.ctrlBorder}`, color: th.ctrlText, background: "transparent" }}
+                  >
+                    {m === "pve" ? "vs COMPUTER" : "LOCAL 2P"}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Color */}
+            {gameState.mode === "pve" && (
+              <div>
+                <div className="text-[10px] font-mono tracking-widest uppercase mb-2.5" style={{ color: th.textAccent }}>// Play As</div>
+                <div className="grid grid-cols-2 gap-2">
+                  {(["w","b"] as PlayerColor[]).map((c) => (
+                    <button key={c} onClick={() => setGameState((gs) => ({ ...gs, playerColor: c }))}
+                      className="py-2.5 text-xs font-mono tracking-wider transition-all duration-150"
+                      style={gameState.playerColor === c
+                        ? { border: `1px solid ${th.accentBorder}`, background: th.accentBg, color: th.accentText }
+                        : { border: `1px solid ${th.ctrlBorder}`, color: th.ctrlText, background: "transparent" }}
+                    >
+                      {c === "w" ? "◻ WHITE" : "◼ BLACK"}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Difficulty */}
+            {gameState.mode === "pve" && (
+              <div>
+                <div className="text-[10px] font-mono tracking-widest uppercase mb-2.5" style={{ color: th.textAccent }}>
+                  // Difficulty — <span style={{ color: diff.hex }}>{diff.name.toUpperCase()}</span>
+                </div>
+                <div className="grid grid-cols-3 gap-1.5">
+                  {DIFFICULTIES.map((d, i) => (
+                    <button key={d.name} onClick={() => setGameState((gs) => ({ ...gs, diffIdx: i }))}
+                      className="py-2 text-[10px] font-mono tracking-wider transition-all duration-150"
+                      style={gameState.diffIdx === i
+                        ? { border: `1px solid ${d.hex}`, color: d.hex, background: d.hex + "18", boxShadow: `0 0 12px ${d.hex}25` }
+                        : { border: `1px solid ${th.ctrlBorder}`, color: th.textMuted, background: "transparent" }}
+                    >
+                      {d.name}
+                    </button>
+                  ))}
+                </div>
+                {/* Per-difficulty tip */}
+                {diff.tip && (
+                  <div className="mt-2 text-[10px] font-mono text-center" style={{ color: diff.hex + "cc" }}>
+                    ⚡ {diff.tip}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Start */}
+            <button onClick={startGame}
+              className="w-full py-3.5 text-xs font-mono tracking-[0.3em] uppercase transition-all duration-200 hover:opacity-90 active:scale-[0.99]"
+              style={{ border: `1px solid ${th.accentBorder}`, background: th.accentBg, color: th.accentText }}
+            >
+              INITIALIZE MATCH <ChevronRight className="inline w-3.5 h-3.5 -mt-0.5" />
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ─── GAME SCREEN ──────────────────────────────────────────────────────────
+  const playerTimerColor = (side: "w" | "b") =>
+    currentTurn === side && gameState.phase === "playing" ? th.timerActive : th.timerInactive;
+
+  // Determine which last-move squares to highlight in the current view
+  const reviewLastMove = reviewIdx >= 0 ? reviewSnaps[reviewIdx] : null;
+  const activeLmFrom = gameState.phase === "review" ? reviewLastMove?.moveFrom ?? null : lastMove?.from ?? null;
+  const activeLmTo   = gameState.phase === "review" ? reviewLastMove?.moveTo   ?? null : lastMove?.to   ?? null;
+
+  const renderBoard = (overrideBoard?: ReturnType<Chess["board"]> | null) => {
+    const source = overrideBoard ?? boardData;
+    return (
+      <div
+        className="grid border"
+        style={{
+          gridTemplateColumns: "repeat(8, 1fr)",
+          borderColor: th.surfaceBorder,
+          boxShadow: theme === "dark" ? `0 0 40px ${th.accentBg}` : "0 4px 24px rgba(0,0,0,0.12)",
+          width: "100%",
+        }}
+      >
+        {ranks.map((rank) =>
+          files.map((file) => {
+            const sq = (file + rank) as Square;
+            const col = file.charCodeAt(0) - 97;
+            const row = 8 - rank;
+            const isLight = (row + col) % 2 === 0;
+            const piece = source[row]?.[col] ?? null;
+            const isReview = gameState.phase === "review";
+
+            return (
+              <BoardSquare
+                key={sq}
+                sq={sq}
+                piece={piece}
+                isSelected={!isReview && selected === sq}
+                isLegal={!isReview && legalMoves.includes(sq)}
+                isHintFrom={!isReview && (hint?.from === sq)}
+                isHintTo={!isReview && (hint?.to === sq)}
+                isLastMoveFrom={activeLmFrom === sq}
+                isLastMoveTo={activeLmTo === sq}
+                isCheck={!isReview && (checkSquare === sq)}
+                isDragTarget={!isReview && (dragOver === sq && legalMoves.includes(sq))}
+                isDragFrom={!isReview && (dragFrom === sq)}
+                onClick={() => !isReview && handleSquareClick(sq)}
+                onDragStart={() => !isReview && handleDragStart(sq)}
+                onDragOver={(e) => { e.preventDefault(); if (!isReview) setDragOver(sq); }}
+                onDrop={() => !isReview && handleDrop(sq)}
+                onDragEnd={() => { if (!isReview) { setDragFrom(null); setDragOver(null); } }}
+                squareBg={isLight ? th.squareLight : th.squareDark}
+                th={th}
+              />
+            );
+          })
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <div className="min-h-screen flex flex-col" style={{ background: th.bg }}>
+      {/* Background grid */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+        {theme === "dark" && Array.from({ length: 30 }).map((_, i) => (
+          <div key={i} className="absolute w-px top-0 bottom-0" style={{ left: `${(i + 1) * 3.33}%`, background: th.gridLine }} />
+        ))}
+      </div>
+
+      {/* ── Header ── */}
+      <header
+        className="relative z-10 flex items-center justify-between px-3 sm:px-4 py-2.5"
+        style={{ borderBottom: `1px solid ${th.surfaceBorder}`, background: th.surface }}
+      >
+        <div className="flex items-center gap-2 sm:gap-3">
+          <span className="text-lg sm:text-xl font-black tracking-[0.2em]" style={{ color: th.accent }}>MONIX</span>
+          <span className="text-[9px] font-mono hidden sm:inline" style={{ color: th.textMuted }}>CHESS</span>
+          {gameState.mode === "pve" ? (
+            <span className="text-[9px] font-mono px-1.5 py-0.5 border" style={{ borderColor: diff.hex + "80", color: diff.hex }}>
+              {diff.name.toUpperCase()}
+            </span>
+          ) : (
+            <span className="text-[9px] font-mono px-1.5 py-0.5 border" style={{ borderColor: th.accentBorder, color: th.accentText }}>2P</span>
+          )}
+        </div>
+
+        {/* Turn indicator + check warning */}
+        <div className="flex items-center gap-2">
+          {showCheckWarning && (
+            <div className="text-[10px] font-mono px-2 py-1 border animate-pulse"
+              style={{ borderColor: th.checkBorder, color: th.checkBorder, background: th.checkBg }}>
+              ⚡ CHECK!
+            </div>
+          )}
+          <div className="text-[10px] font-mono px-2 py-1 border"
+            style={currentTurn === "w"
+              ? { borderColor: th.accentBorder, color: th.accentText, background: th.accentBg }
+              : { borderColor: th.enemy + "80", color: th.enemy, background: th.enemyBg }}>
+            {currentTurn === "w" ? "◻ WHITE" : "◼ BLACK"}
+            {isAiThinking ? " [AI]" : ""}
+          </div>
+
+          {/* Theme toggle */}
+          <Tip label={theme === "dark" ? "Switch to Light" : "Switch to Dark"}>
+            <button
+              onClick={() => setTheme(t => t === "dark" ? "light" : "dark")}
+              className="w-7 h-7 flex items-center justify-center rounded-sm transition-opacity hover:opacity-70"
+              style={{ color: th.textSecondary, border: `1px solid ${th.ctrlBorder}` }}
+            >
+              {theme === "dark" ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
+            </button>
+          </Tip>
+
+          <Tip label="Quit to Main Menu">
+            <button
+              onClick={handleQuit}
+              className="flex items-center gap-1 text-[10px] font-mono px-2 py-1.5 border transition-colors"
+              style={{ border: `1px solid ${th.ctrlBorder}`, color: th.ctrlText }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "#ff444488"; (e.currentTarget as HTMLElement).style.color = "#ff4444"; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = th.ctrlBorder; (e.currentTarget as HTMLElement).style.color = th.ctrlText; }}
+            >
+              <LogOut className="w-3 h-3" />
+              <span className="hidden sm:inline">QUIT</span>
+            </button>
+          </Tip>
+        </div>
+      </header>
+
+      {/* ── Main layout ── */}
+      <div className="relative z-10 flex-1 flex flex-col lg:flex-row gap-3 p-2.5 sm:p-3 lg:p-4 items-start justify-center">
+
+        {/* Left / top panel */}
+        <div className="w-full lg:w-48 xl:w-52 order-2 lg:order-1 flex flex-row lg:flex-col gap-2">
+          {/* Black timer */}
+          <div className="flex-1 lg:flex-none rounded-sm px-3 py-2 flex items-center justify-between"
+            style={{ background: th.surface, border: `1px solid ${th.surfaceBorder}` }}>
+            <div>
+              <div className="text-[9px] font-mono uppercase tracking-widest" style={{ color: th.textMuted }}>◼ BLACK</div>
+              {gameState.mode === "pvp" && (
+                <div className="text-[9px] font-mono" style={{ color: th.textMuted }}>Player 2</div>
+              )}
+            </div>
+            <div className="text-sm font-mono font-bold tabular-nums" style={{ color: playerTimerColor("b") }}>
+              {formatTime(timers.b)}
+            </div>
+          </div>
+
+          {/* Captured by white (black pieces taken) */}
+          <div className="hidden lg:block">
+            <CapturedPanel pieces={captured.w} label="WHITE TOOK" th={th} />
+          </div>
+        </div>
+
+        {/* Board column */}
+        <div className="order-1 lg:order-2 w-full flex flex-col items-center" style={{ maxWidth: "min(100%, 560px)" }}>
+          {/* File labels top */}
+          <div className="flex w-full mb-0.5" style={{ paddingLeft: "20px" }}>
+            {files.map((f) => (
+              <div key={f} className="flex-1 text-center text-[9px] font-mono" style={{ color: th.textMuted }}>{f}</div>
+            ))}
+          </div>
+
+          <div className="flex w-full">
+            {/* Rank labels left */}
+            <div className="flex flex-col justify-around mr-0.5" style={{ width: "20px" }}>
+              {ranks.map((r) => (
+                <div key={r} className="text-[9px] font-mono text-right pr-1 leading-none" style={{ color: th.textMuted }}>{r}</div>
+              ))}
+            </div>
+
+            {/* Board */}
+            <div className="flex-1">{renderBoard(gameState.phase === "review" ? reviewBoard : undefined)}</div>
+
+            {/* Rank labels right */}
+            <div className="flex flex-col justify-around ml-0.5" style={{ width: "20px" }}>
+              {ranks.map((r) => (
+                <div key={r} className="text-[9px] font-mono pl-1 leading-none" style={{ color: th.textMuted }}>{r}</div>
+              ))}
+            </div>
+          </div>
+
+          {/* File labels bottom */}
+          <div className="flex w-full mt-0.5" style={{ paddingLeft: "20px" }}>
+            {files.map((f) => (
+              <div key={f} className="flex-1 text-center text-[9px] font-mono" style={{ color: th.textMuted }}>{f}</div>
+            ))}
+          </div>
+
+          {/* Controls */}
+          <div className="flex gap-1.5 mt-3 flex-wrap justify-center">
+            {gameState.phase === "review" ? (
+              <>
+                <Tip label="Previous move">
+                  <button
+                    onClick={reviewPrev}
+                    disabled={reviewIdx < 0}
+                    className="flex items-center gap-1 px-3 py-2 text-[10px] font-mono border transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                    style={{ border: `1px solid ${th.ctrlBorder}`, color: th.ctrlText }}
+                    onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.borderColor = th.ctrlHoverBorder; el.style.color = th.ctrlHoverText; }}
+                    onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.borderColor = th.ctrlBorder; el.style.color = th.ctrlText; }}
+                  >
+                    <ChevronLeft className="w-3 h-3" /> PREV
+                  </button>
+                </Tip>
+                <div className="flex items-center justify-center px-4 py-2 text-[10px] font-mono border"
+                  style={{ border: `1px solid ${th.surfaceBorder}`, color: th.textMuted }}>
+                  MOVE {reviewIdx + 1} / {reviewSnaps.length}
+                </div>
+                <Tip label="Next move">
+                  <button
+                    onClick={reviewNext}
+                    disabled={reviewIdx >= reviewSnaps.length - 1}
+                    className="flex items-center gap-1 px-3 py-2 text-[10px] font-mono border transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                    style={{ border: `1px solid ${th.ctrlBorder}`, color: th.ctrlText }}
+                    onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.borderColor = th.ctrlHoverBorder; el.style.color = th.ctrlHoverText; }}
+                    onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.borderColor = th.ctrlBorder; el.style.color = th.ctrlText; }}
+                  >
+                    NEXT <ChevronRight className="w-3 h-3" />
+                  </button>
+                </Tip>
+                <Tip label="Exit review mode">
+                  <button
+                    onClick={exitReview}
+                    className="flex items-center gap-1 px-3 py-2 text-[10px] font-mono border transition-all hover:opacity-80 ml-2"
+                    style={{ border: `1px solid ${th.accentBorder}`, color: th.accentBg, background: th.accentText }}
+                  >
+                    <X className="w-3 h-3" /> EXIT
+                  </button>
+                </Tip>
+              </>
+            ) : (
+              <>
+                <Tip label="Undo last move">
+                  <button
+                    onClick={handleUndo}
+                    disabled={chess.history().length === 0 || isAiThinking}
+                    className="flex items-center gap-1 px-3 py-2 text-[10px] font-mono border transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                    style={{ border: `1px solid ${th.ctrlBorder}`, color: th.ctrlText }}
+                    onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.borderColor = th.ctrlHoverBorder; el.style.color = th.ctrlHoverText; }}
+                    onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.borderColor = th.ctrlBorder; el.style.color = th.ctrlText; }}
+                  >
+                    <RotateCcw className="w-3 h-3" /> UNDO
+                  </button>
+                </Tip>
+                {gameState.mode === "pve" && (
+                  <Tip label="Show best move hint">
+                    <button
+                      onClick={handleHint}
+                      disabled={!isPlayerTurn() || isAiThinking}
+                      className="flex items-center gap-1 px-3 py-2 text-[10px] font-mono border transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                      style={{ border: `1px solid ${th.ctrlBorder}`, color: th.ctrlText }}
+                      onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.borderColor = "#d97706"; el.style.color = "#d97706"; }}
+                      onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.borderColor = th.ctrlBorder; el.style.color = th.ctrlText; }}
+                    >
+                      <Lightbulb className="w-3 h-3" /> HINT
+                    </button>
+                  </Tip>
+                )}
+                <Tip label="Resign current game">
+                  <button
+                    onClick={handleResign}
+                    disabled={isAiThinking}
+                    className="flex items-center gap-1 px-3 py-2 text-[10px] font-mono border transition-all disabled:opacity-30"
+                    style={{ border: `1px solid ${th.ctrlBorder}`, color: th.ctrlText }}
+                    onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.borderColor = "#ef444488"; el.style.color = "#ef4444"; }}
+                    onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.borderColor = th.ctrlBorder; el.style.color = th.ctrlText; }}
+                  >
+                    <Flag className="w-3 h-3" /> RESIGN
+                  </button>
+                </Tip>
+                <Tip label="Restart with same settings">
+                  <button
+                    onClick={handleReset}
+                    className="flex items-center gap-1 px-3 py-2 text-[10px] font-mono border transition-all"
+                    style={{ border: `1px solid ${th.ctrlBorder}`, color: th.ctrlText }}
+                    onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.borderColor = "#a855f788"; el.style.color = "#a855f7"; }}
+                    onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.borderColor = th.ctrlBorder; el.style.color = th.ctrlText; }}
+                  >
+                    <RefreshCw className="w-3 h-3" /> RESET
+                  </button>
+                </Tip>
+              </>
+            )}
+          </div>
+
+          {/* Mobile: captured + log (collapsible) */}
+          <div className="lg:hidden w-full mt-3 space-y-2">
+            <div className="grid grid-cols-2 gap-2">
+              <CapturedPanel pieces={captured.w} label="WHITE TOOK" th={th} />
+              <CapturedPanel pieces={captured.b} label="BLACK TOOK" th={th} />
+            </div>
+
+            <div className="rounded-sm" style={{ background: th.surface, border: `1px solid ${th.surfaceBorder}` }}>
+              <button
+                onClick={() => setLogExpanded(!logExpanded)}
+                className="w-full flex items-center justify-between px-3 py-2"
+              >
+                <span className="text-[10px] font-mono tracking-widest uppercase" style={{ color: th.textAccent }}>
+                  // Move Log ({moveHistory.length} moves)
+                </span>
+                {logExpanded ? <ChevronUp className="w-3 h-3" style={{ color: th.textMuted }} /> : <ChevronDown className="w-3 h-3" style={{ color: th.textMuted }} />}
+              </button>
+              {logExpanded && (
+                <div ref={historyRef} className="px-3 pb-3 overflow-y-auto max-h-36">
+                  {moveHistory.length === 0 ? (
+                    <span className="text-[10px] font-mono" style={{ color: th.textMuted }}>No moves yet</span>
+                  ) : (
+                    Array.from({ length: Math.ceil(moveHistory.length / 2) }).map((_, i) => (
+                      <div key={i} className="flex gap-2 text-[10px] font-mono py-0.5">
+                        <span className="w-5" style={{ color: th.textMuted }}>{i + 1}.</span>
+                        <span style={{ color: th.accentText }} className="w-10">{moveHistory[i * 2]}</span>
+                        <span style={{ color: th.enemy }}>{moveHistory[i * 2 + 1] ?? ""}</span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Right panel */}
+        <div className="w-full lg:w-48 xl:w-52 order-3 flex flex-row lg:flex-col gap-2">
+          {/* White timer */}
+          <div className="flex-1 lg:flex-none rounded-sm px-3 py-2 flex items-center justify-between"
+            style={{ background: th.surface, border: `1px solid ${th.surfaceBorder}` }}>
+            <div>
+              <div className="text-[9px] font-mono uppercase tracking-widest" style={{ color: th.textMuted }}>◻ WHITE</div>
+              {gameState.mode === "pvp" && (
+                <div className="text-[9px] font-mono" style={{ color: th.textMuted }}>Player 1</div>
+              )}
+            </div>
+            <div className="text-sm font-mono font-bold tabular-nums" style={{ color: playerTimerColor("w") }}>
+              {formatTime(timers.w)}
+            </div>
+          </div>
+
+          {/* Captured by black */}
+          <div className="hidden lg:block">
+            <CapturedPanel pieces={captured.b} label="BLACK TOOK" th={th} />
+          </div>
+
+          {/* Move log — desktop */}
+          <div className="hidden lg:flex flex-col rounded-sm flex-1" style={{ background: th.surface, border: `1px solid ${th.surfaceBorder}`, minHeight: "180px" }}>
+            <div className="px-3 pt-2.5 pb-1.5 border-b text-[10px] font-mono tracking-widest uppercase flex items-center gap-1.5"
+              style={{ borderColor: th.surfaceBorder, color: th.textAccent }}>
+              <Clock className="w-3 h-3" />
+              Move Log
+            </div>
+            <div ref={historyRef} className="flex-1 p-2 overflow-y-auto" style={{ maxHeight: "240px" }}>
+              {moveHistory.length === 0 ? (
+                <span className="text-[10px] font-mono" style={{ color: th.textMuted }}>No moves yet.</span>
+              ) : (
+                Array.from({ length: Math.ceil(moveHistory.length / 2) }).map((_, i) => (
+                  <div key={i} className="flex gap-2 text-[10px] font-mono py-[3px] hover:bg-white/5 rounded-sm px-1">
+                    <span className="w-5 shrink-0" style={{ color: th.textMuted }}>{i + 1}.</span>
+                    <span className="w-10 shrink-0" style={{ color: th.accentText }}>{moveHistory[i * 2]}</span>
+                    <span style={{ color: th.enemy }}>{moveHistory[i * 2 + 1] ?? ""}</span>
+                  </div>
+                ))
+              )}
+            </div>
+            <div className="px-3 py-2 border-t text-[10px] font-mono" style={{ borderColor: th.surfaceBorder, color: th.textMuted }}>
+              {moveHistory.length} moves · Depth {diff.depth}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Promotion Modal ── */}
+      {promotionPending && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm">
+          <div className="rounded-sm p-5 text-center" style={{ background: th.surface, border: `1px solid ${th.accentBorder}`, boxShadow: `0 0 40px ${th.accentBg}` }}>
+            <div className="text-[10px] font-mono tracking-widest uppercase mb-3" style={{ color: th.textAccent }}>// Promote Pawn</div>
+            <div className="flex gap-2">
+              {(["q","r","b","n"] as PieceSymbol[]).map((p) => (
+                <button key={p} onClick={() => handlePromotion(p)}
+                  className="w-14 h-14 border transition-all"
+                  style={{ border: `1px solid ${th.ctrlBorder}` }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = th.accentBorder; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = th.ctrlBorder; }}
+                >
+                  <PieceSVG type={p} color={chess.turn()} th={th} />
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Game Over Overlay ── */}
+      {gameState.phase === "over" && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="w-full max-w-sm rounded-sm p-6 sm:p-8 text-center"
+            style={{ background: th.surface, border: `1px solid ${th.surfaceBorder}`, boxShadow: `0 0 60px ${th.accentBg}` }}>
+            <Trophy className="w-10 h-10 mx-auto mb-4" style={{ color: th.accent }} />
+            <div className="text-2xl sm:text-3xl font-black tracking-[0.15em] mb-2" style={{ color: th.textPrimary }}>
+              {gameState.endReason === "checkmate" ? "CHECKMATE"
+                : gameState.endReason === "stalemate" ? "STALEMATE"
+                : gameState.endReason === "resign" ? "RESIGNED"
+                : "DRAW"}
+            </div>
+            {gameState.winner && (
+              <div className="text-sm font-mono tracking-widest mb-1" style={{ color: th.accentText }}>
+                {gameState.winner} WINS
+              </div>
+            )}
+            {!gameState.winner && (
+              <div className="text-xs font-mono tracking-widest mb-1" style={{ color: th.textMuted }}>GAME DRAWN</div>
+            )}
+            <div className="text-[10px] font-mono mb-6" style={{ color: th.textMuted }}>{moveHistory.length} moves played</div>
+            <div className="flex gap-2.5">
+              <button onClick={handleReset} className="flex-1 py-3 text-xs font-mono tracking-widest border transition-all hover:opacity-80"
+                style={{ border: `1px solid ${th.accentBorder}`, color: th.accentText, background: th.accentBg }}>
+                REMATCH
+              </button>
+              {reviewSnaps.length > 0 && (
+                <button onClick={enterReview} className="flex-1 py-3 text-xs font-mono tracking-widest border transition-all hover:opacity-80"
+                  style={{ border: `1px solid ${th.accentBorder}`, color: th.accentText }}>
+                  ANALYZE
+                </button>
+              )}
+              <button onClick={handleQuit} className="flex-1 py-3 text-xs font-mono tracking-widest border transition-all hover:opacity-80"
+                style={{ border: `1px solid ${th.ctrlBorder}`, color: th.ctrlText }}>
+                MENU
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

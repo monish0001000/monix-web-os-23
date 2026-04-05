@@ -1,0 +1,45 @@
+@workspace We need to refine the OS window management, update the Settings application, and implement a real-time FPS counter on the taskbar. Please act as an Elite UI/UX Designer and System Architect to execute these precise updates:
+
+1. Global Window Centering (Bug Fix):
+
+Locate the logic where initial window coordinates are set (likely in Store.ts when an app is opened, or in the base Window wrapper component).
+
+Update the default x and y spawn coordinates. Instead of static top-left values, calculate the center of the viewport: x = (window.innerWidth / 2) - (windowWidth / 2) and y = (window.innerHeight / 2) - (windowHeight / 2). Ensure all apps (like ChessApp) spawn perfectly in the center of the screen when opened.
+
+2. Disable Taskbar Settings (SettingsApp.tsx):
+
+Find the "Taskbar" section inside the Settings app.
+
+Visually disable it: Apply classes like opacity-40 grayscale pointer-events-none.
+
+Add a prominent red/cyan badge over it saying [ UNABLE TO ACCESS - KERNEL LOCKED ] so the user knows it's intentionally disabled for now.
+
+3. Global Mouse/Cursor Customization System:
+
+State: Add a new state in our Zustand Store.ts called cursorStyle (default to 'default').
+
+Application: Open the main App.tsx or Desktop.tsx root container and apply the dynamic cursor style: style={{ cursor: cursorStyle }}.
+
+Settings UI: Add a new "Mouse & Cursor" tab in SettingsApp.tsx.
+
+Create a visually attractive grid of cursor options that update the store when clicked. Options should include:
+
+"System Default" (default)
+
+"Hacker Crosshair" (crosshair)
+
+"Terminal Text" (text)
+
+"Neon Pointer" (Use a custom CSS cursor url with a base64 encoded sleek SVG, or fallback to cell or alias).
+
+Highlight the currently active cursor option with a glowing border.
+
+4. Real-Time Taskbar FPS (Taskbar.tsx):
+
+Remove the existing fake CPU/RAM interval animations from the taskbar.
+
+Implement a real-time FPS monitor. Use a requestAnimationFrame loop inside a useEffect to calculate the actual web frames per second.
+
+UI: Display this in the bottom-right of the taskbar. Make it attractive—e.g., a glowing text FPS: 60 (turn green if > 50, yellow if > 30, red if < 30) alongside a tiny, CSS-animated pulse dot or sleek sparkline graphic.
+
+Please ensure you modify the existing files carefully without breaking the current layout.

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Palette, Monitor, Info, Check, AppWindow, LayoutDashboard, Activity } from "lucide-react";
+import { Palette, Monitor, Info, Check, AppWindow, LayoutDashboard, Activity, MousePointer2 } from "lucide-react";
 import WindowChrome from "./WindowChrome";
 import { useOSStore } from "@/lib/store";
 
@@ -15,13 +15,14 @@ interface SettingsAppProps {
   onOpenTaskManager?: () => void;
 }
 
-type Tab = "personalization" | "display" | "apps" | "taskbar" | "sysinfo";
+type Tab = "personalization" | "display" | "apps" | "taskbar" | "cursor" | "sysinfo";
 
-const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
+const TABS: { id: Tab; label: string; icon: React.ReactNode; locked?: boolean }[] = [
   { id: "personalization", label: "Personalization", icon: <Palette size={15} /> },
   { id: "display",         label: "Display",         icon: <Monitor size={15} /> },
   { id: "apps",            label: "Apps & Features", icon: <AppWindow size={15} /> },
-  { id: "taskbar",         label: "Taskbar",         icon: <LayoutDashboard size={15} /> },
+  { id: "taskbar",         label: "Taskbar",         icon: <LayoutDashboard size={15} />, locked: true },
+  { id: "cursor",          label: "Mouse & Cursor",  icon: <MousePointer2 size={15} /> },
   { id: "sysinfo",         label: "System Info",     icon: <Info size={15} /> },
 ];
 
@@ -380,6 +381,219 @@ function AppsTab() {
   );
 }
 
+function CursorTab() {
+  const cursorStyle = useOSStore((s) => s.cursorStyle);
+  const setCursorStyle = useOSStore((s) => s.setCursorStyle);
+
+  const NEON_CURSOR_SVG = `<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'><path d='M5 3l14 9-7 1-4 7z' fill='%2300f0ff' stroke='%23000' stroke-width='1'/></svg>`;
+  const neonCursorUrl = `url("data:image/svg+xml,${NEON_CURSOR_SVG}"), pointer`;
+
+  const CURSORS = [
+    {
+      id: "default",
+      label: "System Default",
+      desc: "Standard OS pointer",
+      preview: "↖",
+      color: "#00f0ff",
+      value: "default",
+    },
+    {
+      id: "crosshair",
+      label: "Hacker Crosshair",
+      desc: "Precision targeting",
+      preview: "⊕",
+      color: "#00ff88",
+      value: "crosshair",
+    },
+    {
+      id: "text",
+      label: "Terminal Text",
+      desc: "I-beam text cursor",
+      preview: "I",
+      color: "#ffaa00",
+      value: "text",
+    },
+    {
+      id: "neon",
+      label: "Neon Pointer",
+      desc: "Custom cyan SVG cursor",
+      preview: "⬡",
+      color: "#c084fc",
+      value: neonCursorUrl,
+    },
+    {
+      id: "cell",
+      label: "Grid Select",
+      desc: "Cell selection mode",
+      preview: "⊞",
+      color: "#00d4ff",
+      value: "cell",
+    },
+    {
+      id: "alias",
+      label: "Shortcut Link",
+      desc: "Alias / shortcut arrow",
+      preview: "↗",
+      color: "#ffd700",
+      value: "alias",
+    },
+    {
+      id: "grab",
+      label: "Grab / Move",
+      desc: "Drag & grab mode",
+      preview: "✋",
+      color: "#90bfff",
+      value: "grab",
+    },
+    {
+      id: "zoom-in",
+      label: "Zoom In",
+      desc: "Magnify & inspect",
+      preview: "⊕",
+      color: "#00ff88",
+      value: "zoom-in",
+    },
+  ];
+
+  const activeCursor = CURSORS.find((c) => c.value === cursorStyle) ?? CURSORS[0];
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      <p style={{ fontFamily: "monospace", fontSize: 10, color: "rgba(0,240,255,0.5)", letterSpacing: "0.15em", margin: 0 }}>
+        MOUSE & CURSOR CUSTOMIZATION
+      </p>
+
+      <div
+        style={{
+          padding: "12px 16px",
+          background: "rgba(0,240,255,0.04)",
+          border: "1px solid rgba(0,240,255,0.12)",
+          borderRadius: 8,
+          display: "flex",
+          alignItems: "center",
+          gap: 12,
+        }}
+      >
+        <span style={{ fontSize: 24, color: activeCursor.color, filter: `drop-shadow(0 0 8px ${activeCursor.color}80)` }}>
+          {activeCursor.preview}
+        </span>
+        <div>
+          <div style={{ fontFamily: "monospace", fontSize: 12, color: "rgba(255,255,255,0.9)", fontWeight: 600 }}>
+            {activeCursor.label}
+          </div>
+          <div style={{ fontFamily: "monospace", fontSize: 9, color: "rgba(255,255,255,0.3)", letterSpacing: "0.08em", marginTop: 2 }}>
+            ACTIVE · {activeCursor.desc.toUpperCase()}
+          </div>
+        </div>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 8 }}>
+        {CURSORS.map((cursor) => {
+          const isActive = cursorStyle === cursor.value;
+          return (
+            <motion.button
+              key={cursor.id}
+              whileHover={{ scale: 1.02, boxShadow: `0 0 16px ${cursor.color}30` }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setCursorStyle(cursor.value)}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+                padding: "14px 16px",
+                borderRadius: 10,
+                border: isActive
+                  ? `1px solid ${cursor.color}80`
+                  : "1px solid rgba(255,255,255,0.07)",
+                background: isActive
+                  ? `linear-gradient(135deg, ${cursor.color}10, ${cursor.color}04)`
+                  : "rgba(255,255,255,0.02)",
+                cursor: "pointer",
+                textAlign: "left",
+                boxShadow: isActive ? `0 0 20px ${cursor.color}20, inset 0 0 12px ${cursor.color}06` : "none",
+                transition: "all 0.2s",
+                position: "relative",
+              }}
+            >
+              <div
+                style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 8,
+                  background: isActive ? `${cursor.color}12` : "rgba(255,255,255,0.04)",
+                  border: isActive ? `1px solid ${cursor.color}40` : "1px solid rgba(255,255,255,0.06)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
+                  fontSize: 18,
+                  color: cursor.color,
+                  filter: isActive ? `drop-shadow(0 0 6px ${cursor.color}90)` : "none",
+                }}
+              >
+                {cursor.preview}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div
+                  style={{
+                    fontFamily: "monospace",
+                    fontSize: 11,
+                    color: isActive ? cursor.color : "rgba(255,255,255,0.8)",
+                    fontWeight: isActive ? 700 : 500,
+                    letterSpacing: "0.03em",
+                  }}
+                >
+                  {cursor.label}
+                </div>
+                <div
+                  style={{
+                    fontFamily: "monospace",
+                    fontSize: 9,
+                    color: "rgba(255,255,255,0.3)",
+                    marginTop: 3,
+                    letterSpacing: "0.06em",
+                  }}
+                >
+                  {cursor.desc}
+                </div>
+              </div>
+              {isActive && (
+                <div
+                  style={{
+                    position: "absolute",
+                    top: 8,
+                    right: 10,
+                    width: 8,
+                    height: 8,
+                    borderRadius: "50%",
+                    background: cursor.color,
+                    boxShadow: `0 0 8px ${cursor.color}`,
+                  }}
+                />
+              )}
+            </motion.button>
+          );
+        })}
+      </div>
+
+      <div
+        style={{
+          padding: "10px 14px",
+          background: "rgba(255,255,255,0.02)",
+          border: "1px solid rgba(255,255,255,0.05)",
+          borderRadius: 8,
+          fontFamily: "monospace",
+          fontSize: 9,
+          color: "rgba(255,255,255,0.25)",
+          letterSpacing: "0.1em",
+        }}
+      >
+        ↑ CURSOR CHANGES APPLY INSTANTLY ACROSS THE ENTIRE OS
+      </div>
+    </div>
+  );
+}
+
 function TaskbarTab() {
   const [taskbarLocation, setTaskbarLocation] = useState("Bottom");
   const [combineButtons, setCombineButtons] = useState(true);
@@ -389,7 +603,75 @@ function TaskbarTab() {
   const locations = ["Bottom", "Top", "Left", "Right"];
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 20, position: "relative" }}>
+      {/* KERNEL LOCKED overlay */}
+      <div
+        style={{
+          position: "absolute",
+          inset: -8,
+          zIndex: 10,
+          backdropFilter: "blur(3px)",
+          WebkitBackdropFilter: "blur(3px)",
+          background: "rgba(5,5,5,0.65)",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 16,
+          borderRadius: 8,
+          border: "1px solid rgba(255,50,50,0.15)",
+        }}
+      >
+        <motion.div
+          animate={{
+            boxShadow: [
+              "0 0 20px rgba(255,50,50,0.3), 0 0 40px rgba(255,50,50,0.1)",
+              "0 0 30px rgba(255,50,50,0.5), 0 0 60px rgba(255,50,50,0.2)",
+              "0 0 20px rgba(255,50,50,0.3), 0 0 40px rgba(255,50,50,0.1)",
+            ],
+          }}
+          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+          style={{
+            background: "rgba(255,30,30,0.08)",
+            border: "1px solid rgba(255,60,60,0.4)",
+            borderRadius: 10,
+            padding: "18px 28px",
+            textAlign: "center",
+          }}
+        >
+          <div style={{ fontSize: 28, marginBottom: 10 }}>🔒</div>
+          <div
+            style={{
+              fontFamily: "monospace",
+              fontSize: 13,
+              fontWeight: 800,
+              color: "#ff4444",
+              letterSpacing: "0.12em",
+              textShadow: "0 0 12px rgba(255,60,60,0.8)",
+            }}
+          >
+            UNABLE TO ACCESS
+          </div>
+          <div
+            style={{
+              fontFamily: "monospace",
+              fontSize: 10,
+              color: "rgba(255,100,100,0.7)",
+              letterSpacing: "0.2em",
+              marginTop: 6,
+              border: "1px solid rgba(255,60,60,0.3)",
+              borderRadius: 4,
+              padding: "4px 12px",
+              background: "rgba(255,30,30,0.06)",
+            }}
+          >
+            KERNEL LOCKED
+          </div>
+          <div style={{ fontFamily: "monospace", fontSize: 9, color: "rgba(255,255,255,0.25)", marginTop: 10, letterSpacing: "0.1em" }}>
+            TASKBAR CONTROLS RESERVED FOR FUTURE KERNEL UPDATE
+          </div>
+        </motion.div>
+      </div>
       <p style={{ fontFamily: "monospace", fontSize: 10, color: "rgba(0,240,255,0.5)", letterSpacing: "0.15em", margin: 0 }}>
         MONIX TASKBAR SETTINGS
       </p>
@@ -687,10 +969,11 @@ export default function SettingsApp({
 
           {TABS.map((tab) => {
             const isTabActive = activeTab === tab.id;
+            const isLocked = tab.locked;
             return (
               <motion.button
                 key={tab.id}
-                whileHover={{ x: 2 }}
+                whileHover={{ x: isLocked ? 0 : 2 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => setActiveTab(tab.id)}
                 style={{
@@ -702,20 +985,42 @@ export default function SettingsApp({
                   border: "none",
                   cursor: "pointer",
                   background: isTabActive
-                    ? "linear-gradient(90deg, rgba(0,240,255,0.1), rgba(0,240,255,0.03))"
+                    ? isLocked
+                      ? "linear-gradient(90deg, rgba(255,50,50,0.08), rgba(255,50,50,0.02))"
+                      : "linear-gradient(90deg, rgba(0,240,255,0.1), rgba(0,240,255,0.03))"
                     : "transparent",
-                  borderLeft: isTabActive ? "2px solid #00f0ff" : "2px solid transparent",
-                  color: isTabActive ? "#00f0ff" : "rgba(255,255,255,0.5)",
+                  borderLeft: isTabActive
+                    ? isLocked ? "2px solid rgba(255,80,80,0.7)" : "2px solid #00f0ff"
+                    : "2px solid transparent",
+                  color: isLocked
+                    ? isTabActive ? "rgba(255,100,100,0.8)" : "rgba(255,100,100,0.45)"
+                    : isTabActive ? "#00f0ff" : "rgba(255,255,255,0.5)",
                   fontSize: 12,
                   fontWeight: isTabActive ? 600 : 400,
                   textAlign: "left",
                   width: "100%",
                   transition: "all 0.2s",
-                  boxShadow: isTabActive ? "inset 0 0 12px rgba(0,240,255,0.06)" : "none",
+                  boxShadow: isTabActive && !isLocked ? "inset 0 0 12px rgba(0,240,255,0.06)" : "none",
+                  position: "relative",
                 }}
               >
                 <span style={{ opacity: isTabActive ? 1 : 0.6 }}>{tab.icon}</span>
-                {tab.label}
+                <span style={{ flex: 1 }}>{tab.label}</span>
+                {isLocked && (
+                  <span style={{
+                    fontSize: 8,
+                    color: "rgba(255,80,80,0.7)",
+                    fontFamily: "monospace",
+                    letterSpacing: "0.04em",
+                    background: "rgba(255,50,50,0.1)",
+                    border: "1px solid rgba(255,80,80,0.3)",
+                    borderRadius: 3,
+                    padding: "1px 4px",
+                    flexShrink: 0,
+                  }}>
+                    🔒
+                  </span>
+                )}
               </motion.button>
             );
           })}
@@ -738,6 +1043,7 @@ export default function SettingsApp({
               {activeTab === "display"         && <DisplayTab />}
               {activeTab === "apps"            && <AppsTab />}
               {activeTab === "taskbar"         && <TaskbarTab />}
+              {activeTab === "cursor"          && <CursorTab />}
               {activeTab === "sysinfo"         && <SystemInfoTab onOpenTaskManager={onOpenTaskManager} />}
             </motion.div>
           </AnimatePresence>

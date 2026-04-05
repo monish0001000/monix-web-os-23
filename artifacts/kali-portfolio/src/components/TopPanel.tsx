@@ -23,47 +23,60 @@ interface TopPanelProps {
   activeWindowId: string;
 }
 
-const BAR_COUNT = 14;
-function generateBars() {
-  return Array.from({ length: BAR_COUNT }, () => Math.random());
-}
-
-function Spectrogram() {
-  const [bars, setBars] = useState<number[]>(generateBars);
+function FpsCounter() {
+  const [fps, setFps] = useState(0);
+  const frameCount = useRef(0);
+  const lastTime = useRef(performance.now());
+  const animId = useRef<number>(0);
 
   useEffect(() => {
-    const id = setInterval(() => setBars(generateBars()), 200);
-    return () => clearInterval(id);
+    const loop = () => {
+      frameCount.current++;
+      const now = performance.now();
+      const elapsed = now - lastTime.current;
+      if (elapsed >= 1000) {
+        setFps(Math.round((frameCount.current * 1000) / elapsed));
+        frameCount.current = 0;
+        lastTime.current = now;
+      }
+      animId.current = requestAnimationFrame(loop);
+    };
+    animId.current = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(animId.current);
   }, []);
+
+  const color = fps > 50 ? "#00ff88" : fps > 30 ? "#ffaa00" : fps > 0 ? "#ff4444" : "#00f0ff";
+  const glow = fps > 50 ? "rgba(0,255,136,0.6)" : fps > 30 ? "rgba(255,170,0,0.6)" : "rgba(255,68,68,0.6)";
 
   return (
     <div
-      className="flex items-end gap-px"
-      style={{ height: 16, width: BAR_COUNT * 3 }}
-      title="System Activity"
+      style={{ display: "flex", alignItems: "center", gap: 5, height: "100%" }}
+      title={`Actual FPS: ${fps}`}
     >
-      {bars.map((v, i) => {
-        const h = Math.max(2, Math.round(v * 14));
-        const isHigh = v > 0.75;
-        const color = isHigh
-          ? "#00ff88"
-          : v > 0.4
-          ? "#00c4ff"
-          : "rgba(0,196,255,0.45)";
-        return (
-          <div
-            key={i}
-            style={{
-              width: 2,
-              height: h,
-              background: color,
-              borderRadius: 1,
-              boxShadow: isHigh ? `0 0 4px ${color}` : "none",
-              transition: "height 0.15s ease, background 0.15s ease",
-            }}
-          />
-        );
-      })}
+      <div
+        style={{
+          width: 6,
+          height: 6,
+          borderRadius: "50%",
+          background: color,
+          boxShadow: `0 0 6px ${glow}`,
+          animation: "fpsPulse 1s ease-in-out infinite",
+          flexShrink: 0,
+        }}
+      />
+      <span
+        style={{
+          fontFamily: "monospace",
+          fontSize: 11,
+          fontWeight: 700,
+          color,
+          textShadow: `0 0 8px ${glow}`,
+          letterSpacing: "0.04em",
+          lineHeight: 1,
+        }}
+      >
+        {fps > 0 ? `${fps} FPS` : "··· FPS"}
+      </span>
     </div>
   );
 }
@@ -352,8 +365,14 @@ export default function TopPanel({ openWindows = [], onOpenWindow, onTaskbarClic
 
         {/* ── RIGHT: System Tray ── */}
         <div className="flex items-center h-full" ref={trayRef}>
-          <div className={btnClass} title="System Activity Monitor">
-            <Spectrogram />
+          <style>{`
+            @keyframes fpsPulse {
+              0%, 100% { opacity: 1; transform: scale(1); }
+              50% { opacity: 0.4; transform: scale(0.75); }
+            }
+          `}</style>
+          <div className={btnClass} style={{ gap: 5 }} title="Real-time FPS">
+            <FpsCounter />
           </div>
 
           <div style={{ width: 1, height: 22, background: "rgba(255,255,255,0.1)" }} />

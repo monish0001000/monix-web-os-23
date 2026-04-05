@@ -71,6 +71,7 @@ export default function Desktop() {
   const isDraggingSelection = useRef(false);
 
   const currentWallpaper = useOSStore((s) => s.currentWallpaper);
+  const cursorStyle = useOSStore((s) => s.cursorStyle);
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
@@ -258,6 +259,7 @@ export default function Desktop() {
         backgroundPosition: "center",
         backgroundRepeat: "no-repeat",
         transition: "background-image 0.4s ease",
+        cursor: cursorStyle,
       }}
       onClick={handleDesktopClick}
       onContextMenu={handleRightClick}

@@ -277,6 +277,28 @@ function CodeStudioIcon() {
   );
 }
 
+function CykryptIcon() {
+  return (
+    <svg viewBox="0 0 36 36" width="36" height="36" fill="none">
+      <defs>
+        <radialGradient id="ckBg" cx="50%" cy="50%" r="60%">
+          <stop offset="0%" stopColor="#001a1a" />
+          <stop offset="100%" stopColor="#000a0a" />
+        </radialGradient>
+        <radialGradient id="ckGlow" cx="50%" cy="50%" r="55%">
+          <stop offset="0%" stopColor="#00f0ff" stopOpacity="0.5" />
+          <stop offset="100%" stopColor="#00f0ff" stopOpacity="0" />
+        </radialGradient>
+      </defs>
+      <rect width="36" height="36" rx="6" fill="url(#ckBg)" stroke="#003a3a" strokeWidth="0.8"/>
+      <circle cx="18" cy="18" r="12" fill="url(#ckGlow)" opacity="0.3"/>
+      <circle cx="18" cy="18" r="10" fill="none" stroke="#00f0ff" strokeWidth="1" opacity="0.4"/>
+      <path d="M13 11 L13 25 M13 11 L21 11 C24 11 25.5 13 25.5 15 C25.5 17 24 18.5 21 18.5 L13 18.5" stroke="#00f0ff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      <circle cx="18" cy="18" r="2" fill="#00f0ff" opacity="0.8"/>
+    </svg>
+  );
+}
+
 function ThreatModelerIcon() {
   return (
     <svg viewBox="0 0 36 36" width="36" height="36" fill="none">
@@ -324,6 +346,7 @@ const ICONS_COL2 = [
   { id: "cyberchef",    label: "CyberChef",     icon: <CyberChefIcon />,     window: "cyberchef"    },
   { id: "codestudio",   label: "Code Studio",   icon: <CodeStudioIcon />,    window: "codestudio"   },
   { id: "threatmodeler",label: "Threat Modeler",icon: <ThreatModelerIcon />, window: "threatmodeler"},
+  { id: "cykrypt",      label: "CYKRYPT",        icon: <CykryptIcon />,       window: "cykrypt"      },
 ];
 
 function IconItem({

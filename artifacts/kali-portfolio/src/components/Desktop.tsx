@@ -15,6 +15,7 @@ import CyberChefApp from "./CyberChefApp";
 import CodeStudioApp from "./CodeStudioApp";
 import ThreatModelerApp from "./ThreatModelerApp";
 import ChessApp from "./ChessApp";
+import CykryptApp from "./CykryptApp";
 import RightClickMenu from "./RightClickMenu";
 import { useOSStore } from "@/lib/store";
 
@@ -38,6 +39,7 @@ const WINDOW_LABELS: Record<string, string> = {
   codestudio:      "Code Studio",
   threatmodeler:   "Threat Modeler",
   chess:           "Monix Grandmaster Chess",
+  cykrypt:         "CYKRYPT — CTF Arena",
 };
 
 interface SelectionBox {
@@ -183,6 +185,7 @@ export default function Desktop() {
       codestudio:      { x: window.innerWidth / 2 - 490, y: window.innerHeight / 2 - 305 },
       threatmodeler:   { x: window.innerWidth / 2 - 480, y: window.innerHeight / 2 - 300 },
       chess:           { x: window.innerWidth / 2 - 390, y: window.innerHeight / 2 - 265 },
+      cykrypt:         { x: window.innerWidth / 2 - 490, y: window.innerHeight / 2 - 320 },
     };
     return offsets[type] ?? { x: 120, y: 60 };
   };
@@ -437,6 +440,19 @@ export default function Desktop() {
             initialX={getInitialPosition("chess").x}
             initialY={getInitialPosition("chess").y}
             zIndex={getWin("chess")!.zIndex}
+          />
+        )}
+
+        {getWin("cykrypt") && !getWin("cykrypt")!.minimized && (
+          <CykryptApp
+            key="cykrypt"
+            onClose={() => handleCloseWindow("cykrypt")}
+            onMinimize={() => handleMinimizeWindow("cykrypt")}
+            isActive={activeWindow === "cykrypt"}
+            onFocus={() => bringToFront("cykrypt")}
+            initialX={getInitialPosition("cykrypt").x}
+            initialY={getInitialPosition("cykrypt").y}
+            zIndex={getWin("cykrypt")!.zIndex}
           />
         )}
       </AnimatePresence>

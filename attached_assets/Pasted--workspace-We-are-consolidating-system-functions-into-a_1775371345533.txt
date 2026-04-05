@@ -1,0 +1,41 @@
+@workspace We are consolidating system functions into a single "Settings" application (SettingsApp.tsx), implementing custom key listeners, and applying crucial UX polish across the OS. Please act as an Elite UI/UX Designer and Frontend Architect to execute the following steps:
+
+1. Custom Task Manager Key Listener (Ctrl+Shift+Esc):
+
+Open the main app entry point (e.g., App.tsx or Desktop.tsx).
+
+Add a global useEffect keyboard event listener to capture Ctrl + Shift + Escape.
+
+If triggered, call e.preventDefault() and toggle the Task Manager window open (toggleTaskManager() state in the store).
+
+Crucially: Ensure TaskManagerApp.tsx no longer appears as a standalone icon on the Desktop or Start Menu.
+
+2. Revamp the Desktop Context Menu (Desktop.tsx):
+
+Open the right-click context menu logic.
+
+Completely remove the "Change Wallpaper" option.
+
+Retain the "⚙️ Settings" option, which should now open the updated SettingsApp.
+
+3. Structure the New "World-Class" Settings App (SettingsApp.tsx):
+
+Create a sleek, multi-section sidebar layout. Aesthetic: premium cyberpunk dark (bg-[#050505]), extreme glassmorphism (bg-white/[0.03] backdrop-blur-3xl border-white/[0.05]), and pulsing neon accents (Cyan/Green).
+
+Personalization: Migrate the entire wallpaper selection function here. Display animated thumbnails of available wallpapers. When clicked, update the global store.
+
+Apps & Features: Create a clean grid/table dynamically listing all installed OS applications from our store (e.g., Terminal, CyberChef, Grandmaster Chess, Aura AI). Include simulated data like "Version".
+
+Taskbar (Simulation): Add a simulated settings section for the MONIX taskbar (Dropdown: "Taskbar location", Toggle: "Combine buttons").
+
+System Monitor: Add a link labeled "System Resources". Clicking it should trigger the same logic as the Ctrl+Shift+Esc keybind.
+
+4. Crucial UX Refinements & Positioning (NEW):
+
+Window Centering: Fix the default initialization coordinates for ChessApp (and ensure it applies to all windows). When opened, they must calculate their (x,y) to spawn perfectly in the center of the screen, rather than off to the side.
+
+Delayed OS Notification: Remove the "Try Games" notification logic from the Start Menu click event. Instead, in Desktop.tsx or App.tsx, use a useEffect with a setTimeout to trigger the "🎮 Try Games in MONIX OS!" notification exactly 10 seconds after the user first loads into the OS. It must appear floating on the bottom-right.
+
+The Start Button "M" Logo: Open the Taskbar.tsx component. Replace the default Start icon with a highly attractive, premium, bold letter "M" (representing MONIX). Style it with a glowing cyan gradient text effect or a sleek custom SVG.
+
+Desktop Icon Reordering: Open the array that maps desktop icons in Desktop.tsx. Move the "Home" directory icon to the very first index (replacing the Trash icon's spot at the top-left).

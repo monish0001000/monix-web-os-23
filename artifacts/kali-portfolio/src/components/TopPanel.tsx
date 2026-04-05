@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { format } from "date-fns";
 import {
   Volume2, VolumeX, Bell, BatteryCharging, Battery,
@@ -104,6 +105,8 @@ export default function TopPanel({ openWindows = [], onOpenWindow, onTaskbarClic
   const [showCalendar, setShowCalendar] = useState(false);
   const [trayPopover, setTrayPopover] = useState<TrayPopover>(null);
   const [showStartMenu, setShowStartMenu] = useState(false);
+  const [showGamesNotif, setShowGamesNotif] = useState(false);
+  const notifTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Battery state
   const [batteryLevel, setBatteryLevel] = useState<number>(100);
@@ -211,7 +214,13 @@ export default function TopPanel({ openWindows = [], onOpenWindow, onTaskbarClic
   const handleLogoClick = () => {
     setTrayPopover(null);
     setShowCalendar(false);
+    const opening = !showStartMenu;
     setShowStartMenu((v) => !v);
+    if (opening) {
+      setShowGamesNotif(true);
+      if (notifTimerRef.current) clearTimeout(notifTimerRef.current);
+      notifTimerRef.current = setTimeout(() => setShowGamesNotif(false), 4500);
+    }
   };
 
   const popoverBase: React.CSSProperties = {
@@ -240,6 +249,67 @@ export default function TopPanel({ openWindows = [], onOpenWindow, onTaskbarClic
         onClose={() => setShowStartMenu(false)}
         onOpenWindow={(id) => { onOpenWindow(id); setShowStartMenu(false); }}
       />
+
+      {/* Games notification */}
+      <AnimatePresence>
+        {showGamesNotif && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.85, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9, y: 6 }}
+            transition={{ type: "spring", stiffness: 420, damping: 28 }}
+            style={{
+              position: "fixed",
+              bottom: 50,
+              left: 8,
+              zIndex: 510,
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              padding: "9px 14px",
+              background: "rgba(0,0,0,0.82)",
+              backdropFilter: "blur(14px)",
+              WebkitBackdropFilter: "blur(14px)",
+              border: "1px solid rgba(0,255,136,0.5)",
+              borderRadius: 8,
+              boxShadow: "0 0 24px rgba(0,255,136,0.25), 0 0 48px rgba(0,0,0,0.8), inset 0 0 16px rgba(0,255,136,0.04)",
+              cursor: "pointer",
+              userSelect: "none",
+              maxWidth: 240,
+            }}
+            onClick={() => {
+              setShowGamesNotif(false);
+              onOpenWindow("chess");
+              setShowStartMenu(false);
+            }}
+          >
+            <span style={{ fontSize: 18, lineHeight: 1 }}>🎮</span>
+            <div>
+              <div style={{
+                fontSize: 12, fontWeight: 700,
+                color: "#00ff88",
+                textShadow: "0 0 10px rgba(0,255,136,0.7)",
+                letterSpacing: "0.02em",
+              }}>
+                Try Games in MONIX OS!
+              </div>
+              <div style={{ fontSize: 10, color: "rgba(0,255,136,0.5)", marginTop: 1 }}>
+                Play Grandmaster Chess ↗
+              </div>
+            </div>
+            <button
+              onClick={(e) => { e.stopPropagation(); setShowGamesNotif(false); }}
+              style={{
+                marginLeft: 4, background: "none", border: "none",
+                color: "rgba(255,255,255,0.3)", cursor: "pointer", fontSize: 14, lineHeight: 1,
+                padding: "0 2px",
+              }}
+            >
+              ×
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <div
         className="fixed bottom-0 left-0 w-full z-50 select-none font-sans flex items-stretch justify-between"

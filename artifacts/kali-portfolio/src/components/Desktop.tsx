@@ -14,6 +14,7 @@ import AuraApp from "./AuraApp";
 import CyberChefApp from "./CyberChefApp";
 import CodeStudioApp from "./CodeStudioApp";
 import ThreatModelerApp from "./ThreatModelerApp";
+import ChessApp from "./ChessApp";
 import RightClickMenu from "./RightClickMenu";
 import { useOSStore } from "@/lib/store";
 
@@ -36,6 +37,7 @@ const WINDOW_LABELS: Record<string, string> = {
   cyberchef:       "CyberChef",
   codestudio:      "Code Studio",
   threatmodeler:   "Threat Modeler",
+  chess:           "Monix Grandmaster Chess",
 };
 
 interface SelectionBox {
@@ -180,6 +182,7 @@ export default function Desktop() {
       cyberchef:       { x: window.innerWidth / 2 - 500, y: window.innerHeight / 2 - 310 },
       codestudio:      { x: window.innerWidth / 2 - 490, y: window.innerHeight / 2 - 305 },
       threatmodeler:   { x: window.innerWidth / 2 - 480, y: window.innerHeight / 2 - 300 },
+      chess:           { x: window.innerWidth / 2 - 390, y: window.innerHeight / 2 - 265 },
     };
     return offsets[type] ?? { x: 120, y: 60 };
   };
@@ -421,6 +424,19 @@ export default function Desktop() {
             initialX={getInitialPosition("threatmodeler").x}
             initialY={getInitialPosition("threatmodeler").y}
             zIndex={getWin("threatmodeler")!.zIndex}
+          />
+        )}
+
+        {getWin("chess") && !getWin("chess")!.minimized && (
+          <ChessApp
+            key="chess"
+            onClose={() => handleCloseWindow("chess")}
+            onMinimize={() => handleMinimizeWindow("chess")}
+            isActive={activeWindow === "chess"}
+            onFocus={() => bringToFront("chess")}
+            initialX={getInitialPosition("chess").x}
+            initialY={getInitialPosition("chess").y}
+            zIndex={getWin("chess")!.zIndex}
           />
         )}
       </AnimatePresence>

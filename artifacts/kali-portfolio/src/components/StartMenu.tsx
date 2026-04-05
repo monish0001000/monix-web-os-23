@@ -2,7 +2,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   TerminalSquare, FolderOpen, Monitor, Github, Trash2,
   Lock, Settings, Power, Search, Globe, Shield, Sparkles,
-  FlaskConical, Code2, PenTool
+  FlaskConical, Code2, PenTool, Crown
 } from "lucide-react";
 import { useOSStore } from "@/lib/store";
 
@@ -11,6 +11,16 @@ interface StartMenuProps {
   onClose: () => void;
   onOpenWindow: (id: string) => void;
 }
+
+const GAMES = [
+  {
+    id: "chess",
+    label: "Grandmaster",
+    icon: <Crown size={22} strokeWidth={1.6} />,
+    color: "#ffd700",
+    bg: "rgba(255,215,0,0.1)",
+  },
+];
 
 const APPS = [
   {
@@ -161,7 +171,7 @@ export default function StartMenu({ open, onClose, onOpenWindow }: StartMenuProp
             </div>
 
             {/* Apps grid */}
-            <div style={{ padding: "12px 12px 8px", flex: 1 }}>
+            <div style={{ padding: "12px 12px 4px", flex: 1, overflowY: "auto" }}>
               <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8, paddingLeft: 4 }}>
                 Applications
               </div>
@@ -196,6 +206,46 @@ export default function StartMenu({ open, onClose, onOpenWindow }: StartMenuProp
                     }}
                   >
                     <div style={{ color: app.color }}>{app.icon}</div>
+                    <span style={{ fontSize: 11, color: "rgba(255,255,255,0.8)", fontWeight: 500 }}>
+                      {app.label}
+                    </span>
+                  </button>
+                ))}
+              </div>
+
+              {/* Games section */}
+              <div style={{ fontSize: 10, color: "rgba(255,215,0,0.5)", letterSpacing: "0.08em", textTransform: "uppercase", margin: "12px 0 8px", paddingLeft: 4, display: "flex", alignItems: "center", gap: 6 }}>
+                <Crown size={10} color="rgba(255,215,0,0.5)" />
+                Games
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6 }}>
+                {GAMES.map((app) => (
+                  <button
+                    key={app.id}
+                    onClick={() => { onOpenWindow(app.id); onClose(); }}
+                    style={{
+                      display: "flex", flexDirection: "column", alignItems: "center",
+                      gap: 6, padding: "12px 4px 10px",
+                      background: app.bg,
+                      border: "1px solid rgba(255,215,0,0.15)",
+                      borderRadius: 8, cursor: "pointer",
+                      transition: "background 0.15s, border-color 0.15s, transform 0.1s",
+                      boxShadow: "0 0 12px rgba(255,215,0,0.06)",
+                    }}
+                    onMouseEnter={(e) => {
+                      (e.currentTarget as HTMLElement).style.background = "rgba(255,215,0,0.18)";
+                      (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,215,0,0.35)";
+                      (e.currentTarget as HTMLElement).style.transform = "translateY(-1px)";
+                      (e.currentTarget as HTMLElement).style.boxShadow = "0 0 16px rgba(255,215,0,0.2)";
+                    }}
+                    onMouseLeave={(e) => {
+                      (e.currentTarget as HTMLElement).style.background = app.bg;
+                      (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,215,0,0.15)";
+                      (e.currentTarget as HTMLElement).style.transform = "translateY(0)";
+                      (e.currentTarget as HTMLElement).style.boxShadow = "0 0 12px rgba(255,215,0,0.06)";
+                    }}
+                  >
+                    <div style={{ color: app.color, filter: "drop-shadow(0 0 6px rgba(255,215,0,0.5))" }}>{app.icon}</div>
                     <span style={{ fontSize: 11, color: "rgba(255,255,255,0.8)", fontWeight: 500 }}>
                       {app.label}
                     </span>

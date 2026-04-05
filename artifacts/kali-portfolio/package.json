@@ -76,6 +76,7 @@
   },
   "dependencies": {
     "@google/genai": "^1.48.0",
+    "@supabase/supabase-js": "^2.101.1",
     "chess.js": "^1.4.0",
     "react-markdown": "^10.1.0",
     "zustand": "^5.0.12"

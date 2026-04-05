@@ -73,9 +73,15 @@ export default function Desktop() {
   const currentWallpaper = useOSStore((s) => s.currentWallpaper);
   const cursorStyle = useOSStore((s) => s.cursorStyle);
   const cursorColor = useOSStore((s) => s.cursorColor);
+  const preloadLocalFS = useOSStore((s) => s.preloadLocalFS);
 
   const computedCursor =
     cursorStyle === "crosshair" || cursorStyle === "target" ? "crosshair" : "default";
+
+  // Preload the static VFS once on desktop mount (synchronous — zero UI delay)
+  useEffect(() => {
+    preloadLocalFS();
+  }, [preloadLocalFS]);
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);

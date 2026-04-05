@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { type VFSNode, scanStorage } from "./vfsUtils";
 
 export const WALLPAPERS: string[] = [
   "/wallpaper_1.webp",
@@ -28,6 +29,10 @@ interface OSState {
   cursorColor: string;
   themeAccent: string;
 
+  // Virtual File System
+  localFileSystem: VFSNode[];
+  preloadLocalFS: () => void;
+
   setLocked: (locked: boolean) => void;
   setTaskbarPosition: (pos: TaskbarPosition) => void;
   setWallpaper: (path: string) => void;
@@ -55,6 +60,10 @@ export const useOSStore = create<OSState>((set) => ({
   cursorStyle: "default",
   cursorColor: "#ffffff",
   themeAccent: "#00f0ff",
+
+  // VFS — populated synchronously at boot via scanStorage()
+  localFileSystem: [],
+  preloadLocalFS: () => set({ localFileSystem: scanStorage() }),
 
   setLocked: (locked) => set({ isLocked: locked }),
   setTaskbarPosition: (pos) => set({ taskbarPosition: pos }),

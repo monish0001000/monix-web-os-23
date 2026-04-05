@@ -1,0 +1,48 @@
+@workspace We are implementing a "Zero-Latency Static Virtual File System" for the Local System tab in FilesApp.tsx. I have placed a folder named storage in the root directory (/storage). Act as a Senior Systems Architect and execute the following steps in exact order:
+
+1. File System Operation (Move Folder):
+
+Please move the entire /storage directory into the /src directory so its new path is /src/storage. This is required for Vite to bundle the static assets.
+
+2. The Glob Scanner & Tree Builder (Store.ts or vfsUtils.ts):
+
+Use Vite's glob feature to aggressively scan the newly moved storage directory:
+const rawFiles = import.meta.glob('/src/storage/**/*', { query: '?url', import: 'default', eager: true });
+
+The Parser: Write a function that iterates over Object.keys(rawFiles).
+
+Strip the /src/storage/ prefix to get the relative virtual path (e.g., projects/portfolio/index.html).
+
+Parse these relative paths into a hierarchical state structure (e.g., a flat array with parentId and id, or nested JSON) suitable for rendering a nested folder UI.
+
+The value from the glob object is the actual public URL of the bundled asset. Attach this URL to the file node so the user can open/download it later.
+
+3. The Silent Preload Engine (Desktop.tsx & Store.ts):
+
+Add a localFileSystem state to the Zustand global store.
+
+Create a preloadLocalFS() action in the store. This action should run the Parser (from step 2) and save the resulting tree into the localFileSystem state.
+
+In Desktop.tsx, add a useEffect on mount that calls preloadLocalFS(). This ensures the VFS is silently built into memory the moment the desktop boots.
+
+4. UI Navigation (FilesApp.tsx - Local System Tab):
+
+Update the Local System tab to read exclusively from the global localFileSystem state.
+
+Implement true nested navigation:
+
+Maintain a currentPath state (e.g., ['root', 'projects']).
+
+Render breadcrumbs at the top (e.g., root > projects). Clicking a breadcrumb navigates back up the tree.
+
+Folder Double-click: Navigates into the folder by updating currentPath.
+
+File Double-click: Uses the attached glob URL to open the static file in a new tab or trigger a native download.
+
+5. Performance & Aesthetics:
+
+Since this relies on build-time globbing and on-mount preloading, the UI must render instantly when the FilesApp is opened—zero loading spinners.
+
+Ensure the right-click context menu (Open, Download) works for these mapped files.
+
+Maintain our exact premium, dark cyberpunk aesthetic (bg-[#050505], monospace fonts, cyan accents, folder/file icons).

@@ -2,7 +2,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   TerminalSquare, FolderOpen, Monitor, Github, Trash2,
   Lock, Settings, Power, Search, Globe, Shield, Sparkles,
-  FlaskConical, Code2, PenTool, Crown
+  FlaskConical, Code2, PenTool, Crown, Activity, Cpu
 } from "lucide-react";
 import { useOSStore } from "@/lib/store";
 
@@ -11,6 +11,16 @@ interface StartMenuProps {
   onClose: () => void;
   onOpenWindow: (id: string) => void;
 }
+
+const SYSTEM_TOOLS = [
+  {
+    id: "taskmanager",
+    label: "Sys Monitor",
+    icon: <Activity size={22} strokeWidth={1.6} />,
+    color: "#00ff88",
+    bg: "rgba(0,255,136,0.08)",
+  },
+];
 
 const GAMES = [
   {
@@ -246,6 +256,44 @@ export default function StartMenu({ open, onClose, onOpenWindow }: StartMenuProp
                     }}
                   >
                     <div style={{ color: app.color, filter: "drop-shadow(0 0 6px rgba(255,215,0,0.5))" }}>{app.icon}</div>
+                    <span style={{ fontSize: 11, color: "rgba(255,255,255,0.8)", fontWeight: 500 }}>
+                      {app.label}
+                    </span>
+                  </button>
+                ))}
+              </div>
+
+              {/* System Tools section */}
+              <div style={{ fontSize: 10, color: "rgba(0,255,136,0.5)", letterSpacing: "0.08em", textTransform: "uppercase", margin: "12px 0 8px", paddingLeft: 4, display: "flex", alignItems: "center", gap: 6 }}>
+                <Activity size={10} color="rgba(0,255,136,0.5)" />
+                System Tools
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6, paddingBottom: 8 }}>
+                {SYSTEM_TOOLS.map((app) => (
+                  <button
+                    key={app.id}
+                    onClick={() => { onOpenWindow(app.id); onClose(); }}
+                    style={{
+                      display: "flex", flexDirection: "column", alignItems: "center",
+                      gap: 6, padding: "12px 4px 10px",
+                      background: app.bg,
+                      border: "1px solid rgba(0,255,136,0.12)",
+                      borderRadius: 8, cursor: "pointer",
+                      transition: "background 0.15s, border-color 0.15s, transform 0.1s",
+                      boxShadow: "0 0 10px rgba(0,255,136,0.04)",
+                    }}
+                    onMouseEnter={(e) => {
+                      (e.currentTarget as HTMLElement).style.background = "rgba(0,255,136,0.16)";
+                      (e.currentTarget as HTMLElement).style.borderColor = "rgba(0,255,136,0.3)";
+                      (e.currentTarget as HTMLElement).style.transform = "translateY(-1px)";
+                    }}
+                    onMouseLeave={(e) => {
+                      (e.currentTarget as HTMLElement).style.background = app.bg;
+                      (e.currentTarget as HTMLElement).style.borderColor = "rgba(0,255,136,0.12)";
+                      (e.currentTarget as HTMLElement).style.transform = "translateY(0)";
+                    }}
+                  >
+                    <div style={{ color: app.color, filter: "drop-shadow(0 0 5px rgba(0,255,136,0.4))" }}>{app.icon}</div>
                     <span style={{ fontSize: 11, color: "rgba(255,255,255,0.8)", fontWeight: 500 }}>
                       {app.label}
                     </span>

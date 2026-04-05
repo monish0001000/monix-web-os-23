@@ -6,6 +6,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import BootScreen from "./components/BootScreen";
 import LoginScreen from "./components/LoginScreen";
 import Desktop from "./components/Desktop";
+import NetworkHandler from "./components/NetworkHandler";
 import { useOSStore } from "./lib/store";
 
 const queryClient = new QueryClient();
@@ -27,6 +28,7 @@ function AppInner() {
       className="w-full h-[100dvh] overflow-hidden font-sans"
       style={{ background: "#000000" }}
     >
+      <NetworkHandler />
       <AnimatePresence mode="wait">
         {phase === "boot" && (
           <BootScreen key="boot" onComplete={() => setPhase("login")} />

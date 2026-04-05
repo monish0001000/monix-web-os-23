@@ -1,0 +1,29 @@
+@workspace We need to build two native system components for our MONIX OS to enhance realism and user experience. Please implement the following directly in the workspace:
+
+Part 1: The Offline Network Handler (NetworkHandler.tsx)
+
+Create a new global component named NetworkHandler.tsx.
+
+Logic: Use a useEffect to listen to the window's online and offline events. Manage a boolean state isOffline.
+
+UI: If isOffline is true, render a full-screen, absolute overlay (fixed inset-0 z-[99999] w-screen h-screen bg-black/90 backdrop-blur-xl flex flex-col items-center justify-center cursor-pointer).
+
+Content: Display an image using <img src="/internet_handler.webp" alt="Connection Lost" className="w-1/2 max-w-md object-contain animate-pulse" />. Add glowing red text below it saying "CONNECTION SEVERED. CLICK TO RECONNECT."
+
+Interaction: Add an onClick event to the entire overlay that executes window.location.reload().
+
+Integration: Import and place <NetworkHandler /> at the very top level of our App.tsx or Desktop.tsx so it's always monitoring.
+
+Part 2: The Native Task Manager (TaskManagerApp.tsx)
+
+Create a new draggable OS window component named TaskManagerApp.tsx.
+
+Theme: Deep dark hacker aesthetic (bg-[#0a0a0a]). Monospace fonts, Neon Cyan and Green accents.
+
+Simulation Logic: Create state for simulated CPU (0-100%) and RAM (0-16GB). Create a static array of processes: ['Kernel_System', 'Aura_AI_Core.exe', 'Sentinel_WFP.sys', 'Window_Manager', 'Cykrypt_Engine']. Use a setInterval (e.g., 1.5s) to randomize the CPU/RAM numbers slightly so the dashboard feels alive.
+
+UI Layout: >   - Top section: Two simple animated bar graphs or progress bars for CPU and RAM.
+
+Bottom section: A clean table listing the processes with mock PID, CPU%, and RAM values. Add hover effects to the rows.
+
+OS Integration: Register this app in our Store.ts (isTaskManagerOpen), add a "System Monitor" icon (use a chart or CPU icon from lucide-react) to the Desktop, and add it to the Start Menu under a "System Tools" category.

@@ -277,6 +277,35 @@ function CodeStudioIcon() {
   );
 }
 
+function TaskManagerIcon() {
+  return (
+    <svg viewBox="0 0 36 36" width="36" height="36" fill="none">
+      <defs>
+        <linearGradient id="tmiBg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#001a10" />
+          <stop offset="100%" stopColor="#000a06" />
+        </linearGradient>
+      </defs>
+      <rect width="36" height="36" rx="6" fill="url(#tmiBg)" stroke="#004422" strokeWidth="0.8"/>
+      <rect x="4" y="6" width="28" height="18" rx="2" fill="#001a0a" stroke="#003318" strokeWidth="0.8"/>
+      <rect x="4" y="6" width="28" height="5" rx="2" fill="#002a14"/>
+      <circle cx="8" cy="8.5" r="1.2" fill="#ff5f5f"/>
+      <circle cx="12" cy="8.5" r="1.2" fill="#ffbe2e"/>
+      <circle cx="16" cy="8.5" r="1.2" fill="#27c93f"/>
+      <rect x="7" y="15" width="6" height="6" rx="1" fill="none" stroke="#00ff88" strokeWidth="0.8" opacity="0.7"/>
+      <rect x="7" y="17" width="6" height="2" rx="0.5" fill="#00ff88" opacity="0.4"/>
+      <rect x="15" y="15" width="14" height="1.5" rx="0.5" fill="#00f0ff" opacity="0.5"/>
+      <rect x="15" y="18" width="9" height="1.5" rx="0.5" fill="#00ff88" opacity="0.4"/>
+      <rect x="15" y="21" width="11" height="1.5" rx="0.5" fill="#00f0ff" opacity="0.3"/>
+      <line x1="4" y1="27" x2="32" y2="27" stroke="#003318" strokeWidth="0.6"/>
+      <rect x="7" y="29" width="4" height="4" rx="0.5" fill="#00ff88" opacity="0.6"/>
+      <rect x="13" y="29" width="4" height="4" rx="0.5" fill="#00f0ff" opacity="0.5"/>
+      <rect x="19" y="29" width="4" height="4" rx="0.5" fill="#00ff88" opacity="0.3"/>
+      <rect x="25" y="29" width="4" height="4" rx="0.5" fill="#00f0ff" opacity="0.4"/>
+    </svg>
+  );
+}
+
 function CykryptIcon() {
   return (
     <svg viewBox="0 0 36 36" width="36" height="36" fill="none">
@@ -343,10 +372,11 @@ const ICONS_COL1 = [
 ];
 
 const ICONS_COL2 = [
-  { id: "cyberchef",    label: "CyberChef",     icon: <CyberChefIcon />,     window: "cyberchef"    },
-  { id: "codestudio",   label: "Code Studio",   icon: <CodeStudioIcon />,    window: "codestudio"   },
-  { id: "threatmodeler",label: "Threat Modeler",icon: <ThreatModelerIcon />, window: "threatmodeler"},
-  { id: "cykrypt",      label: "CYKRYPT",        icon: <CykryptIcon />,       window: "cykrypt"      },
+  { id: "cyberchef",    label: "CyberChef",     icon: <CyberChefIcon />,      window: "cyberchef"    },
+  { id: "codestudio",   label: "Code Studio",   icon: <CodeStudioIcon />,     window: "codestudio"   },
+  { id: "threatmodeler",label: "Threat Modeler",icon: <ThreatModelerIcon />,  window: "threatmodeler"},
+  { id: "cykrypt",      label: "CYKRYPT",        icon: <CykryptIcon />,        window: "cykrypt"      },
+  { id: "taskmanager",  label: "Sys Monitor",   icon: <TaskManagerIcon />,    window: "taskmanager"  },
 ];
 
 function IconItem({

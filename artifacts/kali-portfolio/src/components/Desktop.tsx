@@ -16,6 +16,7 @@ import CodeStudioApp from "./CodeStudioApp";
 import ThreatModelerApp from "./ThreatModelerApp";
 import ChessApp from "./ChessApp";
 import CykryptApp from "./CykryptApp";
+import TaskManagerApp from "./TaskManagerApp";
 import RightClickMenu from "./RightClickMenu";
 import { useOSStore } from "@/lib/store";
 
@@ -40,6 +41,7 @@ const WINDOW_LABELS: Record<string, string> = {
   threatmodeler:   "Threat Modeler",
   chess:           "Monix Grandmaster Chess",
   cykrypt:         "CYKRYPT — CTF Arena",
+  taskmanager:     "System Monitor",
 };
 
 interface SelectionBox {
@@ -186,6 +188,7 @@ export default function Desktop() {
       threatmodeler:   { x: window.innerWidth / 2 - 480, y: window.innerHeight / 2 - 300 },
       chess:           { x: window.innerWidth / 2 - 390, y: window.innerHeight / 2 - 265 },
       cykrypt:         { x: window.innerWidth / 2 - 490, y: window.innerHeight / 2 - 320 },
+      taskmanager:     { x: window.innerWidth / 2 - 330, y: window.innerHeight / 2 - 260 },
     };
     return offsets[type] ?? { x: 120, y: 60 };
   };
@@ -453,6 +456,19 @@ export default function Desktop() {
             initialX={getInitialPosition("cykrypt").x}
             initialY={getInitialPosition("cykrypt").y}
             zIndex={getWin("cykrypt")!.zIndex}
+          />
+        )}
+
+        {getWin("taskmanager") && !getWin("taskmanager")!.minimized && (
+          <TaskManagerApp
+            key="taskmanager"
+            onClose={() => handleCloseWindow("taskmanager")}
+            onMinimize={() => handleMinimizeWindow("taskmanager")}
+            isActive={activeWindow === "taskmanager"}
+            onFocus={() => bringToFront("taskmanager")}
+            initialX={getInitialPosition("taskmanager").x}
+            initialY={getInitialPosition("taskmanager").y}
+            zIndex={getWin("taskmanager")!.zIndex}
           />
         )}
       </AnimatePresence>

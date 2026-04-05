@@ -72,6 +72,21 @@ export default function Desktop() {
 
   const currentWallpaper = useOSStore((s) => s.currentWallpaper);
   const cursorStyle = useOSStore((s) => s.cursorStyle);
+  const cursorColor = useOSStore((s) => s.cursorColor);
+
+  const computedCursor = (() => {
+    const c = encodeURIComponent(cursorColor);
+    if (cursorStyle === "crosshair") {
+      const svg = `<svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><line x1="12" y1="2" x2="12" y2="22" stroke="${c}" stroke-width="2" stroke-linecap="round"/><line x1="2" y1="12" x2="22" y2="12" stroke="${c}" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="12" r="3" fill="none" stroke="${c}" stroke-width="1.5"/><circle cx="12" cy="12" r="1.5" fill="${c}"/></svg>`;
+      return `url('data:image/svg+xml;utf8,${encodeURIComponent(svg)}') 12 12, crosshair`;
+    }
+    if (cursorStyle === "target") {
+      const svg = `<svg width="28" height="28" viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg"><circle cx="14" cy="14" r="12" fill="none" stroke="${c}" stroke-width="1.5"/><circle cx="14" cy="14" r="6" fill="none" stroke="${c}" stroke-width="1.5"/><circle cx="14" cy="14" r="2" fill="${c}"/><line x1="14" y1="2" x2="14" y2="8" stroke="${c}" stroke-width="1.5"/><line x1="14" y1="20" x2="14" y2="26" stroke="${c}" stroke-width="1.5"/><line x1="2" y1="14" x2="8" y2="14" stroke="${c}" stroke-width="1.5"/><line x1="20" y1="14" x2="26" y2="14" stroke="${c}" stroke-width="1.5"/></svg>`;
+      return `url('data:image/svg+xml;utf8,${encodeURIComponent(svg)}') 14 14, crosshair`;
+    }
+    const arrowSvg = `<svg width="20" height="20" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M4 2l13 9.5H11l2.8 6.8-2 .8-2.8-6.8L4 16V2z" fill="${c}" stroke="rgba(0,0,0,0.55)" stroke-width="0.6"/></svg>`;
+    return `url('data:image/svg+xml;utf8,${encodeURIComponent(arrowSvg)}') 4 2, auto`;
+  })();
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
@@ -259,7 +274,7 @@ export default function Desktop() {
         backgroundPosition: "center",
         backgroundRepeat: "no-repeat",
         transition: "background-image 0.4s ease",
-        cursor: cursorStyle,
+        cursor: computedCursor,
       }}
       onClick={handleDesktopClick}
       onContextMenu={handleRightClick}

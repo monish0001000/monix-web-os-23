@@ -1,0 +1,41 @@
+@workspace We are implementing a Global Theme Engine, Advanced Cursor Customization, and fixing Window behaviors to achieve a world-class Web OS standard. Please act as an Elite System Architect and execute the following:
+
+1. Default Maximize for Games (ChessApp.tsx & Window.tsx):
+
+To fix the spawning issues for complex apps, modify the base Window wrapper component to accept a defaultMaximized boolean prop.
+
+If defaultMaximized is true, the window should initialize with its maximized state set to true (taking up the full workspace area, minus the taskbar).
+
+Apply this defaultMaximized={true} prop to the ChessApp.tsx integration.
+
+2. Global Theme Engine (Store.ts & App.tsx):
+
+State: Add themeAccent to the Zustand store. Default it to our cyberpunk cyan (#00f0ff).
+
+Root Injection: In App.tsx or the top-level OS container, inject this color as a CSS variable into the root style: style={{ '--os-accent': themeAccent }}.
+
+Implementation: Update key UI elements across the OS (e.g., Start Menu active borders, glowing hover effects, Settings sidebar active tabs) to utilize this variable. Instead of hardcoding text-cyan-400 or border-cyan-500, use style={{ borderColor: 'var(--os-accent)', color: 'var(--os-accent)', textShadow: '0 0 10px var(--os-accent)' }} where appropriate to make the entire OS react to the theme change.
+
+3. Settings App - Theme Section (SettingsApp.tsx):
+
+Create a new "Themes & Colors" tab in the Settings sidebar.
+
+Build a "Windows-style" color picker grid. Provide 11 distinct, vibrant base colors (e.g., Cyan, Hacker Green, Blood Red, Deep Purple, Neon Pink, Sunset Orange, Gold, Cobalt Blue, White, etc.).
+
+Render these as sleek, clickable circular swatches. When clicked, update themeAccent in the store. Highlight the selected swatch.
+
+4. Advanced Mouse Customization (SettingsApp.tsx & App.tsx):
+
+State Update: Update the store to hold both cursorStyle (e.g., 'default', 'crosshair', 'pointer') and cursorColor (default to white #ffffff).
+
+Settings UI: In the "Mouse & Cursor" tab, add two distinct sections:
+
+Style Selector: A visual list of pointer shapes (Default, Crosshair, Target).
+
+Color Selector: Use the same 11-panel color grid from the Theme section so users can match their cursor to their OS theme.
+
+Dynamic Cursor Generation: In App.tsx, instead of relying purely on CSS cursor names, dynamically generate an SVG cursor using a data URI when a custom color/style is selected.
+
+Example: cursor: url('data:image/svg+xml;utf8,<svg width="24" height="24" viewBox="0 0 24 24" fill="${cursorColor}" xmlns="http://www.w3.org/2000/svg"><path d="M7 2l12 11.2h-5.8l3.3 7.3-2.2.9-3.2-7.4-4.4 4.7z"/></svg>'), auto;
+
+Please ensure flawless state management so changes apply instantly across the entire DOM without a reload.

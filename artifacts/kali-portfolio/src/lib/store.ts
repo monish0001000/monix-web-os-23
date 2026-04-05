@@ -25,6 +25,8 @@ interface OSState {
   brightness: number;
   warmth: number;
   cursorStyle: string;
+  cursorColor: string;
+  themeAccent: string;
 
   setLocked: (locked: boolean) => void;
   setTaskbarPosition: (pos: TaskbarPosition) => void;
@@ -36,6 +38,8 @@ interface OSState {
   setBrightness: (val: number) => void;
   setWarmth: (val: number) => void;
   setCursorStyle: (style: string) => void;
+  setCursorColor: (color: string) => void;
+  setThemeAccent: (color: string) => void;
 }
 
 export const useOSStore = create<OSState>((set) => ({
@@ -49,6 +53,8 @@ export const useOSStore = create<OSState>((set) => ({
   brightness: 100,
   warmth: 0,
   cursorStyle: "default",
+  cursorColor: "#ffffff",
+  themeAccent: "#00f0ff",
 
   setLocked: (locked) => set({ isLocked: locked }),
   setTaskbarPosition: (pos) => set({ taskbarPosition: pos }),
@@ -78,4 +84,6 @@ export const useOSStore = create<OSState>((set) => ({
   setBrightness: (val) => set({ brightness: Math.max(0, Math.min(150, val)) }),
   setWarmth: (val) => set({ warmth: Math.max(0, Math.min(50, val)) }),
   setCursorStyle: (style) => set({ cursorStyle: style }),
+  setCursorColor: (color) => set({ cursorColor: color }),
+  setThemeAccent: (color) => set({ themeAccent: color }),
 }));

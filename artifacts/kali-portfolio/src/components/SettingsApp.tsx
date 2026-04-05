@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Palette, Monitor, Info, Check, AppWindow, LayoutDashboard, Activity, MousePointer2 } from "lucide-react";
+import { Palette, Monitor, Info, Check, AppWindow, LayoutDashboard, Activity, MousePointer2, Sparkles } from "lucide-react";
 import WindowChrome from "./WindowChrome";
 import { useOSStore } from "@/lib/store";
 
@@ -15,15 +15,30 @@ interface SettingsAppProps {
   onOpenTaskManager?: () => void;
 }
 
-type Tab = "personalization" | "display" | "apps" | "taskbar" | "cursor" | "sysinfo";
+type Tab = "personalization" | "display" | "apps" | "taskbar" | "themes" | "cursor" | "sysinfo";
 
 const TABS: { id: Tab; label: string; icon: React.ReactNode; locked?: boolean }[] = [
   { id: "personalization", label: "Personalization", icon: <Palette size={15} /> },
   { id: "display",         label: "Display",         icon: <Monitor size={15} /> },
   { id: "apps",            label: "Apps & Features", icon: <AppWindow size={15} /> },
   { id: "taskbar",         label: "Taskbar",         icon: <LayoutDashboard size={15} />, locked: true },
+  { id: "themes",          label: "Themes & Colors", icon: <Sparkles size={15} /> },
   { id: "cursor",          label: "Mouse & Cursor",  icon: <MousePointer2 size={15} /> },
   { id: "sysinfo",         label: "System Info",     icon: <Info size={15} /> },
+];
+
+const ACCENT_COLORS = [
+  { label: "Cyber Cyan",    hex: "#00f0ff" },
+  { label: "Hacker Green",  hex: "#00ff88" },
+  { label: "Blood Red",     hex: "#ff2244" },
+  { label: "Deep Purple",   hex: "#a855f7" },
+  { label: "Neon Pink",     hex: "#ff0099" },
+  { label: "Sunset Orange", hex: "#ff6600" },
+  { label: "Gold",          hex: "#ffd700" },
+  { label: "Cobalt Blue",   hex: "#0066ff" },
+  { label: "Ice Blue",      hex: "#60a5fa" },
+  { label: "Pure White",    hex: "#ffffff" },
+  { label: "Matrix Green",  hex: "#39ff14" },
 ];
 
 const INSTALLED_APPS = [
@@ -384,211 +399,274 @@ function AppsTab() {
 function CursorTab() {
   const cursorStyle = useOSStore((s) => s.cursorStyle);
   const setCursorStyle = useOSStore((s) => s.setCursorStyle);
+  const cursorColor = useOSStore((s) => s.cursorColor);
+  const setCursorColor = useOSStore((s) => s.setCursorColor);
 
-  const NEON_CURSOR_SVG = `<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'><path d='M5 3l14 9-7 1-4 7z' fill='%2300f0ff' stroke='%23000' stroke-width='1'/></svg>`;
-  const neonCursorUrl = `url("data:image/svg+xml,${NEON_CURSOR_SVG}"), pointer`;
-
-  const CURSORS = [
-    {
-      id: "default",
-      label: "System Default",
-      desc: "Standard OS pointer",
-      preview: "↖",
-      color: "#00f0ff",
-      value: "default",
-    },
-    {
-      id: "crosshair",
-      label: "Hacker Crosshair",
-      desc: "Precision targeting",
-      preview: "⊕",
-      color: "#00ff88",
-      value: "crosshair",
-    },
-    {
-      id: "text",
-      label: "Terminal Text",
-      desc: "I-beam text cursor",
-      preview: "I",
-      color: "#ffaa00",
-      value: "text",
-    },
-    {
-      id: "neon",
-      label: "Neon Pointer",
-      desc: "Custom cyan SVG cursor",
-      preview: "⬡",
-      color: "#c084fc",
-      value: neonCursorUrl,
-    },
-    {
-      id: "cell",
-      label: "Grid Select",
-      desc: "Cell selection mode",
-      preview: "⊞",
-      color: "#00d4ff",
-      value: "cell",
-    },
-    {
-      id: "alias",
-      label: "Shortcut Link",
-      desc: "Alias / shortcut arrow",
-      preview: "↗",
-      color: "#ffd700",
-      value: "alias",
-    },
-    {
-      id: "grab",
-      label: "Grab / Move",
-      desc: "Drag & grab mode",
-      preview: "✋",
-      color: "#90bfff",
-      value: "grab",
-    },
-    {
-      id: "zoom-in",
-      label: "Zoom In",
-      desc: "Magnify & inspect",
-      preview: "⊕",
-      color: "#00ff88",
-      value: "zoom-in",
-    },
+  const CURSOR_SHAPES = [
+    { id: "default",    label: "Arrow Pointer", desc: "Classic OS arrow",     preview: "↖" },
+    { id: "crosshair",  label: "Crosshair",     desc: "Precision targeting",  preview: "⊕" },
+    { id: "target",     label: "Target Ring",   desc: "Center ring pointer",  preview: "◎" },
   ];
 
-  const activeCursor = CURSORS.find((c) => c.value === cursorStyle) ?? CURSORS[0];
-
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      <p style={{ fontFamily: "monospace", fontSize: 10, color: "rgba(0,240,255,0.5)", letterSpacing: "0.15em", margin: 0 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+      <p style={{ fontFamily: "monospace", fontSize: 10, color: "var(--os-accent)", letterSpacing: "0.15em", margin: 0, opacity: 0.7 }}>
         MOUSE & CURSOR CUSTOMIZATION
       </p>
 
-      <div
-        style={{
-          padding: "12px 16px",
-          background: "rgba(0,240,255,0.04)",
-          border: "1px solid rgba(0,240,255,0.12)",
-          borderRadius: 8,
-          display: "flex",
-          alignItems: "center",
-          gap: 12,
-        }}
-      >
-        <span style={{ fontSize: 24, color: activeCursor.color, filter: `drop-shadow(0 0 8px ${activeCursor.color}80)` }}>
-          {activeCursor.preview}
-        </span>
-        <div>
-          <div style={{ fontFamily: "monospace", fontSize: 12, color: "rgba(255,255,255,0.9)", fontWeight: 600 }}>
-            {activeCursor.label}
-          </div>
-          <div style={{ fontFamily: "monospace", fontSize: 9, color: "rgba(255,255,255,0.3)", letterSpacing: "0.08em", marginTop: 2 }}>
-            ACTIVE · {activeCursor.desc.toUpperCase()}
-          </div>
+      {/* Style selector */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        <div style={{ fontFamily: "monospace", fontSize: 9, color: "rgba(255,255,255,0.3)", letterSpacing: "0.15em" }}>
+          POINTER SHAPE
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
+          {CURSOR_SHAPES.map((shape) => {
+            const isActive = cursorStyle === shape.id;
+            return (
+              <motion.button
+                key={shape.id}
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                onClick={() => setCursorStyle(shape.id)}
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: 8,
+                  padding: "16px 12px",
+                  borderRadius: 10,
+                  border: isActive ? `1px solid var(--os-accent)` : "1px solid rgba(255,255,255,0.07)",
+                  background: isActive ? "rgba(var(--os-accent-r,0),240,255,0.06)" : "rgba(255,255,255,0.02)",
+                  cursor: "pointer",
+                  boxShadow: isActive ? `0 0 18px color-mix(in srgb, var(--os-accent) 25%, transparent)` : "none",
+                  transition: "all 0.2s",
+                  position: "relative",
+                }}
+              >
+                <span style={{
+                  fontSize: 26,
+                  color: isActive ? cursorColor : "rgba(255,255,255,0.5)",
+                  filter: isActive ? `drop-shadow(0 0 8px ${cursorColor}99)` : "none",
+                  transition: "all 0.2s",
+                }}>
+                  {shape.preview}
+                </span>
+                <div style={{ fontFamily: "monospace", fontSize: 10, color: isActive ? "var(--os-accent)" : "rgba(255,255,255,0.5)", fontWeight: isActive ? 700 : 400, letterSpacing: "0.04em" }}>
+                  {shape.label}
+                </div>
+                <div style={{ fontFamily: "monospace", fontSize: 8, color: "rgba(255,255,255,0.25)", letterSpacing: "0.06em" }}>
+                  {shape.desc}
+                </div>
+                {isActive && (
+                  <div style={{ position: "absolute", top: 8, right: 8, width: 7, height: 7, borderRadius: "50%", background: "var(--os-accent)", boxShadow: "0 0 6px var(--os-accent)" }} />
+                )}
+              </motion.button>
+            );
+          })}
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 8 }}>
-        {CURSORS.map((cursor) => {
-          const isActive = cursorStyle === cursor.value;
-          return (
-            <motion.button
-              key={cursor.id}
-              whileHover={{ scale: 1.02, boxShadow: `0 0 16px ${cursor.color}30` }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => setCursorStyle(cursor.value)}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 12,
-                padding: "14px 16px",
-                borderRadius: 10,
-                border: isActive
-                  ? `1px solid ${cursor.color}80`
-                  : "1px solid rgba(255,255,255,0.07)",
-                background: isActive
-                  ? `linear-gradient(135deg, ${cursor.color}10, ${cursor.color}04)`
-                  : "rgba(255,255,255,0.02)",
-                cursor: "pointer",
-                textAlign: "left",
-                boxShadow: isActive ? `0 0 20px ${cursor.color}20, inset 0 0 12px ${cursor.color}06` : "none",
-                transition: "all 0.2s",
-                position: "relative",
-              }}
-            >
-              <div
+      {/* Color selector */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        <div style={{ fontFamily: "monospace", fontSize: 9, color: "rgba(255,255,255,0.3)", letterSpacing: "0.15em" }}>
+          CURSOR COLOR
+        </div>
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(11, 1fr)",
+          gap: 8,
+          padding: "14px",
+          background: "rgba(255,255,255,0.02)",
+          border: "1px solid rgba(255,255,255,0.06)",
+          borderRadius: 10,
+        }}>
+          {ACCENT_COLORS.map((color) => {
+            const isSelected = cursorColor === color.hex;
+            return (
+              <motion.button
+                key={color.hex}
+                title={color.label}
+                whileHover={{ scale: 1.2 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={() => setCursorColor(color.hex)}
                 style={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: 8,
-                  background: isActive ? `${cursor.color}12` : "rgba(255,255,255,0.04)",
-                  border: isActive ? `1px solid ${cursor.color}40` : "1px solid rgba(255,255,255,0.06)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  flexShrink: 0,
-                  fontSize: 18,
-                  color: cursor.color,
-                  filter: isActive ? `drop-shadow(0 0 6px ${cursor.color}90)` : "none",
+                  width: "100%",
+                  aspectRatio: "1",
+                  borderRadius: "50%",
+                  background: color.hex,
+                  border: isSelected ? `2px solid #ffffff` : "2px solid transparent",
+                  cursor: "pointer",
+                  boxShadow: isSelected ? `0 0 12px ${color.hex}cc, 0 0 4px ${color.hex}` : `0 0 6px ${color.hex}55`,
+                  padding: 0,
+                  outline: "none",
+                  transition: "all 0.15s",
+                  position: "relative",
                 }}
               >
-                {cursor.preview}
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div
-                  style={{
-                    fontFamily: "monospace",
-                    fontSize: 11,
-                    color: isActive ? cursor.color : "rgba(255,255,255,0.8)",
-                    fontWeight: isActive ? 700 : 500,
-                    letterSpacing: "0.03em",
-                  }}
-                >
-                  {cursor.label}
-                </div>
-                <div
-                  style={{
-                    fontFamily: "monospace",
-                    fontSize: 9,
-                    color: "rgba(255,255,255,0.3)",
-                    marginTop: 3,
-                    letterSpacing: "0.06em",
-                  }}
-                >
-                  {cursor.desc}
-                </div>
-              </div>
-              {isActive && (
-                <div
-                  style={{
-                    position: "absolute",
-                    top: 8,
-                    right: 10,
-                    width: 8,
-                    height: 8,
-                    borderRadius: "50%",
-                    background: cursor.color,
-                    boxShadow: `0 0 8px ${cursor.color}`,
-                  }}
-                />
-              )}
-            </motion.button>
-          );
-        })}
+                {isSelected && (
+                  <Check size={9} color="#000" style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)" }} />
+                )}
+              </motion.button>
+            );
+          })}
+        </div>
+        <div style={{ fontFamily: "monospace", fontSize: 9, color: "rgba(255,255,255,0.2)", letterSpacing: "0.1em" }}>
+          SELECTED: <span style={{ color: cursorColor, textShadow: `0 0 8px ${cursorColor}` }}>{ACCENT_COLORS.find(c => c.hex === cursorColor)?.label ?? cursorColor}</span>
+        </div>
       </div>
 
-      <div
-        style={{
-          padding: "10px 14px",
-          background: "rgba(255,255,255,0.02)",
-          border: "1px solid rgba(255,255,255,0.05)",
-          borderRadius: 8,
-          fontFamily: "monospace",
-          fontSize: 9,
-          color: "rgba(255,255,255,0.25)",
-          letterSpacing: "0.1em",
-        }}
-      >
+      <div style={{ padding: "10px 14px", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 8, fontFamily: "monospace", fontSize: 9, color: "rgba(255,255,255,0.25)", letterSpacing: "0.1em" }}>
         ↑ CURSOR CHANGES APPLY INSTANTLY ACROSS THE ENTIRE OS
+      </div>
+    </div>
+  );
+}
+
+function ThemesTab() {
+  const themeAccent = useOSStore((s) => s.themeAccent);
+  const setThemeAccent = useOSStore((s) => s.setThemeAccent);
+
+  const UI_PREVIEWS = [
+    { label: "Taskbar Active", sample: "bg" },
+    { label: "Start Menu Border", sample: "border" },
+    { label: "Window Focus Ring", sample: "glow" },
+  ];
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+      <p style={{ fontFamily: "monospace", fontSize: 10, color: "var(--os-accent)", letterSpacing: "0.15em", margin: 0, opacity: 0.7 }}>
+        GLOBAL THEME ENGINE
+      </p>
+
+      {/* Live preview banner */}
+      <div style={{
+        padding: "16px 20px",
+        background: "rgba(255,255,255,0.02)",
+        border: `1px solid ${themeAccent}44`,
+        borderRadius: 12,
+        display: "flex",
+        alignItems: "center",
+        gap: 16,
+        boxShadow: `0 0 24px ${themeAccent}18`,
+      }}>
+        <div style={{
+          width: 44,
+          height: 44,
+          borderRadius: 10,
+          background: `linear-gradient(135deg, ${themeAccent}22, ${themeAccent}08)`,
+          border: `1px solid ${themeAccent}55`,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          flexShrink: 0,
+          boxShadow: `0 0 16px ${themeAccent}44`,
+        }}>
+          <Sparkles size={20} color={themeAccent} />
+        </div>
+        <div>
+          <div style={{ fontFamily: "monospace", fontSize: 13, color: themeAccent, fontWeight: 700, textShadow: `0 0 12px ${themeAccent}88` }}>
+            {ACCENT_COLORS.find(c => c.hex === themeAccent)?.label ?? "Custom Color"}
+          </div>
+          <div style={{ fontFamily: "monospace", fontSize: 9, color: "rgba(255,255,255,0.3)", letterSpacing: "0.1em", marginTop: 3 }}>
+            ACTIVE ACCENT · {themeAccent.toUpperCase()} · LIVE ACROSS ALL UI
+          </div>
+        </div>
+        <div style={{ marginLeft: "auto", display: "flex", gap: 6 }}>
+          {UI_PREVIEWS.map((p) => (
+            <div key={p.label} title={p.label} style={{
+              width: 28,
+              height: 28,
+              borderRadius: 6,
+              background: p.sample === "bg" ? `${themeAccent}22` : "transparent",
+              border: p.sample === "border" ? `1px solid ${themeAccent}` : p.sample === "glow" ? `1px solid ${themeAccent}55` : "1px solid rgba(255,255,255,0.1)",
+              boxShadow: p.sample === "glow" ? `0 0 8px ${themeAccent}88` : "none",
+            }} />
+          ))}
+        </div>
+      </div>
+
+      {/* Color swatches */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        <div style={{ fontFamily: "monospace", fontSize: 9, color: "rgba(255,255,255,0.3)", letterSpacing: "0.15em" }}>
+          SELECT ACCENT COLOR
+        </div>
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(11, 1fr)",
+          gap: 10,
+          padding: "18px",
+          background: "rgba(255,255,255,0.015)",
+          border: "1px solid rgba(255,255,255,0.06)",
+          borderRadius: 12,
+        }}>
+          {ACCENT_COLORS.map((color) => {
+            const isSelected = themeAccent === color.hex;
+            return (
+              <motion.button
+                key={color.hex}
+                title={color.label}
+                whileHover={{ scale: 1.25, y: -2 }}
+                whileTap={{ scale: 0.88 }}
+                onClick={() => setThemeAccent(color.hex)}
+                style={{
+                  width: "100%",
+                  aspectRatio: "1",
+                  borderRadius: "50%",
+                  background: color.hex,
+                  border: isSelected ? "2.5px solid #ffffff" : "2px solid transparent",
+                  cursor: "pointer",
+                  boxShadow: isSelected
+                    ? `0 0 20px ${color.hex}cc, 0 0 8px ${color.hex}, 0 0 2px #fff`
+                    : `0 0 8px ${color.hex}44`,
+                  padding: 0,
+                  outline: "none",
+                  transition: "all 0.15s",
+                  position: "relative",
+                }}
+              >
+                {isSelected && (
+                  <Check size={10} color={color.hex === "#ffffff" ? "#000" : "#000"} style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)" }} />
+                )}
+              </motion.button>
+            );
+          })}
+        </div>
+
+        {/* Labels row */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(11, 1fr)", gap: 10, padding: "0 18px" }}>
+          {ACCENT_COLORS.map((color) => (
+            <div key={color.hex} style={{
+              fontFamily: "monospace",
+              fontSize: 7,
+              color: themeAccent === color.hex ? color.hex : "rgba(255,255,255,0.2)",
+              textAlign: "center",
+              letterSpacing: "0.02em",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+              textShadow: themeAccent === color.hex ? `0 0 6px ${color.hex}` : "none",
+              transition: "all 0.2s",
+            }}>
+              {color.label.split(" ")[0]}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Info callout */}
+      <div style={{
+        padding: "12px 16px",
+        background: "rgba(255,255,255,0.02)",
+        border: "1px solid rgba(255,255,255,0.05)",
+        borderRadius: 8,
+        fontFamily: "monospace",
+        fontSize: 9,
+        color: "rgba(255,255,255,0.25)",
+        letterSpacing: "0.08em",
+        lineHeight: 1.7,
+      }}>
+        ↑ THE ACCENT COLOR IS APPLIED GLOBALLY — START MENU, WINDOW BORDERS,
+        HOVER EFFECTS, AND ACTIVE INDICATORS REACT INSTANTLY.
       </div>
     </div>
   );
@@ -987,20 +1065,20 @@ export default function SettingsApp({
                   background: isTabActive
                     ? isLocked
                       ? "linear-gradient(90deg, rgba(255,50,50,0.08), rgba(255,50,50,0.02))"
-                      : "linear-gradient(90deg, rgba(0,240,255,0.1), rgba(0,240,255,0.03))"
+                      : "linear-gradient(90deg, color-mix(in srgb, var(--os-accent) 10%, transparent), color-mix(in srgb, var(--os-accent) 3%, transparent))"
                     : "transparent",
                   borderLeft: isTabActive
-                    ? isLocked ? "2px solid rgba(255,80,80,0.7)" : "2px solid #00f0ff"
+                    ? isLocked ? "2px solid rgba(255,80,80,0.7)" : "2px solid var(--os-accent)"
                     : "2px solid transparent",
                   color: isLocked
                     ? isTabActive ? "rgba(255,100,100,0.8)" : "rgba(255,100,100,0.45)"
-                    : isTabActive ? "#00f0ff" : "rgba(255,255,255,0.5)",
+                    : isTabActive ? "var(--os-accent)" : "rgba(255,255,255,0.5)",
                   fontSize: 12,
                   fontWeight: isTabActive ? 600 : 400,
                   textAlign: "left",
                   width: "100%",
                   transition: "all 0.2s",
-                  boxShadow: isTabActive && !isLocked ? "inset 0 0 12px rgba(0,240,255,0.06)" : "none",
+                  boxShadow: isTabActive && !isLocked ? "inset 0 0 12px color-mix(in srgb, var(--os-accent) 6%, transparent)" : "none",
                   position: "relative",
                 }}
               >
@@ -1043,6 +1121,7 @@ export default function SettingsApp({
               {activeTab === "display"         && <DisplayTab />}
               {activeTab === "apps"            && <AppsTab />}
               {activeTab === "taskbar"         && <TaskbarTab />}
+              {activeTab === "themes"          && <ThemesTab />}
               {activeTab === "cursor"          && <CursorTab />}
               {activeTab === "sysinfo"         && <SystemInfoTab onOpenTaskManager={onOpenTaskManager} />}
             </motion.div>

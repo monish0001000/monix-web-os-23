@@ -26,6 +26,7 @@ export default function ChessApp({
       width={1100}
       height={700}
       zIndex={zIndex}
+      defaultMaximized={true}
     >
       <div className="w-full h-full overflow-auto">
         <MonixChess />

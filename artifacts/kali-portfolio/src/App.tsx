@@ -25,6 +25,11 @@ function AppInner() {
   const isLocked = useOSStore((s) => s.isLocked);
   const displayFilter = useDisplayFilter();
   const setLocked = useOSStore((s) => s.setLocked);
+  const themeAccent = useOSStore((s) => s.themeAccent);
+
+  useEffect(() => {
+    document.documentElement.style.setProperty("--os-accent", themeAccent);
+  }, [themeAccent]);
 
   useEffect(() => {
     document.documentElement.classList.add("dark");

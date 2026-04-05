@@ -14,6 +14,7 @@ interface WindowChromeProps {
   isActive: boolean;
   onFocus: () => void;
   zIndex?: number;
+  defaultMaximized?: boolean;
 }
 
 export default function WindowChrome({
@@ -28,12 +29,13 @@ export default function WindowChrome({
   isActive,
   onFocus,
   zIndex = 20,
+  defaultMaximized = false,
 }: WindowChromeProps) {
   const [pos, setPos] = useState({
     x: initialX ?? (typeof window !== "undefined" ? window.innerWidth / 2 - width / 2 : 100),
     y: initialY ?? (typeof window !== "undefined" ? window.innerHeight / 2 - height / 2 : 100),
   });
-  const [maximized, setMaximized] = useState(false);
+  const [maximized, setMaximized] = useState(defaultMaximized);
   const [isDragging, setIsDragging] = useState(false);
   const [hoverBtn, setHoverBtn] = useState<"min" | "max" | "close" | null>(null);
   const dragOffset = useRef({ x: 0, y: 0 });

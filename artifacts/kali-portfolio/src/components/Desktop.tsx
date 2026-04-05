@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import TopPanel from "./TopPanel";
 import DesktopIcons from "./DesktopIcons";
 import Terminal from "./Terminal";
@@ -61,6 +61,7 @@ export default function Desktop() {
   const [selectedIcon, setSelectedIcon] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [showGamesTip, setShowGamesTip] = useState(true);
   const [selectionBox, setSelectionBox] = useState<SelectionBox>({
     startX: 0, startY: 0, endX: 0, endY: 0, isVisible: false,
   });
@@ -76,6 +77,11 @@ export default function Desktop() {
     check();
     window.addEventListener("resize", check);
     return () => window.removeEventListener("resize", check);
+  }, []);
+
+  useEffect(() => {
+    const t = setTimeout(() => setShowGamesTip(false), 8000);
+    return () => clearTimeout(t);
   }, []);
 
   const bringToFront = (id: string) => {
@@ -498,6 +504,54 @@ export default function Desktop() {
             onOpenWallpaperPicker={() => handleOpenWindow("wallpaperpicker")}
             onRefresh={handleRefresh}
           />
+        )}
+      </AnimatePresence>
+
+      {/* Games tip notification — bottom-right, above taskbar */}
+      <AnimatePresence>
+        {showGamesTip && (
+          <motion.div
+            initial={{ opacity: 0, y: 16, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 12, scale: 0.95 }}
+            transition={{ duration: 0.25, ease: "easeOut" }}
+            onClick={() => { handleOpenWindow("chess"); setShowGamesTip(false); }}
+            style={{
+              position: "fixed",
+              bottom: 52,
+              right: 16,
+              zIndex: 400,
+              cursor: "pointer",
+              background: "rgba(10, 8, 0, 0.88)",
+              backdropFilter: "blur(16px)",
+              WebkitBackdropFilter: "blur(16px)",
+              border: "1px solid rgba(255,215,0,0.25)",
+              borderRadius: 10,
+              padding: "10px 14px",
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              boxShadow: "0 8px 32px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,215,0,0.08)",
+              minWidth: 240,
+              maxWidth: 280,
+            }}
+          >
+            <span style={{ fontSize: 22, lineHeight: 1, flexShrink: 0 }}>🎮</span>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 12, fontWeight: 600, color: "#ffe566", fontFamily: "monospace", letterSpacing: "0.04em" }}>
+                Try Games in MONIX OS!
+              </div>
+              <div style={{ fontSize: 10, color: "rgba(255,255,255,0.45)", marginTop: 2, fontFamily: "monospace" }}>
+                Play Grandmaster Chess — click to open
+              </div>
+            </div>
+            <button
+              onClick={(e) => { e.stopPropagation(); setShowGamesTip(false); }}
+              style={{ background: "none", border: "none", color: "rgba(255,255,255,0.3)", cursor: "pointer", fontSize: 14, lineHeight: 1, padding: 2, flexShrink: 0 }}
+            >
+              ×
+            </button>
+          </motion.div>
         )}
       </AnimatePresence>
 

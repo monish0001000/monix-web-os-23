@@ -306,6 +306,40 @@ function TaskManagerIcon() {
   );
 }
 
+function ChessIcon() {
+  return (
+    <svg viewBox="0 0 36 36" width="36" height="36" fill="none">
+      <defs>
+        <linearGradient id="chBg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#1a1200" />
+          <stop offset="100%" stopColor="#0a0800" />
+        </linearGradient>
+        <linearGradient id="chGold" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#ffe566" />
+          <stop offset="100%" stopColor="#c8960a" />
+        </linearGradient>
+      </defs>
+      <rect width="36" height="36" rx="6" fill="url(#chBg)" stroke="#3a2800" strokeWidth="0.8"/>
+      {/* Board squares */}
+      <rect x="4" y="4" width="7" height="7" rx="1" fill="#2a1e00" opacity="0.6"/>
+      <rect x="11" y="4" width="7" height="7" rx="1" fill="#8B6914" opacity="0.4"/>
+      <rect x="18" y="4" width="7" height="7" rx="1" fill="#2a1e00" opacity="0.6"/>
+      <rect x="25" y="4" width="7" height="7" rx="1" fill="#8B6914" opacity="0.4"/>
+      <rect x="4" y="11" width="7" height="7" rx="1" fill="#8B6914" opacity="0.4"/>
+      <rect x="11" y="11" width="7" height="7" rx="1" fill="#2a1e00" opacity="0.6"/>
+      <rect x="18" y="11" width="7" height="7" rx="1" fill="#8B6914" opacity="0.4"/>
+      <rect x="25" y="11" width="7" height="7" rx="1" fill="#2a1e00" opacity="0.6"/>
+      {/* Crown (king) shape */}
+      <path d="M10 28 L10 24 L13 26 L18 21 L23 26 L26 24 L26 28 Z" fill="url(#chGold)" opacity="0.9"/>
+      <rect x="9" y="28" width="18" height="3" rx="1" fill="url(#chGold)" opacity="0.85"/>
+      {/* Crown points */}
+      <circle cx="10" cy="23" r="1.5" fill="#ffe566"/>
+      <circle cx="18" cy="20" r="1.5" fill="#ffe566"/>
+      <circle cx="26" cy="23" r="1.5" fill="#ffe566"/>
+    </svg>
+  );
+}
+
 function SettingsIcon() {
   return (
     <svg viewBox="0 0 36 36" width="36" height="36" fill="none">
@@ -398,6 +432,7 @@ const ICONS_COL1 = [
 ];
 
 const ICONS_COL2 = [
+  { id: "chess",        label: "Chess",          icon: <ChessIcon />,          window: "chess"        },
   { id: "cyberchef",    label: "CyberChef",     icon: <CyberChefIcon />,      window: "cyberchef"    },
   { id: "codestudio",   label: "Code Studio",   icon: <CodeStudioIcon />,     window: "codestudio"   },
   { id: "threatmodeler",label: "Threat Modeler",icon: <ThreatModelerIcon />,  window: "threatmodeler"},

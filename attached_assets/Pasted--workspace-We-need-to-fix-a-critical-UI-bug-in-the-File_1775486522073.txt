@@ -1,0 +1,33 @@
+@workspace We need to fix a critical UI bug in the FilesApp.tsx Cloud Drive tab and implement a Global Offline Handler for the OS. Act as an Elite OS Frontend Architect and execute the following in exact order:
+
+1. Fix Cloud Drive Context Menu (CSS & Height Bug):
+
+Remove UI Button: In FilesApp.tsx, completely remove the "UPLOAD" button from the top header bar (next to REFRESH). Uploading must only happen via right-click.
+
+Fix Wrapper Height: The reason the window-level right-click isn't working on the empty space is because the grid container doesn't span the full remaining height. Ensure the main container wrapping the cloud files grid has className="flex-1 min-h-full w-full relative" (or equivalent Tailwind) so it fills the entire bottom area.
+
+Ensure the onContextMenu event is attached to this exact full-height container so clicking anywhere in the empty black space opens the cloudWindowMenu (Upload / New).
+
+2. Build the Global Offline Handler (OfflineScreen.tsx):
+
+Create a new component src/components/OfflineScreen.tsx (or similar path).
+
+Use useState to track network status: const [isOffline, setIsOffline] = useState(!navigator.onLine);
+
+Add a useEffect that listens to global window events:
+window.addEventListener('offline', () => setIsOffline(true));
+window.addEventListener('online', () => setIsOffline(false));
+
+UI Render: If !isOffline, return null. If isOffline, render a full-screen, absolute overlay with the highest z-index (fixed inset-0 z-[99999] bg-[#050505] flex items-center justify-center cursor-pointer).
+
+3. Offline Image & Reload Logic:
+
+Inside the OfflineScreen overlay, render an <img src="/src/storage/internet_handler.webp" alt="Connection Lost" className="max-w-[80vw] max-h-[80vh] object-contain animate-pulse" />. (Adjust the image import path if necessary based on Vite's asset pipeline).
+
+Add an onClick handler to the main overlay container: onClick={() => window.location.reload()}.
+
+4. Integration:
+
+Import and mount <OfflineScreen /> at the very top level of App.tsx (above the Desktop/Boot screen) so it can intercept the UI globally if the connection drops.
+
+Ensure all right-click events in the file manager use e.stopPropagation() on the items so they don't trigger the background menu. Maintain the dark cyberpunk aesthetic.

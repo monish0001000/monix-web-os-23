@@ -517,17 +517,6 @@ export default function FileExplorer({
 
                   <div className="ml-auto flex items-center gap-2">
                     <button
-                      onClick={() => cloudFileInputRef.current?.click()}
-                      disabled={isUploading}
-                      className="flex items-center gap-1.5 px-3 py-1 rounded text-[9px] tracking-widest transition-all"
-                      style={{
-                        color: "rgba(0,240,255,0.7)", border: "1px solid rgba(0,240,255,0.2)",
-                        background: "rgba(0,240,255,0.04)",
-                      }}
-                    >
-                      <Upload size={9} /> UPLOAD
-                    </button>
-                    <button
                       onClick={fetchCloudFiles}
                       disabled={loadingFiles}
                       className="flex items-center gap-1.5 px-2 py-1 rounded text-[9px] tracking-widest transition-all"
@@ -541,20 +530,23 @@ export default function FileExplorer({
 
                 {/* Grid area — right-click opens cloud window menu */}
                 <div
-                  className="flex-1 overflow-y-auto p-4"
+                  className="flex-1 min-h-0 overflow-y-auto p-4 relative"
+                  style={{ minHeight: 0 }}
                   onContextMenu={(e) => {
                     e.preventDefault();
                     setCloudWindowMenu({ x: e.clientX, y: e.clientY });
                     setCloudItemMenu(null);
                   }}
                 >
+                  {/* Inner full-height wrapper ensures right-click captures entire empty area */}
+                  <div className="flex flex-col min-h-full">
                   {loadingFiles ? (
-                    <div className="flex flex-col items-center justify-center h-full gap-3 text-white/15">
+                    <div className="flex flex-col items-center justify-center flex-1 gap-3 text-white/15" style={{ minHeight: 200 }}>
                       <Loader2 size={28} className="animate-spin" style={{ color:"#00f0ff" }} />
                       <span className="text-[10px] tracking-widest">QUERYING REGISTRY...</span>
                     </div>
                   ) : cloudFiles.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-full gap-3 text-white/15">
+                    <div className="flex flex-col items-center justify-center flex-1 gap-3 text-white/15" style={{ minHeight: 200 }}>
                       <Cloud size={32} />
                       <span className="text-[11px] tracking-widest">CLOUD DRIVE EMPTY</span>
                       <span className="text-[9px] text-white/10 tracking-widest">Right-click to upload a file</span>
@@ -630,6 +622,7 @@ export default function FileExplorer({
                       })}
                     </div>
                   )}
+                  </div>{/* /inner min-h-full wrapper */}
                 </div>
 
                 {/* Help hint */}

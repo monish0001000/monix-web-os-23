@@ -1,0 +1,37 @@
+@workspace We have migrated the project to a new environment. I am seeing a "REGISTRY ERROR: unknown" in the Cloud Drive, and we also need to build the core OS Taskbar. Act as an Elite OS Architect and execute the following:
+
+1. Fix Error Handling (Cloud Drive):
+
+Open FilesApp.tsx or wherever the fetchCloudFiles logic is.
+
+Locate the catch block that sets the "unknown" error. Change it to explicitly log and display the actual error message from Supabase.
+
+Example: catch (err: any) { console.error("Supabase Error:", err); setError(err.message || JSON.stringify(err)); }. This will help us debug if the secrets are failing.
+
+2. Build the OS Taskbar (Taskbar.tsx):
+
+Create a new component src/components/Taskbar.tsx.
+
+Layout: A fixed bar at the bottom of the screen (fixed bottom-0 w-full h-12 z-[99999]). Use a glassmorphism cyberpunk aesthetic: bg-[#050505]/80 backdrop-blur-md border-t border-cyan-500/30 flex items-center justify-between px-2.
+
+3. Taskbar Sections:
+
+Left (Start Button): Create a glowing "M" logo or Start button using lucide-react (e.g., Hexagon or Terminal icon) with a hover effect.
+
+Center (Active Apps): >   * Import our global Zustand store and subscribe to activeProcesses (the same one used by the Task Manager).
+
+Map over this array. For each running app, render a sleek tab/button in the taskbar.
+
+Include the app's icon and a truncated name. Add a bottom border glow (e.g., border-b-2 border-cyan-400) to indicate it's actively running.
+
+Right (System Tray):
+
+Add a real-time digital clock (e.g., 10:25 PM). Use a simple setInterval inside a useEffect to update the time every minute.
+
+Add status icons: Wifi (Wifi icon), Battery (Battery icon).
+
+4. Integration:
+
+Import <Taskbar /> into Desktop.tsx (or your main OS layout component) and render it outside the main window area, ensuring it always stays on top.
+
+Ensure the aesthetics perfectly match our MONIX OS dark cyberpunk theme. Make sure the taskbar doesn't overlap with maximized windows (adjust the desktop workspace height using calc(100vh - 3rem)).

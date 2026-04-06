@@ -94,7 +94,7 @@ const TASKBAR_ICON: Record<string, React.ReactNode> = {
 
 type TrayPopover = "battery" | "network" | "sound" | "notifications" | null;
 
-export default function TopPanel({ openWindows = [], onOpenWindow, onTaskbarClick, activeWindowId }: TopPanelProps) {
+export default function TopPanel({ openWindows: _openWindows = [], onOpenWindow, onTaskbarClick, activeWindowId }: TopPanelProps) {
   const [time, setTime] = useState(new Date());
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [activeWorkspace, setActiveWorkspace] = useState(1);
@@ -115,6 +115,7 @@ export default function TopPanel({ openWindows = [], onOpenWindow, onTaskbarClic
   const setLocked = useOSStore((s) => s.setLocked);
   const osVolume = useOSStore((s) => s.osVolume);
   const setOsVolume = useOSStore((s) => s.setOsVolume);
+  const activeProcesses = useOSStore((s) => s.activeProcesses);
 
   // Clock + network
   useEffect(() => {
@@ -326,33 +327,61 @@ export default function TopPanel({ openWindows = [], onOpenWindow, onTaskbarClic
             ))}
           </div>
 
-          {/* Open windows taskbar */}
-          {openWindows.length > 0 && (
+          {/* ── Active process tabs (Zustand-driven) ── */}
+          {activeProcesses.length > 0 && (
             <>
               <div style={{ width: 1, height: 22, background: "rgba(255,255,255,0.1)", marginLeft: 4 }} />
-              <div className="flex items-center h-full gap-1 px-1">
-                {openWindows.map((win) => {
-                  const isActive = activeWindowId === win.id;
-                  const icon = TASKBAR_ICON[win.id] ?? <Monitor size={17} color="rgba(255,255,255,0.7)" />;
+              <div className="flex items-center h-full gap-[3px] px-1" style={{ maxWidth: "calc(100vw - 520px)", overflowX: "auto", scrollbarWidth: "none" }}>
+                {activeProcesses.map((proc) => {
+                  const isActive = activeWindowId === proc.id;
+                  const isSuspended = proc.isMinimized;
+                  const truncName = proc.name.length > 14 ? proc.name.slice(0, 13) + "…" : proc.name;
                   return (
                     <button
-                      key={win.id}
-                      onClick={() => onTaskbarClick(win.id)}
-                      title={win.label}
+                      key={proc.id}
+                      onClick={() => onTaskbarClick(proc.id)}
+                      title={`${proc.name}  [${proc.pid}]`}
                       style={{
-                        width: 34, height: 28,
-                        display: "flex", alignItems: "center", justifyContent: "center",
+                        height: 28,
+                        display: "flex", alignItems: "center", gap: 5,
+                        padding: "0 9px",
                         cursor: "pointer", borderRadius: 5,
-                        background: isActive ? "rgba(54,123,240,0.3)" : win.minimized ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.09)",
-                        border: isActive ? "1px solid rgba(54,123,240,0.55)" : "1px solid rgba(255,255,255,0.08)",
-                        position: "relative", transition: "all 0.1s", flexShrink: 0,
+                        background: isActive
+                          ? "rgba(0,212,255,0.13)"
+                          : isSuspended
+                          ? "rgba(255,255,255,0.03)"
+                          : "rgba(255,255,255,0.07)",
+                        border: isActive
+                          ? "1px solid rgba(0,212,255,0.4)"
+                          : "1px solid rgba(255,255,255,0.07)",
+                        boxShadow: isActive ? "0 0 8px rgba(0,212,255,0.2)" : "none",
+                        position: "relative", transition: "all 0.12s", flexShrink: 0,
+                        fontFamily: "monospace",
                       }}
                     >
-                      {icon}
+                      {/* Status dot */}
+                      <span style={{
+                        display: "inline-block", width: 5, height: 5, borderRadius: "50%", flexShrink: 0,
+                        background: isSuspended ? "#f59e0b" : "#22d3ee",
+                        boxShadow: isSuspended ? "0 0 5px #f59e0b" : "0 0 5px #22d3ee",
+                      }} />
+                      {/* Emoji icon */}
+                      <span style={{ fontSize: 13, lineHeight: 1, flexShrink: 0 }}>{proc.icon}</span>
+                      {/* Truncated name */}
+                      <span style={{
+                        fontSize: 11, letterSpacing: "0.02em", lineHeight: 1,
+                        color: isActive ? "rgba(0,212,255,0.95)" : isSuspended ? "rgba(255,255,255,0.35)" : "rgba(255,255,255,0.75)",
+                        whiteSpace: "nowrap",
+                      }}>
+                        {truncName}
+                      </span>
+                      {/* Bottom active bar */}
                       {isActive && (
                         <div style={{
-                          position: "absolute", bottom: -1, left: "50%", transform: "translateX(-50%)",
-                          width: 16, height: 2, borderRadius: 1, background: "#367BF0",
+                          position: "absolute", bottom: 0, left: "10%", right: "10%",
+                          height: 2, borderRadius: "1px 1px 0 0",
+                          background: "linear-gradient(90deg, transparent, #00d4ff, transparent)",
+                          boxShadow: "0 0 6px #00d4ff",
                         }} />
                       )}
                     </button>

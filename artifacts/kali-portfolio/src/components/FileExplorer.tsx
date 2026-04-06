@@ -217,8 +217,10 @@ export default function FileExplorer({
         .order("created_at", { ascending: false });
       if (error) throw error;
       setCloudFiles((data as CloudFile[]) ?? []);
-    } catch (err: unknown) {
-      pushToast("error", `REGISTRY ERROR: ${err instanceof Error ? err.message : "Unknown"}`);
+    } catch (err: any) {
+      console.error("[MONIX OS] Cloud Registry fetch error:", err);
+      const msg = err?.message ?? err?.error_description ?? JSON.stringify(err);
+      pushToast("error", `REGISTRY ERROR: ${msg}`);
     } finally {
       setLoadingFiles(false);
     }
@@ -246,8 +248,9 @@ export default function FileExplorer({
 
       pushToast("success", `${file.name} secured to cloud`);
       await fetchCloudFiles();
-    } catch (err: unknown) {
-      pushToast("error", `Upload failed — ${err instanceof Error ? err.message : "Unknown"}`);
+    } catch (err: any) {
+      console.error("[MONIX OS] Cloud upload error:", err);
+      pushToast("error", `Upload failed — ${err?.message ?? JSON.stringify(err)}`);
     } finally {
       setIsUploading(false);
     }
@@ -266,8 +269,9 @@ export default function FileExplorer({
       document.body.appendChild(a); a.click(); a.remove();
       URL.revokeObjectURL(blobUrl);
       pushToast("success", `${file.file_name} downloaded`);
-    } catch (err: unknown) {
-      pushToast("error", `Download failed — ${err instanceof Error ? err.message : "Unknown"}`);
+    } catch (err: any) {
+      console.error("[MONIX OS] Cloud download error:", err);
+      pushToast("error", `Download failed — ${err?.message ?? JSON.stringify(err)}`);
     } finally {
       setDownloadingId(null);
     }
@@ -289,8 +293,9 @@ export default function FileExplorer({
       if (error) throw error;
       pushToast("success", `${file.file_name} deleted`);
       await fetchCloudFiles();
-    } catch (err: unknown) {
-      pushToast("error", `Delete failed — ${err instanceof Error ? err.message : "Unknown"}`);
+    } catch (err: any) {
+      console.error("[MONIX OS] Cloud delete error:", err);
+      pushToast("error", `Delete failed — ${err?.message ?? JSON.stringify(err)}`);
     }
   }, [pushToast, fetchCloudFiles]);
 
@@ -302,8 +307,9 @@ export default function FileExplorer({
       if (error) throw error;
       pushToast("success", `Renamed to ${trimmed}`);
       await fetchCloudFiles();
-    } catch (err: unknown) {
-      pushToast("error", `Rename failed — ${err instanceof Error ? err.message : "Unknown"}`);
+    } catch (err: any) {
+      console.error("[MONIX OS] Cloud rename error:", err);
+      pushToast("error", `Rename failed — ${err?.message ?? JSON.stringify(err)}`);
     } finally {
       setRenamingId(null);
     }

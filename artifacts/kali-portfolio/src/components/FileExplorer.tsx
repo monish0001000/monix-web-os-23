@@ -192,6 +192,7 @@ export default function FileExplorer({
   const [cloudFiles, setCloudFiles]         = useState<CloudFile[]>([]);
   const [loadingFiles, setLoadingFiles]     = useState(false);
   const [isUploading, setIsUploading]       = useState(false);
+  const [gridRefreshing, setGridRefreshing] = useState(false);
   const [downloadingId, setDownloadingId]   = useState<string | null>(null);
   const [toasts, setToasts]                 = useState<Toast[]>([]);
   const [cloudWindowMenu, setCloudWindowMenu] = useState<{ x: number; y: number } | null>(null);
@@ -393,7 +394,7 @@ export default function FileExplorer({
                 exit={{ opacity: 0, x: -12 }}
                 transition={{ duration: 0.18 }}
                 className="flex flex-col h-full"
-                onContextMenu={(e) => e.preventDefault()}
+                onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); }}
               >
                 {/* Breadcrumb bar */}
                 <div className="flex items-center gap-1 px-4 py-2 border-b border-white/[0.04] bg-[#060606] shrink-0">
@@ -517,7 +518,7 @@ export default function FileExplorer({
 
                   <div className="ml-auto flex items-center gap-2">
                     <button
-                      onClick={fetchCloudFiles}
+                      onClick={() => { setGridRefreshing(true); fetchCloudFiles().finally(() => setTimeout(() => setGridRefreshing(false), 300)); }}
                       disabled={loadingFiles}
                       className="flex items-center gap-1.5 px-2 py-1 rounded text-[9px] tracking-widest transition-all"
                       style={{ color:"rgba(255,255,255,0.3)", border:"1px solid rgba(255,255,255,0.07)", background:"rgba(255,255,255,0.02)" }}
@@ -534,12 +535,16 @@ export default function FileExplorer({
                   style={{ minHeight: 0 }}
                   onContextMenu={(e) => {
                     e.preventDefault();
+                    e.stopPropagation();
                     setCloudWindowMenu({ x: e.clientX, y: e.clientY });
                     setCloudItemMenu(null);
                   }}
                 >
                   {/* Inner full-height wrapper ensures right-click captures entire empty area */}
-                  <div className="flex flex-col min-h-full">
+                  <div
+                    className="flex flex-col min-h-full transition-opacity duration-300"
+                    style={{ opacity: gridRefreshing ? 0.35 : 1 }}
+                  >
                   {loadingFiles ? (
                     <div className="flex flex-col items-center justify-center flex-1 gap-3 text-white/15" style={{ minHeight: 200 }}>
                       <Loader2 size={28} className="animate-spin" style={{ color:"#00f0ff" }} />
@@ -656,7 +661,7 @@ export default function FileExplorer({
                     >
                       {[
                         { label: "📤  Upload File", action: () => { cloudFileInputRef.current?.click(); setCloudWindowMenu(null); } },
-                        { label: "🔄  Refresh",      action: () => { fetchCloudFiles(); setCloudWindowMenu(null); } },
+                        { label: "🔄  Refresh",      action: () => { setCloudWindowMenu(null); setGridRefreshing(true); fetchCloudFiles().finally(() => { setTimeout(() => setGridRefreshing(false), 300); }); } },
                       ].map(({ label, action }) => (
                         <button key={label} onClick={action}
                           className="flex items-center px-3 py-2 text-[11px] tracking-wider text-left transition-all"

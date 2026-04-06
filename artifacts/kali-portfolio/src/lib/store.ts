@@ -15,6 +15,19 @@ export const DEFAULT_WALLPAPER: string = WALLPAPERS[3];
 
 export type TaskbarPosition = "top" | "bottom" | "left" | "right";
 
+// ─── Process registry ─────────────────────────────────────────────────────────
+export interface OSProcess {
+  id: string;
+  name: string;
+  icon: string;
+  pid: string;        // e.g. "0x4A2F"
+  isMinimized: boolean;
+  launchedAt: number; // timestamp for uptime display
+}
+
+// Module-level ref so the kill callback is never stale without causing re-renders
+let _killCallbackRef: ((id: string) => void) | null = null;
+
 interface OSState {
   isLocked: boolean;
   taskbarPosition: TaskbarPosition;
@@ -32,6 +45,14 @@ interface OSState {
   // Virtual File System
   localFileSystem: VFSNode[];
   preloadLocalFS: () => void;
+
+  // Process management
+  activeProcesses: OSProcess[];
+  registerProcess: (proc: OSProcess) => void;
+  unregisterProcess: (id: string) => void;
+  updateProcessMinimized: (id: string, minimized: boolean) => void;
+  setKillCallback: (cb: (id: string) => void) => void;
+  killProcess: (id: string) => void;
 
   setLocked: (locked: boolean) => void;
   setTaskbarPosition: (pos: TaskbarPosition) => void;
@@ -65,6 +86,38 @@ export const useOSStore = create<OSState>((set) => ({
   localFileSystem: [],
   preloadLocalFS: () => set({ localFileSystem: scanStorage() }),
 
+  // ── Process management ─────────────────────────────────────────────────────
+  activeProcesses: [],
+
+  registerProcess: (proc) =>
+    set((state) => ({
+      activeProcesses: state.activeProcesses.some((p) => p.id === proc.id)
+        ? state.activeProcesses
+        : [...state.activeProcesses, proc],
+    })),
+
+  unregisterProcess: (id) =>
+    set((state) => ({
+      activeProcesses: state.activeProcesses.filter((p) => p.id !== id),
+    })),
+
+  updateProcessMinimized: (id, minimized) =>
+    set((state) => ({
+      activeProcesses: state.activeProcesses.map((p) =>
+        p.id === id ? { ...p, isMinimized: minimized } : p
+      ),
+    })),
+
+  setKillCallback: (cb) => {
+    _killCallbackRef = cb;
+  },
+
+  killProcess: (id) => {
+    _killCallbackRef?.(id);
+    // unregisterProcess is called by Desktop's handleCloseWindow
+  },
+
+  // ── OS settings ────────────────────────────────────────────────────────────
   setLocked: (locked) => set({ isLocked: locked }),
   setTaskbarPosition: (pos) => set({ taskbarPosition: pos }),
 

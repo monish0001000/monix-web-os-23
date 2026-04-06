@@ -22,6 +22,30 @@ import RightClickMenu from "./RightClickMenu";
 import MediaViewerApp, { type MediaType } from "./MediaViewerApp";
 import { useOSStore } from "@/lib/store";
 
+// ── Process info registry ─────────────────────────────────────────────────────
+const PROCESS_INFO: Record<string, { name: string; icon: string }> = {
+  terminal:        { name: "Terminal",         icon: "⬛" },
+  files:           { name: "File Manager",     icon: "📁" },
+  trash:           { name: "Trash",            icon: "🗑️" },
+  github:          { name: "GitHub",           icon: "🐙" },
+  portfolio:       { name: "Portfolio",        icon: "🧑‍💻" },
+  browser:         { name: "Web Browser",      icon: "🌐" },
+  wallpaperpicker: { name: "Wallpaper Picker", icon: "🖼️" },
+  sentinel:        { name: "Sentinel SOC",     icon: "🛡️" },
+  aura:            { name: "AURA AI",          icon: "🤖" },
+  cyberchef:       { name: "CyberChef",        icon: "🍳" },
+  codestudio:      { name: "Code Studio",      icon: "💻" },
+  threatmodeler:   { name: "Threat Modeler",   icon: "🔐" },
+  chess:           { name: "Chess",            icon: "♟️" },
+  cykrypt:         { name: "CYKRYPT CTF",      icon: "🎯" },
+  taskmanager:     { name: "System Monitor",   icon: "📊" },
+  settings:        { name: "Settings",         icon: "⚙️" },
+};
+
+function genPID(): string {
+  return "0x" + Math.floor(Math.random() * 0xffff).toString(16).toUpperCase().padStart(4, "0");
+}
+
 export interface WindowEntry {
   id: string;
   minimized: boolean;
@@ -76,14 +100,26 @@ export default function Desktop() {
   const cursorStyle = useOSStore((s) => s.cursorStyle);
   const cursorColor = useOSStore((s) => s.cursorColor);
   const preloadLocalFS = useOSStore((s) => s.preloadLocalFS);
+  const registerProcess = useOSStore((s) => s.registerProcess);
+  const unregisterProcess = useOSStore((s) => s.unregisterProcess);
+  const updateProcessMinimized = useOSStore((s) => s.updateProcessMinimized);
+  const setKillCallback = useOSStore((s) => s.setKillCallback);
 
   const computedCursor =
     cursorStyle === "crosshair" || cursorStyle === "target" ? "crosshair" : "default";
+
+  // Stable ref so the kill callback never closes over stale state
+  const handleCloseWindowRef = useRef<(id: string) => void>(() => {});
 
   // Preload the static VFS once on desktop mount (synchronous — zero UI delay)
   useEffect(() => {
     preloadLocalFS();
   }, [preloadLocalFS]);
+
+  // Register the kill callback once so TaskManager can force-close windows
+  useEffect(() => {
+    setKillCallback((id: string) => handleCloseWindowRef.current(id));
+  }, [setKillCallback]);
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
@@ -116,15 +152,32 @@ export default function Desktop() {
     const z = nextZ.current++;
     setWindows((prev) => prev.map((w) => (w.id === id ? { ...w, zIndex: z, minimized: false } : w)));
     setActiveWindow(id);
+    updateProcessMinimized(id, false);
   };
 
   const handleOpenWindow = (id: string) => {
+    // Check before setWindows so we don't rely on setter callback side-effects
+    const isNew = !windows.some((w) => w.id === id);
     setWindows((prev) => {
       const existing = prev.find((w) => w.id === id);
       const z = nextZ.current++;
       if (existing) return prev.map((w) => (w.id === id ? { ...w, minimized: false, zIndex: z } : w));
       return [...prev, { id, minimized: false, zIndex: z }];
     });
+    // Register or un-minimize in process store
+    const info = PROCESS_INFO[id] ?? { name: id, icon: "⬜" };
+    if (isNew) {
+      registerProcess({
+        id,
+        name: info.name,
+        icon: info.icon,
+        pid: genPID(),
+        isMinimized: false,
+        launchedAt: Date.now(),
+      });
+    } else {
+      updateProcessMinimized(id, false);
+    }
     setActiveWindow(id);
     setContextMenu(null);
   };
@@ -136,10 +189,15 @@ export default function Desktop() {
       const remaining = windows.filter((w) => w.id !== id && !w.minimized);
       return remaining.length > 0 ? remaining[remaining.length - 1].id : "";
     });
+    unregisterProcess(id);
   };
+
+  // Keep ref in sync so the kill callback is never stale
+  handleCloseWindowRef.current = handleCloseWindow;
 
   const handleMinimizeWindow = (id: string) => {
     setWindows((prev) => prev.map((w) => (w.id === id ? { ...w, minimized: true } : w)));
+    updateProcessMinimized(id, true);
     if (activeWindow === id) {
       const visible = windows.filter((w) => w.id !== id && !w.minimized);
       setActiveWindow(visible.length > 0 ? visible[visible.length - 1].id : "");
@@ -177,7 +235,15 @@ export default function Desktop() {
     const z = nextZ.current++;
     setWindows((prev) => [...prev, { id, minimized: false, zIndex: z, props: { fileName, fileUrl, fileType } }]);
     setActiveWindow(id);
-  }, []);
+    registerProcess({
+      id,
+      name: fileName.length > 20 ? fileName.slice(0, 18) + "…" : fileName,
+      icon: fileType === "image" ? "🖼️" : fileType === "video" ? "🎬" : fileType === "audio" ? "🎵" : "📄",
+      pid: genPID(),
+      isMinimized: false,
+      launchedAt: Date.now(),
+    });
+  }, [registerProcess]);
 
   // ── Selection Box handlers ──
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {

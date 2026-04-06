@@ -1,0 +1,63 @@
+@workspace We are building a native "Terminal / CLI" application for the OS to give power users direct command-line access to our Zustand-managed Virtual File System (VFS). The terminal must support "Root Mode" and separate command namespaces for Local and Cloud storage. Act as an Elite OS Architect and execute the following:
+
+1. State & UI Setup (TerminalApp.tsx):
+
+Create a new window application TerminalApp.tsx.
+
+State: history (array of objects: { type: 'input' | 'output' | 'error', text: ReactNode }), inputValue (string), and isRoot (boolean, default false).
+
+UI Layout: A classic hacker terminal. bg-black, monospace font.
+
+The prompt line should change dynamically:
+
+Normal: <span className="text-green-500">monix@system:~$</span>
+
+Root: <span className="text-red-500">root@system:~#</span>
+
+The input field should be a transparent, borderless <input> that auto-focuses and spans the remaining width.
+
+Add a hidden <input type="file"> reference for CLI-triggered uploads.
+
+2. Command Parser Engine:
+
+Create a handleCommand(cmd: string) function that runs on <Enter>. Add the user's input to the history array first.
+
+Split the command by spaces (e.g., ['cloud', 'open', 'file.txt']).
+
+Access the global Zustand store to read localFileSystem and cloudFiles.
+
+3. Core System Commands:
+
+help: Prints a stylized list of available commands.
+
+clear: Clears the history array.
+
+sudo su: Toggles isRoot to true, prints an authentication success message, and changes the prompt to red.
+
+exit: Calls the global store to close the Terminal window.
+
+4. Local Storage Commands (local namespace):
+
+local ls: Iterates through the Zustand localFileSystem and prints the file/folder names.
+
+local open [filename]: Finds the file. If found, dispatches the MediaViewerApp via the Window Manager using the file's attached object URL.
+
+local download [filename]: Finds the file and programmatically triggers a native <a> download using its blob/URL.
+
+5. Cloud Storage Commands (cloud namespace):
+
+cloud ls: Maps over Zustand's cloudFiles (Supabase DB) and prints filenames and sizes.
+
+cloud open [filename]: Finds the file in cloudFiles and opens the MediaViewerApp with its file_url.
+
+cloud download [filename]: Triggers a native download using the file_url.
+
+cloud upload: Triggers the hidden fileInputRef.current?.click(). Once the user selects a file, execute the existing Supabase upload logic (upload to bucket -> insert to DB -> refresh store -> print success to terminal).
+
+6. Polish:
+
+Auto-scroll the terminal to the bottom whenever history changes.
+
+Handle errors gracefully (e.g., if a user types cloud open fake.txt, print "Error: fake.txt not found" in red text).
+
+Register the Terminal App in the OS Start Menu / Context Menu.

@@ -75,7 +75,18 @@ export default function RightClickMenu({ x, y, onClose, onOpenWindow, onOpenWall
 
       <div className="border-t border-white/10 my-1" />
 
-      {/* 6. Settings */}
+      {/* 6. Task Manager */}
+      <div
+        className={item + " flex items-center gap-2"}
+        onClick={() => handleAction(() => onOpenWindow("taskmanager"))}
+      >
+        <span>📊</span>
+        <span>Task Manager</span>
+      </div>
+
+      <div className="border-t border-white/10 my-1" />
+
+      {/* 7. Settings */}
       <div
         className={item + " flex items-center gap-2"}
         onClick={() => handleAction(() => onOpenWindow("settings"))}

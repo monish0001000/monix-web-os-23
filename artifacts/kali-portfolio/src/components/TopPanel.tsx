@@ -335,16 +335,16 @@ export default function TopPanel({ openWindows: _openWindows = [], onOpenWindow,
                 {activeProcesses.map((proc) => {
                   const isActive = activeWindowId === proc.id;
                   const isSuspended = proc.isMinimized;
-                  const truncName = proc.name.length > 14 ? proc.name.slice(0, 13) + "…" : proc.name;
                   return (
                     <button
                       key={proc.id}
                       onClick={() => onTaskbarClick(proc.id)}
                       title={`${proc.name}  [${proc.pid}]`}
                       style={{
+                        width: 36,
                         height: 28,
-                        display: "flex", alignItems: "center", gap: 5,
-                        padding: "0 9px",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        padding: 0,
                         cursor: "pointer", borderRadius: 5,
                         background: isActive
                           ? "rgba(0,212,255,0.13)"
@@ -352,38 +352,19 @@ export default function TopPanel({ openWindows: _openWindows = [], onOpenWindow,
                           ? "rgba(255,255,255,0.03)"
                           : "rgba(255,255,255,0.07)",
                         border: isActive
-                          ? "1px solid rgba(0,212,255,0.4)"
+                          ? "1px solid rgba(0,212,255,0.35)"
                           : "1px solid rgba(255,255,255,0.07)",
-                        boxShadow: isActive ? "0 0 8px rgba(0,212,255,0.2)" : "none",
+                        borderBottom: isActive
+                          ? "2px solid #00d4ff"
+                          : isSuspended
+                          ? "2px solid rgba(245,158,11,0.5)"
+                          : "2px solid rgba(255,255,255,0.12)",
+                        boxShadow: isActive ? "0 0 10px rgba(0,212,255,0.25), inset 0 0 8px rgba(0,212,255,0.06)" : "none",
                         position: "relative", transition: "all 0.12s", flexShrink: 0,
-                        fontFamily: "monospace",
+                        opacity: isSuspended ? 0.55 : 1,
                       }}
                     >
-                      {/* Status dot */}
-                      <span style={{
-                        display: "inline-block", width: 5, height: 5, borderRadius: "50%", flexShrink: 0,
-                        background: isSuspended ? "#f59e0b" : "#22d3ee",
-                        boxShadow: isSuspended ? "0 0 5px #f59e0b" : "0 0 5px #22d3ee",
-                      }} />
-                      {/* Emoji icon */}
-                      <span style={{ fontSize: 13, lineHeight: 1, flexShrink: 0 }}>{proc.icon}</span>
-                      {/* Truncated name */}
-                      <span style={{
-                        fontSize: 11, letterSpacing: "0.02em", lineHeight: 1,
-                        color: isActive ? "rgba(0,212,255,0.95)" : isSuspended ? "rgba(255,255,255,0.35)" : "rgba(255,255,255,0.75)",
-                        whiteSpace: "nowrap",
-                      }}>
-                        {truncName}
-                      </span>
-                      {/* Bottom active bar */}
-                      {isActive && (
-                        <div style={{
-                          position: "absolute", bottom: 0, left: "10%", right: "10%",
-                          height: 2, borderRadius: "1px 1px 0 0",
-                          background: "linear-gradient(90deg, transparent, #00d4ff, transparent)",
-                          boxShadow: "0 0 6px #00d4ff",
-                        }} />
-                      )}
+                      <span style={{ fontSize: 16, lineHeight: 1 }}>{proc.icon}</span>
                     </button>
                   );
                 })}

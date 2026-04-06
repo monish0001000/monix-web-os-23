@@ -15,10 +15,11 @@ interface SettingsAppProps {
   onOpenTaskManager?: () => void;
 }
 
-type Tab = "personalization" | "taskbar" | "themes" | "cursor";
+type Tab = "personalization" | "taskbar" | "themes" | "cursor" | "system";
 
 const TABS: { id: Tab; label: string; icon: React.ReactNode; locked?: boolean }[] = [
   { id: "personalization", label: "Personalization", icon: <Palette size={15} /> },
+  { id: "system",          label: "System",          icon: <Info size={15} /> },
   { id: "themes",          label: "Themes & Colors", icon: <Sparkles size={15} />, locked: true },
   { id: "cursor",          label: "Mouse & Cursor",  icon: <MousePointer2 size={15} />, locked: true },
   { id: "taskbar",         label: "Taskbar",         icon: <LayoutDashboard size={15} />, locked: true },
@@ -1004,10 +1005,10 @@ function SystemInfoTab({ onOpenTaskManager }: { onOpenTaskManager?: () => void }
             <Activity size={18} color="#00ff88" style={{ filter: "drop-shadow(0 0 6px rgba(0,255,136,0.8))" }} />
             <div style={{ textAlign: "left" }}>
               <div style={{ fontFamily: "monospace", fontSize: 12, color: "#00ff88", fontWeight: 700, letterSpacing: "0.08em" }}>
-                System Resources
+                Open Task Manager
               </div>
               <div style={{ fontFamily: "monospace", fontSize: 9, color: "rgba(0,255,136,0.45)", marginTop: 2, letterSpacing: "0.08em" }}>
-                CPU · RAM · FPS · PROCESSES
+                PROCESSES · CPU · RAM · FPS · UPTIME
               </div>
             </div>
           </div>
@@ -1192,6 +1193,7 @@ export default function SettingsApp({
               transition={{ duration: 0.2 }}
             >
               {activeTab === "personalization" && <PersonalizationTab />}
+              {activeTab === "system" && <SystemInfoTab onOpenTaskManager={onOpenTaskManager} />}
               {activeTab === "themes" && (
                 <LockedSection label="THEMES ENGINE — UNDER ACTIVE DEVELOPMENT">
                   <ThemesTab />

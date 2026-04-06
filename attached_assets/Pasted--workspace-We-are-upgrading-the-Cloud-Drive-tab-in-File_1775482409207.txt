@@ -1,0 +1,51 @@
+@workspace We are upgrading the "Cloud Drive" tab in FilesApp.tsx to match the native OS experience of our Local System. The Supabase backend is fully functional, but we need to overhaul the UI from a List/Table view with a Dropzone into a native Grid View with Desktop-style Context Menus. Act as an Elite OS Frontend Architect and execute the following:
+
+1. UI Cleanup (Remove Dropzone & Table):
+
+Completely remove the large "Decrypt & Upload" visual dropzone area.
+
+Completely remove the <table...> layout used for the Cloud Registry.
+
+2. Implement Grid View:
+
+Render the cloudFiles array as a sleek CSS Grid (e.g., grid-cols-4 or grid-cols-5, gap, padding).
+
+Each file should be a clickable, hoverable icon item (use lucide-react icons like FileText, Image, FileArchive based on file extension).
+
+Display the filename below the icon, truncated gracefully with ellipsis if too long.
+
+3. Context Menu State Setup:
+
+Add state for the Cloud Window Menu (clicking empty space): const [cloudWindowMenu, setCloudWindowMenu] = useState<{ visible: boolean, x: number, y: number } | null>(null);
+
+Add state for the Cloud Item Menu (clicking a file): const [cloudItemMenu, setCloudItemMenu] = useState<{ visible: boolean, x: number, y: number, file: any } | null>(null);
+
+Add a hidden file input ref: const cloudFileInputRef = useRef<HTMLInputElement>(null);
+
+4. Cloud Window Menu (Empty Space Actions):
+
+Attach onContextMenu to the main Cloud Drive background container. Prevent default and set cloudWindowMenu coordinates.
+
+Menu Options: "📤 Upload File" and "📄 New File".
+
+Action: Clicking "Upload File" should trigger cloudFileInputRef.current?.click().
+
+Re-attach your existing Supabase upload logic to this hidden file input's onChange event (Upload to bucket -> Insert to DB -> Refresh).
+
+5. Cloud Item Menu (File Actions):
+
+Attach onContextMenu to the individual grid items. CRITICAL: Use e.stopPropagation() so the window menu doesn't trigger. Set cloudItemMenu coordinates and pass the specific file data.
+
+Menu Options: "📂 Open", "📥 Download", "✏️ Rename", "🗑️ Delete".
+
+Action (Download): Move your existing native download logic (fetch blob -> trigger <a> download) into this context menu action.
+
+(Ensure Rename, Delete, and Open also call their respective Supabase/Viewer functions).
+
+6. Menu Aesthetics:
+
+Render the menus as sleek, cyberpunk floating panels (absolute z-50 bg-[#0a0a0a] border border-cyan-500/30 backdrop-blur-xl rounded-md shadow-2xl p-1 min-w-[150px]).
+
+Add a global click listener to close both menus when the user clicks elsewhere.
+
+Maintain the dark cyberpunk aesthetic of the OS.

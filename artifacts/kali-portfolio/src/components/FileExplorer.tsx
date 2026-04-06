@@ -5,6 +5,7 @@ import {
   ChevronRight, Cloud, Upload, CheckCircle, XCircle,
   HardDrive, Loader2, Database, AlertTriangle,
   Download, RefreshCw, ExternalLink, Mouse,
+  Pencil, Trash2, Play, Music2,
 } from "lucide-react";
 import WindowChrome from "./WindowChrome";
 import { supabase } from "@/lib/supabaseClient";
@@ -52,6 +53,22 @@ function getVFSIconColor(node: VFSNode): string {
   if (["enc","key","pem"].includes(e)) return "#f87171";
   if (["md","txt","log"].includes(e)) return "#94a3b8";
   return "#64748b";
+}
+
+// ─── Cloud file icon helper ────────────────────────────────────────────────────
+function getCloudIcon(fileName: string): { Icon: React.ElementType; color: string } {
+  const ext = fileName.split(".").pop()?.toLowerCase() ?? "";
+  if (["png","jpg","jpeg","gif","webp","avif","bmp","svg","ico"].includes(ext))
+    return { Icon: ImageIcon, color: "#34d399" };
+  if (["mp4","webm","ogv","mov","avi","mkv","m4v"].includes(ext))
+    return { Icon: Play, color: "#a78bfa" };
+  if (["mp3","wav","ogg","flac","aac","m4a","opus"].includes(ext))
+    return { Icon: Music2, color: "#fb923c" };
+  if (["zip","gz","tar","iso","rar","7z"].includes(ext))
+    return { Icon: Archive, color: "#fbbf24" };
+  if (["md","txt","log","json","csv"].includes(ext))
+    return { Icon: FileText, color: "#94a3b8" };
+  return { Icon: File, color: "#64748b" };
 }
 
 // ─── Supabase cloud registry row ──────────────────────────────────────────────
@@ -172,15 +189,17 @@ export default function FileExplorer({
   };
 
   // ── Cloud state ──
-  const [isDragging, setIsDragging]       = useState(false);
-  const [cloudFiles, setCloudFiles]       = useState<CloudFile[]>([]);
-  const [loadingFiles, setLoadingFiles]   = useState(false);
-  const [uploadPhase, setUploadPhase]     = useState<"idle"|"encrypting"|"uploading"|"done"|"error">("idle");
-  const [uploadStatus, setUploadStatus]   = useState<string | null>(null);
-  const [downloadingId, setDownloadingId] = useState<string | null>(null);
-  const [toasts, setToasts]               = useState<Toast[]>([]);
-  const fileInputRef                       = useRef<HTMLInputElement>(null);
-  const toastCounter                       = useRef(0);
+  const [cloudFiles, setCloudFiles]         = useState<CloudFile[]>([]);
+  const [loadingFiles, setLoadingFiles]     = useState(false);
+  const [isUploading, setIsUploading]       = useState(false);
+  const [downloadingId, setDownloadingId]   = useState<string | null>(null);
+  const [toasts, setToasts]                 = useState<Toast[]>([]);
+  const [cloudWindowMenu, setCloudWindowMenu] = useState<{ x: number; y: number } | null>(null);
+  const [cloudItemMenu, setCloudItemMenu]   = useState<{ x: number; y: number; file: CloudFile } | null>(null);
+  const [renamingId, setRenamingId]         = useState<string | null>(null);
+  const [renameValue, setRenameValue]       = useState("");
+  const cloudFileInputRef                   = useRef<HTMLInputElement>(null);
+  const toastCounter                        = useRef(0);
 
   const pushToast = useCallback((kind: ToastKind, msg: string) => {
     const id = ++toastCounter.current;
@@ -209,12 +228,8 @@ export default function FileExplorer({
   }, [tab, fetchCloudFiles]);
 
   const doUpload = useCallback(async (file: File) => {
-    setUploadPhase("encrypting");
-    setUploadStatus("Encrypting payload...");
-    await new Promise((r) => setTimeout(r, 1000));
-
-    setUploadPhase("uploading");
-    setUploadStatus("Uploading to secure server...");
+    setIsUploading(true);
+    pushToast("info", `Uploading ${file.name}...`);
     try {
       const storagePath = `${Date.now()}_${file.name}`;
       const { error: storageError } = await supabase.storage
@@ -228,17 +243,12 @@ export default function FileExplorer({
         .insert([{ file_name: file.name, file_size: file.size, file_url: urlData.publicUrl }]);
       if (insertError) throw insertError;
 
-      setUploadPhase("done");
-      setUploadStatus("Secure upload verified ✓");
       pushToast("success", `${file.name} secured to cloud`);
       await fetchCloudFiles();
-      setTimeout(() => { setUploadPhase("idle"); setUploadStatus(null); }, 2500);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Unknown error";
-      setUploadPhase("error");
-      setUploadStatus(`ERROR: ${msg}`);
-      pushToast("error", `Upload failed — ${msg}`);
-      setTimeout(() => { setUploadPhase("idle"); setUploadStatus(null); }, 4000);
+      pushToast("error", `Upload failed — ${err instanceof Error ? err.message : "Unknown"}`);
+    } finally {
+      setIsUploading(false);
     }
   }, [pushToast, fetchCloudFiles]);
 
@@ -262,11 +272,55 @@ export default function FileExplorer({
     }
   }, [pushToast]);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const doCloudOpen = useCallback((file: CloudFile) => {
+    const ext = file.file_name.split(".").pop()?.toLowerCase() ?? "";
+    const kind = detectMediaType(ext);
+    if (kind !== "unknown") {
+      onOpenMediaViewer?.(file.file_name, file.file_url, kind);
+    } else {
+      doCloudDownload(file);
+    }
+  }, [onOpenMediaViewer, doCloudDownload]);
+
+  const doCloudDelete = useCallback(async (file: CloudFile) => {
+    try {
+      const { error } = await supabase.from("cloud_registry").delete().eq("id", file.id);
+      if (error) throw error;
+      pushToast("success", `${file.file_name} deleted`);
+      await fetchCloudFiles();
+    } catch (err: unknown) {
+      pushToast("error", `Delete failed — ${err instanceof Error ? err.message : "Unknown"}`);
+    }
+  }, [pushToast, fetchCloudFiles]);
+
+  const doCloudRename = useCallback(async (file: CloudFile, newName: string) => {
+    const trimmed = newName.trim();
+    if (!trimmed || trimmed === file.file_name) { setRenamingId(null); return; }
+    try {
+      const { error } = await supabase.from("cloud_registry").update({ file_name: trimmed }).eq("id", file.id);
+      if (error) throw error;
+      pushToast("success", `Renamed to ${trimmed}`);
+      await fetchCloudFiles();
+    } catch (err: unknown) {
+      pushToast("error", `Rename failed — ${err instanceof Error ? err.message : "Unknown"}`);
+    } finally {
+      setRenamingId(null);
+    }
+  }, [pushToast, fetchCloudFiles]);
+
+  const handleCloudFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) doUpload(file);
     e.target.value = "";
   };
+
+  // Close cloud menus on outside click
+  useEffect(() => {
+    if (!cloudWindowMenu && !cloudItemMenu) return;
+    const handler = () => { setCloudWindowMenu(null); setCloudItemMenu(null); };
+    window.addEventListener("click", handler);
+    return () => window.removeEventListener("click", handler);
+  }, [cloudWindowMenu, cloudItemMenu]);
 
   const toastColors: Record<ToastKind, { bg: string; border: string; color: string; shadow: string }> = {
     success: { bg:"rgba(0,255,136,0.1)",   border:"rgba(0,255,136,0.35)",   color:"#00ff88", shadow:"0 0 20px rgba(0,255,136,0.2)"   },
@@ -434,7 +488,7 @@ export default function FileExplorer({
               </motion.div>
             )}
 
-            {/* ══ TAB 2: CLOUD DRIVE (Supabase) ══ */}
+            {/* ══ TAB 2: CLOUD DRIVE (Supabase) — Grid View ══ */}
             {tab === "cloud" && (
               <motion.div
                 key="cloud"
@@ -442,155 +496,246 @@ export default function FileExplorer({
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 12 }}
                 transition={{ duration: 0.18 }}
-                className="flex flex-col h-full overflow-hidden"
+                className="flex flex-col h-full overflow-hidden relative"
               >
-                <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-5">
+                {/* Hidden file input for uploads */}
+                <input ref={cloudFileInputRef} type="file" className="hidden" onChange={handleCloudFileChange} />
 
-                  {/* Upload Zone */}
-                  <div
-                    onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
-                    onDragLeave={() => setIsDragging(false)}
-                    onDrop={(e) => { e.preventDefault(); setIsDragging(false); const f=e.dataTransfer.files[0]; if(f) doUpload(f); }}
-                    onClick={() => uploadPhase==="idle" && fileInputRef.current?.click()}
-                    className="relative rounded-xl flex flex-col items-center justify-center gap-3 cursor-pointer transition-all duration-300"
-                    style={{
-                      minHeight:  170,
-                      background: isDragging ? "rgba(0,240,255,0.08)" : "rgba(0,240,255,0.025)",
-                      border:     isDragging ? "2px dashed rgba(0,240,255,0.7)" : "2px dashed rgba(0,240,255,0.2)",
-                      boxShadow:  isDragging ? "0 0 24px rgba(0,240,255,0.25)" : "none",
-                    }}
-                  >
-                    <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileChange} />
+                {/* Toolbar */}
+                <div className="flex items-center gap-2 px-4 py-2 border-b border-white/[0.04] bg-[#060606] shrink-0">
+                  <Database size={10} className="text-white/20 mr-1 shrink-0" />
+                  <span className="text-[10px] tracking-widest font-bold" style={{ color:"rgba(0,240,255,0.6)" }}>
+                    cloud_registry
+                  </span>
+                  <span className="text-[9px] text-white/15 tracking-widest">/ monix-drive</span>
 
-                    {uploadPhase === "idle" && (<>
-                      <div className="flex items-center justify-center w-14 h-14 rounded-full"
-                        style={{ background:"rgba(0,240,255,0.08)", border:"1px solid rgba(0,240,255,0.2)", boxShadow:"0 0 20px rgba(0,240,255,0.12)" }}>
-                        <Upload size={22} style={{ color:"#00f0ff" }} />
-                      </div>
-                      <div className="text-[11px] tracking-[0.22em] font-bold"
-                        style={{ color:"#00f0ff", textShadow:"0 0 12px rgba(0,240,255,0.7)" }}>
-                        DECRYPT & UPLOAD TO SECURE CLOUD
-                      </div>
-                      <div className="text-[10px] text-white/25 tracking-wider">DRAG & DROP OR CLICK TO SELECT</div>
-                      <motion.button
-                        whileHover={{ scale:1.04 }} whileTap={{ scale:0.97 }}
-                        onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
-                        className="flex items-center gap-2 px-6 py-2 rounded-lg text-[11px] tracking-widest font-bold mt-1"
-                        style={{ background:"linear-gradient(135deg,rgba(0,240,255,0.18),rgba(0,255,136,0.08))", border:"1px solid rgba(0,240,255,0.35)", color:"#00f0ff" }}
-                      >
-                        <Upload size={13} /> INITIATE UPLOAD
-                      </motion.button>
-                    </>)}
+                  {isUploading && (
+                    <span className="flex items-center gap-1 text-[9px] tracking-widest" style={{ color:"#00f0ff" }}>
+                      <Loader2 size={9} className="animate-spin" /> UPLOADING...
+                    </span>
+                  )}
 
-                    {(uploadPhase==="encrypting"||uploadPhase==="uploading") && (
-                      <div className="flex flex-col items-center gap-3">
-                        <Loader2 size={32} className="animate-spin" style={{ color:"#00f0ff" }} />
-                        <div className="text-[12px] tracking-widest font-bold" style={{ color:"#00f0ff", textShadow:"0 0 10px rgba(0,240,255,0.8)" }}>
-                          {uploadStatus}
-                        </div>
-                        <div className="flex gap-1">
-                          {[0,1,2,3,4].map((i)=>(
-                            <motion.div key={i} animate={{ opacity:[0.2,1,0.2] }} transition={{ duration:1,repeat:Infinity,delay:i*0.15 }}
-                              className="w-1.5 h-1.5 rounded-full" style={{ background:"#00f0ff" }} />
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {uploadPhase==="done" && (
-                      <div className="flex flex-col items-center gap-2">
-                        <CheckCircle size={36} style={{ color:"#00ff88" }} />
-                        <div className="text-[12px] tracking-widest font-bold" style={{ color:"#00ff88", textShadow:"0 0 10px rgba(0,255,136,0.8)" }}>{uploadStatus}</div>
-                      </div>
-                    )}
-
-                    {uploadPhase==="error" && (
-                      <div className="flex flex-col items-center gap-2 px-8 text-center">
-                        <XCircle size={36} style={{ color:"#f87171" }} />
-                        <div className="text-[11px] tracking-widest font-bold" style={{ color:"#f87171" }}>{uploadStatus}</div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Cloud Registry */}
-                  <div>
-                    <div className="flex items-center gap-2 mb-3">
-                      <Database size={11} style={{ color:"#00f0ff" }} />
-                      <span className="text-[10px] tracking-[0.2em] font-bold" style={{ color:"#00f0ff",opacity:0.7 }}>CLOUD REGISTRY</span>
-                      <span className="text-[9px] text-white/20 tracking-widest ml-1">— SUPABASE / cloud_registry</span>
-                      <button onClick={fetchCloudFiles} disabled={loadingFiles}
-                        className="ml-auto flex items-center gap-1 px-2 py-0.5 rounded text-[9px] tracking-widest transition-all"
-                        style={{ color:"rgba(0,240,255,0.5)", border:"1px solid rgba(0,240,255,0.15)", background:"rgba(0,240,255,0.03)" }}>
-                        <RefreshCw size={9} className={loadingFiles ? "animate-spin" : ""} /> REFRESH
-                      </button>
-                      <span className="text-[9px] text-white/20 tracking-widest">{cloudFiles.length} FILES</span>
-                    </div>
-
-                    {loadingFiles ? (
-                      <div className="flex items-center justify-center py-10 gap-2 rounded-lg"
-                        style={{ background:"rgba(255,255,255,0.015)", border:"1px solid rgba(255,255,255,0.04)" }}>
-                        <Loader2 size={16} className="animate-spin" style={{ color:"#00f0ff" }} />
-                        <span className="text-[10px] text-white/30 tracking-widest">QUERYING REGISTRY...</span>
-                      </div>
-                    ) : cloudFiles.length === 0 ? (
-                      <div className="flex flex-col items-center justify-center py-10 gap-2 rounded-lg"
-                        style={{ background:"rgba(255,255,255,0.015)", border:"1px solid rgba(255,255,255,0.04)" }}>
-                        <AlertTriangle size={20} className="text-white/15" />
-                        <span className="text-[10px] text-white/15 tracking-widest">NO FILES IN REGISTRY</span>
-                        <span className="text-[9px] text-white/10 tracking-widest">Upload a file to get started</span>
-                      </div>
-                    ) : (
-                      <div className="rounded-lg overflow-hidden" style={{ border:"1px solid rgba(0,240,255,0.1)", background:"rgba(0,0,0,0.35)" }}>
-                        <table className="w-full text-[10px]">
-                          <thead>
-                            <tr style={{ background:"rgba(0,240,255,0.05)", borderBottom:"1px solid rgba(0,240,255,0.1)" }}>
-                              <th className="text-left px-3 py-2 tracking-widest text-white/30 font-normal">FILENAME</th>
-                              <th className="text-left px-3 py-2 tracking-widest text-white/30 font-normal">SIZE</th>
-                              <th className="text-left px-3 py-2 tracking-widest text-white/30 font-normal">UPLOADED</th>
-                              <th className="text-center px-3 py-2 tracking-widest text-white/30 font-normal">STATUS</th>
-                              <th className="text-right px-3 py-2 tracking-widest text-white/30 font-normal">ACTION</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {cloudFiles.map((f, i) => (
-                              <motion.tr key={f.id}
-                                initial={{ opacity:0, y:-4 }} animate={{ opacity:1, y:0 }} transition={{ delay:i*0.03 }}
-                                style={{ borderBottom:"1px solid rgba(255,255,255,0.03)" }}>
-                                <td className="px-3 py-2 text-white/70 max-w-[180px]">
-                                  <span className="truncate block" title={f.file_name}>{f.file_name}</span>
-                                </td>
-                                <td className="px-3 py-2 text-white/35 whitespace-nowrap">{formatBytes(f.file_size)}</td>
-                                <td className="px-3 py-2 text-white/30 whitespace-nowrap">
-                                  {new Date(f.created_at).toLocaleString(undefined,{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"})}
-                                </td>
-                                <td className="px-3 py-2 text-center">
-                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] tracking-widest font-bold whitespace-nowrap"
-                                    style={{ background:"rgba(0,255,136,0.08)", border:"1px solid rgba(0,255,136,0.25)", color:"#00ff88" }}>
-                                    <CheckCircle size={8} /> CLOUD SYNC VERIFIED
-                                  </span>
-                                </td>
-                                <td className="px-3 py-2 text-right">
-                                  <motion.button whileHover={{ scale:1.07 }} whileTap={{ scale:0.95 }}
-                                    onClick={() => doCloudDownload(f)} disabled={downloadingId===f.id}
-                                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-[9px] tracking-wider font-bold"
-                                    style={{
-                                      background: downloadingId===f.id ? "rgba(0,240,255,0.04)" : "rgba(0,240,255,0.07)",
-                                      border:     "1px solid rgba(0,240,255,0.2)",
-                                      color:      downloadingId===f.id ? "rgba(0,240,255,0.4)" : "#00f0ff",
-                                      cursor:     downloadingId===f.id ? "not-allowed" : "pointer",
-                                    }}>
-                                    {downloadingId===f.id ? <Loader2 size={9} className="animate-spin"/> : <Download size={9}/>}
-                                    {downloadingId===f.id ? "..." : "DOWNLOAD"}
-                                  </motion.button>
-                                </td>
-                              </motion.tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
+                  <div className="ml-auto flex items-center gap-2">
+                    <button
+                      onClick={() => cloudFileInputRef.current?.click()}
+                      disabled={isUploading}
+                      className="flex items-center gap-1.5 px-3 py-1 rounded text-[9px] tracking-widest transition-all"
+                      style={{
+                        color: "rgba(0,240,255,0.7)", border: "1px solid rgba(0,240,255,0.2)",
+                        background: "rgba(0,240,255,0.04)",
+                      }}
+                    >
+                      <Upload size={9} /> UPLOAD
+                    </button>
+                    <button
+                      onClick={fetchCloudFiles}
+                      disabled={loadingFiles}
+                      className="flex items-center gap-1.5 px-2 py-1 rounded text-[9px] tracking-widest transition-all"
+                      style={{ color:"rgba(255,255,255,0.3)", border:"1px solid rgba(255,255,255,0.07)", background:"rgba(255,255,255,0.02)" }}
+                    >
+                      <RefreshCw size={9} className={loadingFiles ? "animate-spin" : ""} /> REFRESH
+                    </button>
+                    <span className="text-[9px] text-white/15 tracking-widest">{cloudFiles.length} FILES</span>
                   </div>
                 </div>
+
+                {/* Grid area — right-click opens cloud window menu */}
+                <div
+                  className="flex-1 overflow-y-auto p-4"
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    setCloudWindowMenu({ x: e.clientX, y: e.clientY });
+                    setCloudItemMenu(null);
+                  }}
+                >
+                  {loadingFiles ? (
+                    <div className="flex flex-col items-center justify-center h-full gap-3 text-white/15">
+                      <Loader2 size={28} className="animate-spin" style={{ color:"#00f0ff" }} />
+                      <span className="text-[10px] tracking-widest">QUERYING REGISTRY...</span>
+                    </div>
+                  ) : cloudFiles.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center h-full gap-3 text-white/15">
+                      <Cloud size={32} />
+                      <span className="text-[11px] tracking-widest">CLOUD DRIVE EMPTY</span>
+                      <span className="text-[9px] text-white/10 tracking-widest">Right-click to upload a file</span>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-5 gap-3">
+                      {cloudFiles.map((f, i) => {
+                        const { Icon, color } = getCloudIcon(f.file_name);
+                        const isRenaming = renamingId === f.id;
+                        return (
+                          <motion.div
+                            key={f.id}
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ delay: i * 0.03 }}
+                            whileHover={{ scale: 1.05, y: -2 }}
+                            whileTap={{ scale: 0.97 }}
+                            onDoubleClick={() => doCloudOpen(f)}
+                            onContextMenu={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setCloudItemMenu({ x: e.clientX, y: e.clientY, file: f });
+                              setCloudWindowMenu(null);
+                            }}
+                            className="flex flex-col items-center gap-1.5 p-2.5 rounded-lg cursor-pointer text-center select-none relative"
+                            style={{
+                              background: "rgba(255,255,255,0.02)",
+                              border: "1px solid rgba(255,255,255,0.04)",
+                              transition: "background 0.15s, border-color 0.15s",
+                            }}
+                            onMouseEnter={(e) => {
+                              const el = e.currentTarget as HTMLDivElement;
+                              el.style.background  = "rgba(0,240,255,0.05)";
+                              el.style.borderColor = "rgba(0,240,255,0.15)";
+                            }}
+                            onMouseLeave={(e) => {
+                              const el = e.currentTarget as HTMLDivElement;
+                              el.style.background  = "rgba(255,255,255,0.02)";
+                              el.style.borderColor = "rgba(255,255,255,0.04)";
+                            }}
+                          >
+                            {downloadingId === f.id
+                              ? <Loader2 size={30} className="animate-spin" style={{ color:"#00f0ff" }} />
+                              : <Icon size={30} style={{ color, filter:`drop-shadow(0 0 6px ${color}88)` }} />
+                            }
+
+                            {isRenaming ? (
+                              <input
+                                autoFocus
+                                className="w-full text-[10px] text-center bg-transparent border-b border-cyan-500/50 outline-none text-white/80 leading-tight"
+                                value={renameValue}
+                                onChange={(e) => setRenameValue(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") doCloudRename(f, renameValue);
+                                  if (e.key === "Escape") setRenamingId(null);
+                                  e.stopPropagation();
+                                }}
+                                onBlur={() => doCloudRename(f, renameValue)}
+                                onClick={(e) => e.stopPropagation()}
+                              />
+                            ) : (
+                              <span className="text-[10px] text-white/70 truncate w-full leading-tight" title={f.file_name}>
+                                {f.file_name}
+                              </span>
+                            )}
+
+                            <span className="text-[8px] px-1.5 py-0.5 rounded uppercase tracking-widest"
+                              style={{ background:"rgba(255,255,255,0.04)", color:"rgba(255,255,255,0.2)" }}>
+                              {formatBytes(f.file_size)}
+                            </span>
+                          </motion.div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* Help hint */}
+                <div className="shrink-0 px-4 py-1.5 border-t border-white/[0.04] flex items-center gap-3"
+                  style={{ background:"rgba(0,0,0,0.3)" }}>
+                  <Mouse size={9} className="text-white/15" />
+                  <span className="text-[9px] text-white/15 tracking-wider">
+                    DOUBLE-CLICK to open · RIGHT-CLICK file for options · RIGHT-CLICK background to upload
+                  </span>
+                </div>
+
+                {/* ── Cloud Window Context Menu (empty space) ── */}
+                <AnimatePresence>
+                  {cloudWindowMenu && (
+                    <motion.div
+                      initial={{ opacity:0, scale:0.93 }}
+                      animate={{ opacity:1, scale:1 }}
+                      exit={{ opacity:0, scale:0.93 }}
+                      transition={{ duration:0.12 }}
+                      className="fixed flex flex-col py-1 rounded-lg overflow-hidden"
+                      style={{
+                        left: cloudWindowMenu.x, top: cloudWindowMenu.y,
+                        zIndex: (zIndex ?? 100) + 70,
+                        background: "rgba(8,8,8,0.97)",
+                        border: "1px solid rgba(0,240,255,0.2)",
+                        backdropFilter: "blur(16px)",
+                        boxShadow: "0 8px 40px rgba(0,0,0,0.75), 0 0 20px rgba(0,240,255,0.08)",
+                        minWidth: 160,
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {[
+                        { label: "📤  Upload File", action: () => { cloudFileInputRef.current?.click(); setCloudWindowMenu(null); } },
+                        { label: "🔄  Refresh",      action: () => { fetchCloudFiles(); setCloudWindowMenu(null); } },
+                      ].map(({ label, action }) => (
+                        <button key={label} onClick={action}
+                          className="flex items-center px-3 py-2 text-[11px] tracking-wider text-left transition-all"
+                          style={{ color:"rgba(255,255,255,0.75)" }}
+                          onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background="rgba(0,240,255,0.07)"; (e.currentTarget as HTMLButtonElement).style.color="#00f0ff"; }}
+                          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background="transparent"; (e.currentTarget as HTMLButtonElement).style.color="rgba(255,255,255,0.75)"; }}
+                        >{label}</button>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* ── Cloud Item Context Menu (file) ── */}
+                <AnimatePresence>
+                  {cloudItemMenu && (
+                    <motion.div
+                      initial={{ opacity:0, scale:0.93 }}
+                      animate={{ opacity:1, scale:1 }}
+                      exit={{ opacity:0, scale:0.93 }}
+                      transition={{ duration:0.12 }}
+                      className="fixed flex flex-col py-1 rounded-lg overflow-hidden"
+                      style={{
+                        left: cloudItemMenu.x, top: cloudItemMenu.y,
+                        zIndex: (zIndex ?? 100) + 70,
+                        background: "rgba(8,8,8,0.97)",
+                        border: "1px solid rgba(0,240,255,0.2)",
+                        backdropFilter: "blur(16px)",
+                        boxShadow: "0 8px 40px rgba(0,0,0,0.75), 0 0 20px rgba(0,240,255,0.08)",
+                        minWidth: 160,
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {[
+                        {
+                          label: "📂  Open",
+                          icon: null,
+                          danger: false,
+                          action: () => { doCloudOpen(cloudItemMenu.file); setCloudItemMenu(null); },
+                        },
+                        {
+                          label: "📥  Download",
+                          icon: <Download size={11} />,
+                          danger: false,
+                          action: () => { doCloudDownload(cloudItemMenu.file); setCloudItemMenu(null); },
+                        },
+                        {
+                          label: "✏️  Rename",
+                          icon: <Pencil size={11} />,
+                          danger: false,
+                          action: () => {
+                            setRenamingId(cloudItemMenu.file.id);
+                            setRenameValue(cloudItemMenu.file.file_name);
+                            setCloudItemMenu(null);
+                          },
+                        },
+                        {
+                          label: "🗑️  Delete",
+                          icon: <Trash2 size={11} />,
+                          danger: true,
+                          action: () => { doCloudDelete(cloudItemMenu.file); setCloudItemMenu(null); },
+                        },
+                      ].map(({ label, danger, action }) => (
+                        <button key={label} onClick={action}
+                          className="flex items-center px-3 py-2 text-[11px] tracking-wider text-left transition-all"
+                          style={{ color: danger ? "#f87171" : "rgba(255,255,255,0.75)" }}
+                          onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background="rgba(0,240,255,0.07)"; (e.currentTarget as HTMLButtonElement).style.color= danger ? "#f87171" : "#00f0ff"; }}
+                          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background="transparent"; (e.currentTarget as HTMLButtonElement).style.color= danger ? "#f87171" : "rgba(255,255,255,0.75)"; }}
+                        >{label}</button>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </motion.div>
             )}
           </AnimatePresence>

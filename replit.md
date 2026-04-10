@@ -51,7 +51,7 @@ A pixel-perfect Kali Linux OS desktop environment simulation as a portfolio web 
 - Components: `Browser.tsx`, `TabBar.tsx`, `NavigationBar.tsx`, `BookmarksBar.tsx`, `BrowserContent.tsx`, `AIPanel.tsx`, `geminiService.ts`, `types.ts`
 - Features: Multi-tab, incognito mode, Gemini AI side panel, download/extension/history popovers, Google-style new tab page, AI Mode (chrome://ai), voice input
 - Wrapped by `src/components/BrowserApp.tsx` inside `WindowChrome` at 82% × 82% of screen
-- Launched via: Start Menu → Browser, Desktop right-click → Open Browser, Desktop icon
+- Launched via: Start Menu → Browser, Desktop icon (Chrome logo SVG)
 - Registered in OS process registry (`PROCESS_INFO: browser`) for Taskbar and Task Manager
 
 **Components:**

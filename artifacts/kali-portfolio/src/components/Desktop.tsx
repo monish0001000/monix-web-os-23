@@ -29,7 +29,7 @@ const PROCESS_INFO: Record<string, { name: string; icon: string }> = {
   trash:           { name: "Trash",            icon: "🗑️" },
   github:          { name: "GitHub",           icon: "🐙" },
   portfolio:       { name: "Portfolio",        icon: "🧑‍💻" },
-  browser:         { name: "Web Browser",      icon: "🌐" },
+  browser:         { name: "Web Browser",      icon: "⬡" },
   wallpaperpicker: { name: "Wallpaper Picker", icon: "🖼️" },
   sentinel:        { name: "Sentinel SOC",     icon: "🛡️" },
   aura:            { name: "AURA AI",          icon: "🤖" },

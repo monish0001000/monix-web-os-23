@@ -114,28 +114,14 @@ function GitHubIcon() {
 function BrowserIcon() {
   return (
     <svg viewBox="0 0 36 36" width="36" height="36" fill="none">
-      <defs>
-        <linearGradient id="browserBg" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#1a3a7a" />
-          <stop offset="100%" stopColor="#0d1f4a" />
-        </linearGradient>
-        <linearGradient id="browserBar" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#1e4490" />
-          <stop offset="100%" stopColor="#162e68" />
-        </linearGradient>
-      </defs>
-      <rect x="2" y="5" width="32" height="26" rx="3" fill="url(#browserBg)" stroke="#2a5ad8" strokeWidth="1"/>
-      <rect x="2" y="5" width="32" height="8" rx="3" fill="url(#browserBar)"/>
-      <rect x="2" y="9" width="32" height="4" fill="url(#browserBar)"/>
-      <circle cx="7" cy="9" r="1.3" fill="#e05555"/>
-      <circle cx="11.5" cy="9" r="1.3" fill="#e0a020"/>
-      <circle cx="16" cy="9" r="1.3" fill="#30c030"/>
-      <rect x="20" y="6.5" width="11" height="5" rx="2.5" fill="rgba(255,255,255,0.12)" stroke="rgba(255,255,255,0.2)" strokeWidth="0.6"/>
-      <circle cx="18" cy="23" r="7.5" fill="none" stroke="#3a6ad0" strokeWidth="1.2"/>
-      <ellipse cx="18" cy="23" rx="3.5" ry="7.5" fill="none" stroke="#5090e0" strokeWidth="0.8"/>
-      <line x1="10.5" y1="23" x2="25.5" y2="23" stroke="#4a80d8" strokeWidth="0.8"/>
-      <line x1="11.5" y1="19.5" x2="24.5" y2="19.5" stroke="#3a60c0" strokeWidth="0.6" strokeDasharray="1.5 1"/>
-      <line x1="11.5" y1="26.5" x2="24.5" y2="26.5" stroke="#3a60c0" strokeWidth="0.6" strokeDasharray="1.5 1"/>
+      <path d="M 18 5.25 A 12.75 12.75 0 0 1 29.04 24.375"
+        fill="none" stroke="#FBBC04" strokeWidth="4.6" strokeLinecap="butt"/>
+      <path d="M 29.04 24.375 A 12.75 12.75 0 0 1 6.96 24.375"
+        fill="none" stroke="#34A853" strokeWidth="4.6" strokeLinecap="butt"/>
+      <path d="M 6.96 24.375 A 12.75 12.75 0 0 1 18 5.25"
+        fill="none" stroke="#EA4335" strokeWidth="4.6" strokeLinecap="butt"/>
+      <circle cx="18" cy="18" r="11" fill="white"/>
+      <circle cx="18" cy="18" r="7" fill="#4285F4"/>
     </svg>
   );
 }

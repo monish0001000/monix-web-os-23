@@ -221,7 +221,7 @@ export default function TopPanel({ openWindows: _openWindows = [], onOpenWindow,
 
   const popoverBase: React.CSSProperties = {
     position: "fixed",
-    bottom: 38,
+    bottom: 48,
     background: "rgba(18, 18, 26, 0.97)",
     backdropFilter: "blur(16px)",
     border: "1px solid rgba(255,255,255,0.12)",
@@ -551,7 +551,7 @@ export default function TopPanel({ openWindows: _openWindows = [], onOpenWindow,
             {showCalendar && (
               <div
                 style={{
-                  position: "fixed", bottom: 44, right: 62,
+                  position: "fixed", bottom: 54, right: 62,
                   background: "rgba(14,14,22,0.96)",
                   backdropFilter: "blur(20px)",
                   border: "1px solid rgba(255,255,255,0.12)",

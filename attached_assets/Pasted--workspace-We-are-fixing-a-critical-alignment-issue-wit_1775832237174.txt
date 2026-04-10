@@ -1,0 +1,31 @@
+@workspace We are fixing a critical alignment issue with maximized windows (image_3.png). Absolutely positioned windows (e.g., the Terminal window shown) are offset to the right and do not perfectly fill the desktop workspace. We must implement a strict layout architecture and react-rnd hard overrides. Act as an Elite Frontend OS Architect and execute the following with exact technical detail:
+
+1. Refactor OS Layout (src/components/Desktop.tsx):
+
+Change the main root container layout to a full-screen flexible column using Tailwind: className="w-full h-screen flex flex-col overflow-hidden bg-black text-white".
+
+Explicitly define the desktop area (where windows living) above the taskbar to be relative and overflow-hidden to bound all absolute windows perfectly: className="flex-1 relative overflow-hidden".
+
+Define the Taskbar at the bottom to be fixed-height: className="h-12 shrink-0 z-[9999]". Absolutely positioned windows inside the desktop area will now be perfectly edge-to-edge.
+
+2. Hard Override Maximization Props (src/components/WindowWrapper.tsx):
+
+Ensure the component accurately uses the Zustand store's process.isMaximized state.
+
+Inside the conditional logic for passing props to the <Rnd> component, if process.isMaximized is true, HARD-OVERRIDE with static, non-dragging/non-resizing props:
+
+position={{ x: 0, y: 0 }} (Locks the top-left to the precise edge of the relative desktop area).
+
+size={{ width: '100%', height: '100%' }} (Forces the window to perfectly fill its bounded parent, addressing the right-side gap).
+
+disableDragging={true} (Locks state).
+
+enableResizing={false} (Locks state).
+
+If false, fallback to the dynamic store values.
+
+3. Enforce Inner Content Full-Flush (FilesApp, TerminalApp, etc.):
+
+Audit all application window content (e.g., TerminalApp shown). Ensure their root div component uses className="w-full h-full" and has zero internal padding or margins that would create gaps. The content must flush perfectly to the title bar and window edges.
+
+Maintain the dark cyberpunk aesthetic with monospace fonts and glowing borders. Please apply these exact technical architectural constraints to guarantee edge-to-edge fit.

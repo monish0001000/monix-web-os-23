@@ -347,7 +347,7 @@ export default function Desktop() {
   };
 
   return (
-    <div className="w-full h-full flex flex-col overflow-hidden">
+    <div className="w-full h-screen flex flex-col overflow-hidden bg-black text-white">
       <main
         ref={desktopRef}
         className="flex-1 relative overflow-hidden select-none"
@@ -656,7 +656,7 @@ export default function Desktop() {
             onClick={() => { handleOpenWindow("chess"); setShowGamesTip(false); }}
             style={{
               position: "fixed",
-              bottom: 52,
+              bottom: 62,
               right: 16,
               zIndex: 400,
               cursor: "pointer",
@@ -695,7 +695,7 @@ export default function Desktop() {
 
       </main>
 
-      <footer className="shrink-0 z-[9999]" style={{ height: 38 }}>
+      <footer className="h-12 shrink-0 z-[9999]">
         <TopPanel
           openWindows={openWindowList}
           onOpenWindow={handleOpenWindow}

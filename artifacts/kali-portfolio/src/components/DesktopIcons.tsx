@@ -5,7 +5,7 @@ interface DesktopIconsProps {
   onOpenWindow: (id: string) => void;
   selectedIcon: string | null;
   onSelectIcon: (id: string | null) => void;
-  dragConstraintsRef: React.RefObject<HTMLDivElement>;
+  dragConstraintsRef: React.RefObject<HTMLDivElement | null>;
 }
 
 function TrashIcon() {
@@ -437,7 +437,7 @@ function IconItem({
   selectedIcon: string | null;
   onSelectIcon: (id: string | null) => void;
   onOpenWindow: (id: string) => void;
-  dragConstraintsRef: React.RefObject<HTMLDivElement>;
+  dragConstraintsRef: React.RefObject<HTMLDivElement | null>;
 }) {
   const isSelected = selectedIcon === item.id;
   return (

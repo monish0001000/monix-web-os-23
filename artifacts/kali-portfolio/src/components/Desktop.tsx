@@ -103,6 +103,8 @@ export default function Desktop() {
   const registerProcess = useOSStore((s) => s.registerProcess);
   const unregisterProcess = useOSStore((s) => s.unregisterProcess);
   const updateProcessMinimized = useOSStore((s) => s.updateProcessMinimized);
+  const focusWindow = useOSStore((s) => s.focusWindow);
+  const toggleMinimize = useOSStore((s) => s.toggleMinimize);
   const setKillCallback = useOSStore((s) => s.setKillCallback);
 
   const computedCursor =
@@ -153,6 +155,7 @@ export default function Desktop() {
     setWindows((prev) => prev.map((w) => (w.id === id ? { ...w, zIndex: z, minimized: false } : w)));
     setActiveWindow(id);
     updateProcessMinimized(id, false);
+    focusWindow(id);
   };
 
   const handleOpenWindow = (id: string) => {
@@ -198,6 +201,7 @@ export default function Desktop() {
   const handleMinimizeWindow = (id: string) => {
     setWindows((prev) => prev.map((w) => (w.id === id ? { ...w, minimized: true } : w)));
     updateProcessMinimized(id, true);
+    toggleMinimize(id);
     if (activeWindow === id) {
       const visible = windows.filter((w) => w.id !== id && !w.minimized);
       setActiveWindow(visible.length > 0 ? visible[visible.length - 1].id : "");

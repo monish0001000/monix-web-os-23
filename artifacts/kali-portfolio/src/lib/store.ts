@@ -20,12 +20,17 @@ export interface OSProcess {
   id: string;
   name: string;
   icon: string;
-  pid: string;        // e.g. "0x4A2F"
+  pid: string;
   isMinimized: boolean;
-  launchedAt: number; // timestamp for uptime display
+  isMaximized: boolean;
+  launchedAt: number;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  zIndex: number;
 }
 
-// Module-level ref so the kill callback is never stale without causing re-renders
 let _killCallbackRef: ((id: string) => void) | null = null;
 
 interface OSState {
@@ -42,15 +47,22 @@ interface OSState {
   cursorColor: string;
   themeAccent: string;
 
-  // Virtual File System
   localFileSystem: VFSNode[];
   preloadLocalFS: () => void;
 
+  // Window focus tracking
+  focusedWindowId: string;
+  highestZIndex: number;
+
   // Process management
   activeProcesses: OSProcess[];
-  registerProcess: (proc: OSProcess) => void;
+  registerProcess: (proc: Pick<OSProcess, "id" | "name" | "icon" | "pid" | "isMinimized" | "launchedAt"> & Partial<Pick<OSProcess, "isMaximized" | "zIndex" | "x" | "y" | "width" | "height">>) => void;
   unregisterProcess: (id: string) => void;
   updateProcessMinimized: (id: string, minimized: boolean) => void;
+  focusWindow: (id: string) => void;
+  updateWindowBounds: (id: string, bounds: Partial<Pick<OSProcess, "x" | "y" | "width" | "height">>) => void;
+  toggleMinimize: (id: string) => void;
+  toggleMaximize: (id: string) => void;
   setKillCallback: (cb: (id: string) => void) => void;
   killProcess: (id: string) => void;
 
@@ -68,7 +80,7 @@ interface OSState {
   setThemeAccent: (color: string) => void;
 }
 
-export const useOSStore = create<OSState>((set) => ({
+export const useOSStore = create<OSState>((set, get) => ({
   isLocked: false,
   taskbarPosition: "bottom",
   currentWallpaper: DEFAULT_WALLPAPER,
@@ -82,23 +94,40 @@ export const useOSStore = create<OSState>((set) => ({
   cursorColor: "#ffffff",
   themeAccent: "#00f0ff",
 
-  // VFS — populated synchronously at boot via scanStorage()
   localFileSystem: [],
   preloadLocalFS: () => set({ localFileSystem: scanStorage() }),
 
-  // ── Process management ─────────────────────────────────────────────────────
+  focusedWindowId: "",
+  highestZIndex: 20,
+
   activeProcesses: [],
 
   registerProcess: (proc) =>
-    set((state) => ({
-      activeProcesses: state.activeProcesses.some((p) => p.id === proc.id)
-        ? state.activeProcesses
-        : [...state.activeProcesses, proc],
-    })),
+    set((state) => {
+      if (state.activeProcesses.some((p) => p.id === proc.id)) return {};
+      const zIndex = state.highestZIndex + 1;
+      return {
+        highestZIndex: zIndex,
+        focusedWindowId: proc.id,
+        activeProcesses: [
+          ...state.activeProcesses,
+          {
+            isMaximized: false,
+            zIndex,
+            x: 100,
+            y: 60,
+            width: 700,
+            height: 450,
+            ...proc,
+          },
+        ],
+      };
+    }),
 
   unregisterProcess: (id) =>
     set((state) => ({
       activeProcesses: state.activeProcesses.filter((p) => p.id !== id),
+      focusedWindowId: state.focusedWindowId === id ? "" : state.focusedWindowId,
     })),
 
   updateProcessMinimized: (id, minimized) =>
@@ -108,16 +137,43 @@ export const useOSStore = create<OSState>((set) => ({
       ),
     })),
 
-  setKillCallback: (cb) => {
-    _killCallbackRef = cb;
-  },
+  focusWindow: (id) =>
+    set((state) => {
+      const zIndex = state.highestZIndex + 1;
+      return {
+        highestZIndex: zIndex,
+        focusedWindowId: id,
+        activeProcesses: state.activeProcesses.map((p) =>
+          p.id === id ? { ...p, zIndex, isMinimized: false } : p
+        ),
+      };
+    }),
 
-  killProcess: (id) => {
-    _killCallbackRef?.(id);
-    // unregisterProcess is called by Desktop's handleCloseWindow
-  },
+  updateWindowBounds: (id, bounds) =>
+    set((state) => ({
+      activeProcesses: state.activeProcesses.map((p) =>
+        p.id === id ? { ...p, ...bounds } : p
+      ),
+    })),
 
-  // ── OS settings ────────────────────────────────────────────────────────────
+  toggleMinimize: (id) =>
+    set((state) => ({
+      activeProcesses: state.activeProcesses.map((p) =>
+        p.id === id ? { ...p, isMinimized: !p.isMinimized } : p
+      ),
+    })),
+
+  toggleMaximize: (id) =>
+    set((state) => ({
+      activeProcesses: state.activeProcesses.map((p) =>
+        p.id === id ? { ...p, isMaximized: !p.isMaximized } : p
+      ),
+    })),
+
+  setKillCallback: (cb) => { _killCallbackRef = cb; },
+
+  killProcess: (id) => { _killCallbackRef?.(id); },
+
   setLocked: (locked) => set({ isLocked: locked }),
   setTaskbarPosition: (pos) => set({ taskbarPosition: pos }),
 

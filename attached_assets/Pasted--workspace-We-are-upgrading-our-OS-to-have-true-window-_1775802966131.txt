@@ -1,0 +1,47 @@
+@workspace We are upgrading our OS to have true window mechanics (Draggable, Resizable, Minimizable, Maximizable) using the react-rnd library. Act as an Elite OS Architect and execute the following in exact order:
+
+1. Install Dependency:
+
+Run npm install react-rnd
+
+2. Upgrade OS Global Store (Store.ts):
+
+Update the activeProcesses interface to include window bounds and states: x, y, width, height, zIndex, isMinimized, isMaximized.
+
+Add a focusedWindowId string to track which window is currently active.
+
+Add actions: focusWindow(id), updateWindowBounds(id, bounds), toggleMinimize(id), toggleMaximize(id).
+
+When focusing a window, increment a global highestZIndex counter and assign it to that window so it comes to the front.
+
+3. Create the Universal WindowWrapper.tsx:
+
+Create a new component src/components/WindowWrapper.tsx that uses <Rnd> from react-rnd.
+
+It should accept props: process (the process object from store) and children (the actual app content like FilesApp or Browser).
+
+Rnd Configuration:
+
+Bind size and position to the process bounds from the store (unless isMaximized is true, in which case it should snap to 100% width/height).
+
+dragHandleClassName="window-title-bar" (Crucial: only drag from the top bar).
+
+On onDragStop and onResizeStop, call updateWindowBounds in the store.
+
+On onMouseDown, call focusWindow to bring it to the front.
+
+Title Bar UI: Inside the Rnd wrapper, create a sleek cyberpunk title bar (h-8 bg-[#111] border-b border-cyan-500/30 flex justify-between items-center px-2 className="window-title-bar").
+
+Include the App Icon, App Name, and 3 buttons on the right: Minimize (_), Maximize ([ ]), and Close (X). Wire these buttons to the Zustand store actions.
+
+Content Area: Render the children below the title bar in a container with h-[calc(100%-2rem)] overflow-hidden.
+
+4. Refactor Existing Apps (Desktop.tsx / App Components):
+
+Ensure all existing applications (FilesApp, MediaViewer, Terminal, TaskManager, BrowserApp) do NOT have fixed/absolute positioning that locks them to the screen center anymore. They should just fill their parent container (w-full h-full).
+
+In the Desktop component, map over activeProcesses. For each process, if it is NOT minimized, render its respective App component wrapped INSIDE the WindowWrapper.
+
+5. Taskbar Integration (Taskbar.tsx):
+
+Update the Taskbar app icons: When an icon in the taskbar is clicked, if the app is minimized, restore it (toggleMinimize). If it's behind other windows, bring it to the front (focusWindow).

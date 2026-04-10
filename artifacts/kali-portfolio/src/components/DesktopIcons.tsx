@@ -6,6 +6,7 @@ interface DesktopIconsProps {
   selectedIcon: string | null;
   onSelectIcon: (id: string | null) => void;
   dragConstraintsRef: React.RefObject<HTMLDivElement | null>;
+  onLongPress?: (x: number, y: number) => void;
 }
 
 function TrashIcon() {
@@ -431,15 +432,31 @@ function IconItem({
   selectedIcon,
   onSelectIcon,
   onOpenWindow,
+  onLongPress,
   dragConstraintsRef,
 }: {
   item: { id: string; label: string; icon: React.ReactNode; window: string };
   selectedIcon: string | null;
   onSelectIcon: (id: string | null) => void;
   onOpenWindow: (id: string) => void;
+  onLongPress?: (x: number, y: number) => void;
   dragConstraintsRef: React.RefObject<HTMLDivElement | null>;
 }) {
   const isSelected = selectedIcon === item.id;
+  const lpTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lpFired = useRef(false);
+
+  const startLongPress = (x: number, y: number) => {
+    lpFired.current = false;
+    lpTimer.current = setTimeout(() => {
+      lpFired.current = true;
+      onLongPress?.(x, y);
+    }, 500);
+  };
+  const cancelLongPress = () => {
+    if (lpTimer.current) clearTimeout(lpTimer.current);
+  };
+
   return (
     <motion.div
       key={item.id}
@@ -474,6 +491,19 @@ function IconItem({
         e.stopPropagation();
         onOpenWindow(item.window);
       }}
+      onTouchStart={(e) => {
+        e.stopPropagation();
+        const touch = e.touches[0];
+        startLongPress(touch.clientX, touch.clientY);
+      }}
+      onTouchEnd={(e) => {
+        cancelLongPress();
+        if (!lpFired.current) {
+          e.stopPropagation();
+          onOpenWindow(item.window);
+        }
+      }}
+      onTouchMove={cancelLongPress}
     >
       {item.icon}
       <span
@@ -501,6 +531,7 @@ export default function DesktopIcons({
   selectedIcon,
   onSelectIcon,
   dragConstraintsRef,
+  onLongPress,
 }: DesktopIconsProps) {
   return (
     <div
@@ -515,6 +546,7 @@ export default function DesktopIcons({
             selectedIcon={selectedIcon}
             onSelectIcon={onSelectIcon}
             onOpenWindow={onOpenWindow}
+            onLongPress={onLongPress}
             dragConstraintsRef={dragConstraintsRef}
           />
         ))}
@@ -527,6 +559,7 @@ export default function DesktopIcons({
             selectedIcon={selectedIcon}
             onSelectIcon={onSelectIcon}
             onOpenWindow={onOpenWindow}
+            onLongPress={onLongPress}
             dragConstraintsRef={dragConstraintsRef}
           />
         ))}

@@ -1,0 +1,49 @@
+@workspace We need to perfect the Window Manager mechanics for "Maximized" states and make the entire OS fully responsive across Mobile, Tablet, and Desktop. Building a Web OS for mobile requires specific UX paradigms (like forced maximization and touch support). Act as an Elite Frontend OS Architect and execute the following:
+
+1. Fix Maximized Window Mechanics (WindowWrapper.tsx):
+
+Currently, maximized windows might still be draggable or overflow the taskbar.
+
+Check the isMaximized state for the current process.
+
+If isMaximized is true, pass the following strict props to the <Rnd> component:
+
+position={{ x: 0, y: 0 }}
+
+size={{ width: '100%', height: 'calc(100vh - 3rem)' }} (assuming taskbar is h-12 or 3rem).
+
+disableDragging={true} (Critical: Maximized windows cannot be dragged).
+
+enableResizing={false} (Critical: Maximized windows cannot be resized).
+
+If isMaximized is false, fallback to the dynamic bounds from the Zustand store and enable drag/resize.
+
+2. Mobile-First Window Policy (Global Hook):
+
+Create a hook or logic to detect screen size (e.g., window.innerWidth < 768).
+
+Mobile Override: On mobile devices, ALL applications must automatically launch in isMaximized: true state.
+
+On mobile, hide the "Minimize" and "Restore Down" buttons from the window title bar if they don't make sense, forcing users to either use full-screen apps or close them.
+
+3. Responsive Desktop & File Grid (FilesApp.tsx & Desktop):
+
+Ensure the Desktop icons and Cloud/Local file grids use responsive Tailwind classes.
+
+Desktop Grid: grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-4.
+
+Mobile File Manager: Change the file grid to grid-cols-3 or a vertical list view flex flex-col on screens smaller than sm:.
+
+4. Responsive Taskbar (Taskbar.tsx):
+
+On mobile screens (max-w-[768px]), the taskbar center section (active apps) needs to be horizontally scrollable without breaking the layout (flex overflow-x-auto no-scrollbar).
+
+Ensure the clock and system tray icons shrink or hide gracefully on extremely small screens (e.g., hide the date, show only time).
+
+5. Touch Interactions (Long-Press for Right-Click):
+
+Mobile devices cannot trigger onContextMenu easily.
+
+Implement a simple Long-Press logic (using onTouchStart, onTouchEnd, and a setTimeout of 500ms) on the Desktop and File System items.
+
+If the user holds their finger for 500ms, trigger the exact same Context Menu logic as the desktop right-click.

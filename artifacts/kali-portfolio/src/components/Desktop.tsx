@@ -324,22 +324,27 @@ export default function Desktop() {
   const selWidth  = Math.abs(selectionBox.endX - selectionBox.startX);
   const selHeight = Math.abs(selectionBox.endY - selectionBox.startY);
 
-  if (isMobile) {
-    return (
-      <div className="fixed inset-0 bg-black flex flex-col items-center justify-center p-6 text-center z-[100] font-sans">
-        <h2 className="text-2xl font-bold text-white mb-4">Best Viewed on Desktop</h2>
-        <p className="text-gray-400 mb-8 max-w-sm">
-          This portfolio is a full OS simulation designed for desktop screens (1366×768+).
-        </p>
-        <div className="flex flex-col gap-2 text-sm text-gray-500">
-          <p>Monish</p>
-          <a href="https://github.com/monishpkp" target="_blank" rel="noreferrer" className="text-blue-500 hover:underline">
-            github.com/monishpkp
-          </a>
-        </div>
-      </div>
-    );
-  }
+  // ── Long-press (touch right-click) on the desktop background ──────────────
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const longPressFired = useRef(false);
+
+  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (e.target !== e.currentTarget) return;
+    longPressFired.current = false;
+    const touch = e.touches[0];
+    longPressTimer.current = setTimeout(() => {
+      longPressFired.current = true;
+      setContextMenu({ x: touch.clientX, y: touch.clientY });
+    }, 500);
+  };
+
+  const handleTouchEnd = () => {
+    if (longPressTimer.current) clearTimeout(longPressTimer.current);
+  };
+
+  const handleTouchMove = () => {
+    if (longPressTimer.current) clearTimeout(longPressTimer.current);
+  };
 
   return (
     <div
@@ -356,6 +361,9 @@ export default function Desktop() {
       onClick={handleDesktopClick}
       onContextMenu={handleRightClick}
       onMouseDown={handleMouseDown}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+      onTouchMove={handleTouchMove}
     >
       {/* Desktop icons wrapper with refresh animation */}
       <div
@@ -374,6 +382,7 @@ export default function Desktop() {
           selectedIcon={selectedIcon}
           onSelectIcon={setSelectedIcon}
           dragConstraintsRef={desktopRef}
+          onLongPress={(x, y) => setContextMenu({ x, y })}
         />
       </div>
 

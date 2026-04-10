@@ -98,6 +98,10 @@ export default function TopPanel({ openWindows: _openWindows = [], onOpenWindow,
   const [time, setTime] = useState(new Date());
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [activeWorkspace, setActiveWorkspace] = useState(1);
+  const [screenWidth, setScreenWidth] = useState(
+    typeof window !== "undefined" ? window.innerWidth : 1280
+  );
+  const isMobile = screenWidth < 768;
   const [showCalendar, setShowCalendar] = useState(false);
   const [trayPopover, setTrayPopover] = useState<TrayPopover>(null);
   const [showStartMenu, setShowStartMenu] = useState(false);
@@ -117,17 +121,20 @@ export default function TopPanel({ openWindows: _openWindows = [], onOpenWindow,
   const setOsVolume = useOSStore((s) => s.setOsVolume);
   const activeProcesses = useOSStore((s) => s.activeProcesses);
 
-  // Clock + network
+  // Clock + network + screen size
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 1000);
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
+    const handleResize = () => setScreenWidth(window.innerWidth);
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
+    window.addEventListener("resize", handleResize);
     return () => {
       clearInterval(timer);
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
+      window.removeEventListener("resize", handleResize);
     };
   }, []);
 
@@ -307,31 +314,42 @@ export default function TopPanel({ openWindows: _openWindows = [], onOpenWindow,
 
           <div style={{ width: 1, height: 22, background: "rgba(255,255,255,0.1)", marginLeft: 2 }} />
 
-          {/* Workspace switcher */}
-          <div className="flex items-center h-full px-1.5 gap-0.5">
-            {[1, 2, 3, 4].map((n) => (
-              <div
-                key={n}
-                onClick={() => setActiveWorkspace(n)}
-                style={{
-                  width: 22, height: 20, display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: 11, fontWeight: 500, cursor: "pointer",
-                  border: activeWorkspace === n ? "1px solid #367BF0" : "1px solid rgba(255,255,255,0.15)",
-                  background: activeWorkspace === n ? "rgba(54,123,240,0.35)" : "rgba(255,255,255,0.04)",
-                  color: activeWorkspace === n ? "#90bfff" : "rgba(255,255,255,0.55)",
-                  transition: "all 0.1s",
-                }}
-              >
-                {n}
-              </div>
-            ))}
-          </div>
+          {/* Workspace switcher — hidden on mobile */}
+          {!isMobile && (
+            <div className="flex items-center h-full px-1.5 gap-0.5">
+              {[1, 2, 3, 4].map((n) => (
+                <div
+                  key={n}
+                  onClick={() => setActiveWorkspace(n)}
+                  style={{
+                    width: 22, height: 20, display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 11, fontWeight: 500, cursor: "pointer",
+                    border: activeWorkspace === n ? "1px solid #367BF0" : "1px solid rgba(255,255,255,0.15)",
+                    background: activeWorkspace === n ? "rgba(54,123,240,0.35)" : "rgba(255,255,255,0.04)",
+                    color: activeWorkspace === n ? "#90bfff" : "rgba(255,255,255,0.55)",
+                    transition: "all 0.1s",
+                  }}
+                >
+                  {n}
+                </div>
+              ))}
+            </div>
+          )}
 
           {/* ── Active process tabs (Zustand-driven) ── */}
           {activeProcesses.length > 0 && (
             <>
               <div style={{ width: 1, height: 22, background: "rgba(255,255,255,0.1)", marginLeft: 4 }} />
-              <div className="flex items-center h-full gap-[3px] px-1" style={{ maxWidth: "calc(100vw - 520px)", overflowX: "auto", scrollbarWidth: "none" }}>
+              <div
+                className="flex items-center h-full gap-[3px] px-1"
+                style={{
+                  flex: isMobile ? "1 1 0" : "0 1 auto",
+                  maxWidth: isMobile ? "100%" : "calc(100vw - 520px)",
+                  overflowX: "auto",
+                  scrollbarWidth: "none",
+                  msOverflowStyle: "none",
+                } as React.CSSProperties}
+              >
                 {activeProcesses.map((proc) => {
                   const isActive = activeWindowId === proc.id;
                   const isSuspended = proc.isMinimized;
@@ -381,11 +399,16 @@ export default function TopPanel({ openWindows: _openWindows = [], onOpenWindow,
               50% { opacity: 0.4; transform: scale(0.75); }
             }
           `}</style>
-          <div className={btnClass} style={{ gap: 5 }} title="Real-time FPS">
-            <FpsCounter />
-          </div>
 
-          <div style={{ width: 1, height: 22, background: "rgba(255,255,255,0.1)" }} />
+          {/* FPS counter — hidden on mobile */}
+          {!isMobile && (
+            <>
+              <div className={btnClass} style={{ gap: 5 }} title="Real-time FPS">
+                <FpsCounter />
+              </div>
+              <div style={{ width: 1, height: 22, background: "rgba(255,255,255,0.1)" }} />
+            </>
+          )}
 
           {/* Network / IP */}
           <div
@@ -530,7 +553,7 @@ export default function TopPanel({ openWindows: _openWindows = [], onOpenWindow,
             ref={calRef}
           >
             <span style={{ fontSize: 12, color: "rgba(255,255,255,0.9)", fontWeight: 400, letterSpacing: "0.02em" }}>
-              {format(time, "EEE HH:mm")}
+              {isMobile ? format(time, "HH:mm") : format(time, "EEE HH:mm")}
             </span>
 
             {showCalendar && (

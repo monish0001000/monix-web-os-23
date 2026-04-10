@@ -113,7 +113,7 @@ export default function StartMenu({ open, onClose, onOpenWindow }: StartMenuProp
             transition={{ duration: 0.15, ease: "easeOut" }}
             className="fixed font-sans"
             style={{
-              bottom: 44,
+              bottom: 42,
               left: 8,
               width: 320,
               zIndex: 500,

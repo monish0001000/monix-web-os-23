@@ -38,8 +38,7 @@ function AppInner() {
 
   return (
     <div
-      className="w-full h-[100dvh] overflow-hidden font-sans"
-      style={{ background: "#000000" }}
+      className="w-full h-[100dvh] flex flex-col overflow-hidden bg-black text-white font-sans"
     >
       <NetworkHandler />
       <AnimatePresence mode="wait">
@@ -57,7 +56,7 @@ function AppInner() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5 }}
-            className="w-full h-full relative"
+            className="flex-1 w-full relative overflow-hidden"
           >
             {/* Desktop — blurred when locked, display-filtered by settings */}
             <motion.div

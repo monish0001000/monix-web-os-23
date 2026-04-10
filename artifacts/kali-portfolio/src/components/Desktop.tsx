@@ -347,24 +347,25 @@ export default function Desktop() {
   };
 
   return (
-    <div
-      ref={desktopRef}
-      className="w-full h-full relative overflow-hidden select-none"
-      style={{
-        backgroundImage: `url(${currentWallpaper})`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        backgroundRepeat: "no-repeat",
-        transition: "background-image 0.4s ease",
-        cursor: computedCursor,
-      }}
-      onClick={handleDesktopClick}
-      onContextMenu={handleRightClick}
-      onMouseDown={handleMouseDown}
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
-      onTouchMove={handleTouchMove}
-    >
+    <div className="w-full h-full flex flex-col overflow-hidden">
+      <main
+        ref={desktopRef}
+        className="flex-1 relative overflow-hidden select-none"
+        style={{
+          backgroundImage: `url(${currentWallpaper})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+          transition: "background-image 0.4s ease",
+          cursor: computedCursor,
+        }}
+        onClick={handleDesktopClick}
+        onContextMenu={handleRightClick}
+        onMouseDown={handleMouseDown}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+        onTouchMove={handleTouchMove}
+      >
       {/* Desktop icons wrapper with refresh animation */}
       <div
         className={isRefreshing ? "cyber-glitch-refresh" : undefined}
@@ -692,12 +693,16 @@ export default function Desktop() {
         )}
       </AnimatePresence>
 
-      <TopPanel
-        openWindows={openWindowList}
-        onOpenWindow={handleOpenWindow}
-        onTaskbarClick={handleTaskbarClick}
-        activeWindowId={activeWindow}
-      />
+      </main>
+
+      <footer className="shrink-0 z-[9999]" style={{ height: 38 }}>
+        <TopPanel
+          openWindows={openWindowList}
+          onOpenWindow={handleOpenWindow}
+          onTaskbarClick={handleTaskbarClick}
+          activeWindowId={activeWindow}
+        />
+      </footer>
     </div>
   );
 }

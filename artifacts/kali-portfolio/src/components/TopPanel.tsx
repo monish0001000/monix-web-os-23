@@ -247,9 +247,8 @@ export default function TopPanel({ openWindows: _openWindows = [], onOpenWindow,
       />
 
       <div
-        className="fixed bottom-0 left-0 w-full z-50 select-none font-sans flex items-stretch justify-between"
+        className="w-full h-full select-none font-sans flex items-stretch justify-between"
         style={{
-          height: 38,
           background: "rgba(0,0,0,0.45)",
           backdropFilter: "blur(18px) saturate(160%)",
           WebkitBackdropFilter: "blur(18px) saturate(160%)",

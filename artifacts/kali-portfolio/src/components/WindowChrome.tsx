@@ -18,8 +18,6 @@ interface WindowChromeProps {
   defaultMaximized?: boolean;
 }
 
-const TASKBAR_H = 38;
-
 export default function WindowChrome({
   title,
   onClose,
@@ -102,7 +100,7 @@ export default function WindowChrome({
       exit={{ scale: 0.82, opacity: 0, filter: "blur(6px)" }}
       transition={{ duration: 0.16, ease: "easeOut" }}
       style={{
-        position: "fixed",
+        position: "absolute",
         inset: 0,
         pointerEvents: "none",
         zIndex,
@@ -111,7 +109,7 @@ export default function WindowChrome({
       <Rnd
         size={
           isMaxed
-            ? { width: "100vw", height: `calc(100vh - ${TASKBAR_H}px)` }
+            ? { width: "100%", height: "100%" }
             : { width: bounds.w, height: bounds.h }
         }
         position={isMaxed ? { x: 0, y: 0 } : { x: bounds.x, y: bounds.y }}
@@ -130,7 +128,7 @@ export default function WindowChrome({
         disableDragging={isMaxed}
         enableResizing={!isMaxed}
         cancel="button,a,input,select,textarea"
-        bounds="window"
+        bounds="parent"
         minWidth={300}
         minHeight={200}
         style={{

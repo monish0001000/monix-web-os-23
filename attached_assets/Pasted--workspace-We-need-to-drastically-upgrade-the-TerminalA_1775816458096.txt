@@ -1,0 +1,51 @@
+@workspace We need to drastically upgrade the TerminalApp.tsx to include a robust command parser, command history (Up/Down arrows), and a suite of "Cyber Flex" commands for a demo video. Act as an Elite OS Architect and execute the following:
+
+1. State Management Upgrade (TerminalApp.tsx):
+
+Ensure state exists for: history (output log), input (current text), isRoot (boolean).
+
+NEW STATE: Add commandHistory (string array of past entered commands) and historyIndex (number, to navigate with Up/Down arrows).
+
+Add an onKeyDown handler to the input:
+
+ArrowUp: Navigate back in commandHistory.
+
+ArrowDown: Navigate forward in commandHistory.
+
+2. Command Parser & Existing Commands:
+
+Refine the handleCommand execution. Split the input by spaces to get cmd and args.
+
+sudo su: Sets isRoot to true, prints "Authentication successful. Root privileges granted.", and changes the input prompt from monix@system:~$ to <span className="text-red-500">root@system:~#</span>.
+
+exit: If isRoot is true, change it to false. If false, close the Terminal app via Zustand.
+
+clear: Clears the history output log.
+
+Ensure cloud ls, cloud open [file], local ls, etc., map correctly to the Zustand store.
+
+3. The "Cyber Flex" Commands (NEW):
+
+github: Prints "Redirecting to GitHub..." and executes window.open('https://github.com/monish0001000', '_blank').
+
+whoami: Returns root if isRoot is true, else returns monix.
+
+date: Prints the current system date and time.
+
+matrix: Toggles a CSS class or state that makes the terminal text bright neon green (text-green-400) for that true hacker aesthetic.
+
+open [app_name]: Hooks into the Window Manager. Example: open browser opens the BrowserApp, open files opens FilesApp.
+
+4. The Ultimate Flex: neofetch or sysinfo:
+
+When the user types neofetch, print a badass ASCII art logo of "MONIX" alongside fake/real system stats.
+
+Output Layout (Flexbox): Left side: ASCII Art (in cyan). Right side: System stats (OS: MONIX WEB OS, Kernel: React/Vite, Uptime: [calculate from mount], Shell: ZSH, Resolution: window.innerWidth x window.innerHeight).
+
+5. Polish:
+
+Add a default welcome message when the terminal first opens (e.g., "MONIX OS v1.0.0. Type 'help' for available commands.").
+
+Ensure help prints a neatly aligned table/list of all these commands.
+
+Auto-scroll to the bottom (useRef into a dummy div) after every command execution.

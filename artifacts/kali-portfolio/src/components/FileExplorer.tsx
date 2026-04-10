@@ -548,8 +548,7 @@ export default function FileExplorer({
                     </div>
                   </div>
                 ) : (<>
-
-                {/* Grid area — right-click opens cloud window menu */}
+                  {/* Grid area — right-click opens cloud window menu */}
                 <div
                   className="flex-1 min-h-0 overflow-y-auto p-4 relative"
                   style={{ minHeight: 0 }}
@@ -755,7 +754,7 @@ export default function FileExplorer({
                   )}
                 </AnimatePresence>
                 </>)}
-              </motion.div>
+                </motion.div>
             )}
           </AnimatePresence>
         </div>

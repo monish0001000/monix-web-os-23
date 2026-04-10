@@ -277,16 +277,12 @@ export default function TopPanel({ openWindows: _openWindows = [], onOpenWindow,
                 fontSize: 17,
                 fontWeight: 900,
                 letterSpacing: "-0.02em",
-                background: showStartMenu
-                  ? "linear-gradient(135deg, #00f0ff 0%, #00ff88 100%)"
-                  : "linear-gradient(135deg, #00c4ff 0%, #0080ff 100%)",
+                background: "linear-gradient(135deg, #00c4ff 0%, #0080ff 100%)",
                 WebkitBackgroundClip: "text",
                 WebkitTextFillColor: "transparent",
                 backgroundClip: "text",
                 textShadow: "none",
-                filter: showStartMenu
-                  ? "drop-shadow(0 0 6px rgba(0,240,255,0.8))"
-                  : "drop-shadow(0 0 4px rgba(0,196,255,0.5))",
+                filter: "drop-shadow(0 0 4px rgba(0,196,255,0.5))",
                 lineHeight: 1,
                 userSelect: "none",
               }}

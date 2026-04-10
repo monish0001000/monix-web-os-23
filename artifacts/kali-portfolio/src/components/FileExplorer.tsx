@@ -8,7 +8,7 @@ import {
   Pencil, Trash2, Play, Music2,
 } from "lucide-react";
 import WindowChrome from "./WindowChrome";
-import { supabase } from "@/lib/supabaseClient";
+import { supabase, supabaseReady } from "@/lib/supabaseClient";
 import { useOSStore } from "@/lib/store";
 import type { VFSNode } from "@/lib/vfsUtils";
 
@@ -209,6 +209,7 @@ export default function FileExplorer({
   }, []);
 
   const fetchCloudFiles = useCallback(async () => {
+    if (!supabaseReady) return;
     setLoadingFiles(true);
     try {
       const { data, error } = await supabase
@@ -231,6 +232,7 @@ export default function FileExplorer({
   }, [tab, fetchCloudFiles]);
 
   const doUpload = useCallback(async (file: File) => {
+    if (!supabaseReady) { pushToast("error", "Supabase not configured — cloud uploads disabled"); return; }
     setIsUploading(true);
     pushToast("info", `Uploading ${file.name}...`);
     try {
@@ -535,6 +537,18 @@ export default function FileExplorer({
                   </div>
                 </div>
 
+                {/* ── Not configured / Grid area ── */}
+                {!supabaseReady ? (
+                  <div className="flex-1 flex flex-col items-center justify-center gap-4 text-white/20 p-6" style={{ minHeight: 200 }}>
+                    <AlertTriangle size={36} style={{ color: "#f87171", filter: "drop-shadow(0 0 8px rgba(248,113,113,0.4))" }} />
+                    <span className="text-[12px] tracking-widest font-bold" style={{ color: "#f87171" }}>SUPABASE NOT CONFIGURED</span>
+                    <div className="text-center space-y-1 max-w-xs">
+                      <p className="text-[10px] tracking-wider text-white/30">Cloud Drive requires Supabase credentials.</p>
+                      <p className="text-[10px] tracking-wider text-white/20">Set <span className="text-cyan-400/60">VITE_SUPABASE_URL</span> and <span className="text-cyan-400/60">VITE_SUPABASE_ANON_KEY</span> to enable cloud storage.</p>
+                    </div>
+                  </div>
+                ) : (<>
+
                 {/* Grid area — right-click opens cloud window menu */}
                 <div
                   className="flex-1 min-h-0 overflow-y-auto p-4 relative"
@@ -740,6 +754,7 @@ export default function FileExplorer({
                     </motion.div>
                   )}
                 </AnimatePresence>
+                </>)}
               </motion.div>
             )}
           </AnimatePresence>

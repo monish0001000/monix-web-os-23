@@ -1,0 +1,41 @@
+@workspace We need to expand the TerminalApp.tsx command parser to include a suite of Cybersecurity-themed commands. These will elevate the OS to a "Hacker/Kali Linux" aesthetic. Some will use real browser APIs, while others will be highly realistic simulations using setTimeout for effect. Act as an Elite Cybersecurity Developer and safely inject these into our existing command switch/if-else logic:
+
+1. Real Cryptography Commands:
+
+base64 encode [text]: Uses the native btoa() browser API to encode the provided text. Output: <span className="text-cyan-400">Encoded: [result]</span>.
+
+base64 decode [text]: Uses native atob() to decode. Wrap in a try/catch in case of invalid base64. Output: <span className="text-cyan-400">Decoded: [result]</span>.
+
+hash [text]: Simulate a hash generation or use crypto.subtle. For simplicity, generate a fake 64-character SHA-256-like hex string using the text as a seed, or just a random hex string. Print: [+] Generating SHA-256 hash... -> [hash_string].
+
+2. Realistic Simulated Network Tools (The Flex):
+
+ping [domain/ip]: Simulate a ping command.
+
+Behavior: Print PING [domain] (192.168.1.45) 56(84) bytes of data.. Then, use a loop with setTimeout to push 4 lines into the terminal history one by one (e.g., every 800ms): 64 bytes from [domain]: icmp_seq=1 ttl=117 time=23.4 ms. End with a fake stats line.
+
+nmap [domain/ip]: Simulate a port scanner.
+
+Behavior: Print Starting Nmap 7.93 at [current_date]. Wait 1 second, then print Host is up (0.012s latency).. Wait another 1.5 seconds, then print a stylized table of ports:
+PORT      STATE    SERVICE
+22/tcp    <span className="text-green-500">open</span>     ssh
+80/tcp    <span className="text-green-500">open</span>     http
+443/tcp   <span className="text-green-500">open</span>     https
+
+Print Nmap done: 1 IP address scanned in 2.31 seconds.
+
+traceroute [domain]: Simulate packet jumping. Print 3-4 fake router hops with random ms latencies, mimicking a real traceroute output.
+
+3. System & Info Commands:
+
+ifconfig / ipconfig: Print a fake, realistic network interface config. Include eth0 or wlan0, a fake local IP (192.168.X.X), Subnet Mask (255.255.255.0), and MAC address (00:1B:44:11:3A:B7).
+
+history: Loop through the newly created commandHistory state array and print them with numbers (e.g.,   1  sudo su,   2  whoami).
+
+4. Implementation Details:
+
+For the asynchronous commands (ping, nmap), ensure you temporarily disable the input field OR set a isProcessing state so the user cannot type new commands while the simulated output is "streaming" in.
+
+Ensure all outputs are stylized perfectly with monospace fonts, and use colors (green for success/open, red for errors, cyan for data) to match the MONIX OS cyberpunk theme.
+
+Add all these new commands to the help command output.

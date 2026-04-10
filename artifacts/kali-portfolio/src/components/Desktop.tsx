@@ -406,6 +406,7 @@ export default function Desktop() {
             initialX={getInitialPosition("terminal").x}
             initialY={getInitialPosition("terminal").y}
             zIndex={getWin("terminal")!.zIndex}
+            onOpenWindow={handleOpenWindow}
           />
         )}
 

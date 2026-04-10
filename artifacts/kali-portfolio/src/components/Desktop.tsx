@@ -288,7 +288,7 @@ export default function Desktop() {
       trash:           { x: window.innerWidth / 2 - 250, y: window.innerHeight / 2 - 175 },
       github:          { x: window.innerWidth / 2 - 340, y: window.innerHeight / 2 - 280 },
       portfolio:       { x: window.innerWidth / 2 - 450, y: window.innerHeight / 2 - 290 },
-      browser:         { x: window.innerWidth / 2 - 480, y: window.innerHeight / 2 - 310 },
+      browser:         { x: Math.round(window.innerWidth * 0.09), y: Math.round(window.innerHeight * 0.09) },
       wallpaperpicker: { x: window.innerWidth / 2 - 280, y: window.innerHeight / 2 - 230 },
       sentinel:        { x: window.innerWidth / 2 - 460, y: window.innerHeight / 2 - 300 },
       aura:            { x: window.innerWidth / 2 - 380, y: window.innerHeight / 2 - 270 },

@@ -46,6 +46,14 @@ A pixel-perfect Kali Linux OS desktop environment simulation as a portfolio web 
 - Fonts: Ubuntu (sans) + Fira Code (mono)
 - Color palette: Electric blue (#00a3ff) accents on deep black background, green terminal text
 
+**Browser App (Chrome Clone):**
+- Integrated from `/Chrome-browser/` into `src/components/chrome-browser/`
+- Components: `Browser.tsx`, `TabBar.tsx`, `NavigationBar.tsx`, `BookmarksBar.tsx`, `BrowserContent.tsx`, `AIPanel.tsx`, `geminiService.ts`, `types.ts`
+- Features: Multi-tab, incognito mode, Gemini AI side panel, download/extension/history popovers, Google-style new tab page, AI Mode (chrome://ai), voice input
+- Wrapped by `src/components/BrowserApp.tsx` inside `WindowChrome` at 82% × 82% of screen
+- Launched via: Start Menu → Browser, Desktop right-click → Open Browser, Desktop icon
+- Registered in OS process registry (`PROCESS_INFO: browser`) for Taskbar and Task Manager
+
 **Components:**
 - `src/components/BootScreen.tsx` — Boot animation
 - `src/components/Desktop.tsx` — Main desktop with window management

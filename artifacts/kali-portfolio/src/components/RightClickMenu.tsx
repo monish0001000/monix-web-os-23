@@ -47,7 +47,16 @@ export default function RightClickMenu({ x, y, onClose, onOpenWindow, onOpenWall
 
       <div className="border-t border-white/10 my-1" />
 
-      {/* 3. Open Terminal */}
+      {/* 3. Open Browser */}
+      <div
+        className={item + " flex items-center gap-2"}
+        onClick={() => handleAction(() => onOpenWindow("browser"))}
+      >
+        <span>🌐</span>
+        <span>Open Browser</span>
+      </div>
+
+      {/* 4. Open Terminal */}
       <div
         className={item}
         onClick={() => handleAction(() => onOpenWindow("terminal"))}

@@ -277,14 +277,11 @@ export default function TopPanel({ openWindows: _openWindows = [], onOpenWindow,
                 fontSize: 17,
                 fontWeight: 900,
                 letterSpacing: "-0.02em",
-                background: "linear-gradient(135deg, #00c4ff 0%, #0080ff 100%)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-                backgroundClip: "text",
-                textShadow: "none",
-                filter: "drop-shadow(0 0 4px rgba(0,196,255,0.5))",
+                color: "#00c4ff",
+                textShadow: "0 0 8px rgba(0,196,255,0.7), 0 0 2px rgba(0,128,255,0.5)",
                 lineHeight: 1,
                 userSelect: "none",
+                display: "inline-block",
               }}
             >
               M

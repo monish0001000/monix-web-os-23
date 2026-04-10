@@ -114,7 +114,7 @@ export default function WindowChrome({
             ? { width: "100vw", height: `calc(100vh - ${TASKBAR_H}px)` }
             : { width: bounds.w, height: bounds.h }
         }
-        position={isMaxed ? { x: 0, y: TASKBAR_H } : { x: bounds.x, y: bounds.y }}
+        position={isMaxed ? { x: 0, y: 0 } : { x: bounds.x, y: bounds.y }}
         onDragStop={(_, d) => {
           if (!isMaxed) setBounds((prev) => ({ ...prev, x: d.x, y: d.y }));
         }}

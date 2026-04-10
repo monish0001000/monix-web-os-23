@@ -18,6 +18,8 @@ import ChessApp from "./ChessApp";
 import CykryptApp from "./CykryptApp";
 import TaskManagerApp from "./TaskManagerApp";
 import SettingsApp from "./SettingsApp";
+import ThreatMapApp from "./ThreatMapApp";
+import CodePadApp from "./CodePadApp";
 import RightClickMenu from "./RightClickMenu";
 import MediaViewerApp, { type MediaType } from "./MediaViewerApp";
 import { useOSStore } from "@/lib/store";
@@ -40,6 +42,8 @@ const PROCESS_INFO: Record<string, { name: string; icon: string }> = {
   cykrypt:         { name: "CYKRYPT CTF",      icon: "🎯" },
   taskmanager:     { name: "System Monitor",   icon: "📊" },
   settings:        { name: "Settings",         icon: "⚙️" },
+  threatmap:       { name: "Threat Map",       icon: "🗺️" },
+  codepad:         { name: "CodePad",          icon: "📝" },
 };
 
 function genPID(): string {
@@ -70,6 +74,8 @@ const WINDOW_LABELS: Record<string, string> = {
   cykrypt:         "CYKRYPT — CTF Arena",
   taskmanager:     "System Monitor",
   settings:        "Settings",
+  threatmap:       "Live Cyber Threat Map",
+  codepad:         "CodePad",
 };
 
 interface SelectionBox {
@@ -304,6 +310,8 @@ export default function Desktop() {
       taskmanager:     { x: window.innerWidth / 2 - 330, y: window.innerHeight / 2 - 260 },
       settings:        { x: window.innerWidth / 2 - 390, y: window.innerHeight / 2 - 280 },
       mediaviewer:     { x: window.innerWidth / 2 - 410, y: window.innerHeight / 2 - 280 },
+      threatmap:       { x: window.innerWidth / 2 - 450, y: window.innerHeight / 2 - 280 },
+      codepad:         { x: window.innerWidth / 2 - 410, y: window.innerHeight / 2 - 270 },
     };
     return offsets[type] ?? { x: 120, y: 60 };
   };
@@ -612,6 +620,32 @@ export default function Desktop() {
             initialY={getInitialPosition("settings").y}
             zIndex={getWin("settings")!.zIndex}
             onOpenTaskManager={() => handleOpenWindow("taskmanager")}
+          />
+        )}
+
+        {getWin("threatmap") && !getWin("threatmap")!.minimized && (
+          <ThreatMapApp
+            key="threatmap"
+            onClose={() => handleCloseWindow("threatmap")}
+            onMinimize={() => handleMinimizeWindow("threatmap")}
+            isActive={activeWindow === "threatmap"}
+            onFocus={() => bringToFront("threatmap")}
+            initialX={getInitialPosition("threatmap").x}
+            initialY={getInitialPosition("threatmap").y}
+            zIndex={getWin("threatmap")!.zIndex}
+          />
+        )}
+
+        {getWin("codepad") && !getWin("codepad")!.minimized && (
+          <CodePadApp
+            key="codepad"
+            onClose={() => handleCloseWindow("codepad")}
+            onMinimize={() => handleMinimizeWindow("codepad")}
+            isActive={activeWindow === "codepad"}
+            onFocus={() => bringToFront("codepad")}
+            initialX={getInitialPosition("codepad").x}
+            initialY={getInitialPosition("codepad").y}
+            zIndex={getWin("codepad")!.zIndex}
           />
         )}
 

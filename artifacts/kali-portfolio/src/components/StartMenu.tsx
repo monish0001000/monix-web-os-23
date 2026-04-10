@@ -2,7 +2,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   TerminalSquare, FolderOpen, Monitor, Github, Trash2,
   Lock, Settings, Power, Search, Globe, Shield, Sparkles,
-  FlaskConical, Code2, PenTool, Crown, Activity, Cpu
+  FlaskConical, Code2, PenTool, Crown, Activity, Cpu, Map, FileCode
 } from "lucide-react";
 import { useOSStore } from "@/lib/store";
 
@@ -88,6 +88,20 @@ const APPS = [
     icon: <Sparkles size={22} strokeWidth={1.6} />,
     color: "#c084fc",
     bg: "rgba(168,85,247,0.1)",
+  },
+  {
+    id: "threatmap",
+    label: "Threat Map",
+    icon: <Map size={22} strokeWidth={1.6} />,
+    color: "#ff6060",
+    bg: "rgba(255,96,96,0.1)",
+  },
+  {
+    id: "codepad",
+    label: "CodePad",
+    icon: <FileCode size={22} strokeWidth={1.6} />,
+    color: "#00c4ff",
+    bg: "rgba(0,196,255,0.1)",
   },
 ];
 

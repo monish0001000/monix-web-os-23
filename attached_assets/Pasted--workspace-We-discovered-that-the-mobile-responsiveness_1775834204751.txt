@@ -1,0 +1,41 @@
+@workspace We discovered that the mobile responsiveness logic caused the react-rnd maximization bug. To fix this flawlessly 100%, we will bypass <Rnd> entirely when a window is maximized. We will also add two new native OS applications. Act as an Elite OS Architect and execute the following:
+
+1. The Flawless WindowWrapper Hack (WindowWrapper.tsx):
+
+Implement a screen size hook: const isMobile = window.innerWidth < 768; (ensure it updates on resize).
+
+Determine effective maximization: const shouldMaximize = process.isMaximized || isMobile;
+
+CRITICAL CONDITIONAL RENDERING:
+
+IF shouldMaximize is true: DO NOT render the <Rnd> component. Instead, render a standard HTML div with these exact classes: className="absolute inset-0 w-full h-full z-[100] flex flex-col bg-black overflow-hidden". (Since the parent desktop area is relative, inset-0 will perfectly lock it to all 4 corners without covering the taskbar).
+
+ELSE: Render the standard <Rnd> component for free-floating behavior.
+
+Both branches must render the same Title Bar and children (App Content).
+
+2. Build App 1: Live Cyber Threat Map (ThreatMapApp.tsx):
+
+Create a new application component for our Cybersecurity theme.
+
+Render a dark UI with an iframe embedding a live cyber-attack map.
+
+Iframe code: <iframe src="https://cybermap.kaspersky.com/en/widget/dynamic/dark" className="w-full h-full border-none" allowFullScreen></iframe>
+
+Register it in the Zustand store as "Threat Map" with a Globe or Radar icon.
+
+3. Build App 2: CodePad (CodePadApp.tsx):
+
+Create a sleek code editor application.
+
+Use a simple <textarea> that takes up w-full h-full flex-1 bg-[#0a0a0a] text-green-400 font-mono p-4 outline-none resize-none.
+
+Add a small header inside the app: "MONIX Code Editor - Root Access".
+
+Register it in the store as "CodePad" with a Code or FileCode icon.
+
+4. Integration:
+
+Add both "🗺️ Threat Map" and "📝 CodePad" to the Desktop Context Menu and Taskbar/Start menu.
+
+Verify that ALL applications (Terminal, Files, Browser, Radio, Threat Map, CodePad) have their inner root containers set to w-full h-full flex flex-col so they stretch perfectly into the new maximized inset-0 container.

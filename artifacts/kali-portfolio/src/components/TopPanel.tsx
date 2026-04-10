@@ -90,6 +90,8 @@ const TASKBAR_ICON: Record<string, React.ReactNode> = {
   browser:   <Globe size={17} color="#7ec8e3" />,
   sentinel:  <Monitor size={17} color="#00c4ff" />,
   aura:      <Sparkles size={17} color="#c084fc" />,
+  threatmap: <Globe size={17} color="#ff6060" />,
+  codepad:   <TerminalSquare size={17} color="#00c4ff" />,
 };
 
 type TrayPopover = "battery" | "network" | "sound" | "notifications" | null;

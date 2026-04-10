@@ -86,6 +86,26 @@ export default function RightClickMenu({ x, y, onClose, onOpenWindow, onOpenWall
 
       <div className="border-t border-white/10 my-1" />
 
+      {/* Threat Map */}
+      <div
+        className={item + " flex items-center gap-2"}
+        onClick={() => handleAction(() => onOpenWindow("threatmap"))}
+      >
+        <span>🗺️</span>
+        <span>Live Threat Map</span>
+      </div>
+
+      {/* CodePad */}
+      <div
+        className={item + " flex items-center gap-2"}
+        onClick={() => handleAction(() => onOpenWindow("codepad"))}
+      >
+        <span>📝</span>
+        <span>CodePad</span>
+      </div>
+
+      <div className="border-t border-white/10 my-1" />
+
       {/* 7. Settings */}
       <div
         className={item + " flex items-center gap-2"}

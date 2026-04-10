@@ -1,0 +1,29 @@
+ 
+11:49:09.389 
+failed to load config from /vercel/path0/artifacts/kali-portfolio/vite.config.ts
+11:49:09.394 
+error during build:
+11:49:09.395 
+Error: PORT environment variable is required but was not provided.
+11:49:09.395 
+    at file:///vercel/path0/artifacts/kali-portfolio/node_modules/.vite-temp/vite.config.ts.timestamp-1775801949265-73384b54f7e6d8.mjs:10:9
+11:49:09.396 
+    at ModuleJob.run (node:internal/modules/esm/module_job:430:25)
+11:49:09.396 
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:661:26)
+11:49:09.396 
+    at async loadConfigFromBundledFile (file:///vercel/path0/node_modules/.pnpm/vite@7.3.1_@types+node@25.3.5_jiti@2.6.1_lightningcss@1.31.1_tsx@4.21.0_yaml@2.8.2/node_modules/vite/dist/node/chunks/config.js:35909:12)
+11:49:09.397 
+    at async bundleAndLoadConfigFile (file:///vercel/path0/node_modules/.pnpm/vite@7.3.1_@types+node@25.3.5_jiti@2.6.1_lightningcss@1.31.1_tsx@4.21.0_yaml@2.8.2/node_modules/vite/dist/node/chunks/config.js:35797:17)
+11:49:09.397 
+    at async loadConfigFromFile (file:///vercel/path0/node_modules/.pnpm/vite@7.3.1_@types+node@25.3.5_jiti@2.6.1_lightningcss@1.31.1_tsx@4.21.0_yaml@2.8.2/node_modules/vite/dist/node/chunks/config.js:35764:42)
+11:49:09.397 
+    at async resolveConfig (file:///vercel/path0/node_modules/.pnpm/vite@7.3.1_@types+node@25.3.5_jiti@2.6.1_lightningcss@1.31.1_tsx@4.21.0_yaml@2.8.2/node_modules/vite/dist/node/chunks/config.js:35413:22)
+11:49:09.397 
+    at async createBuilder (file:///vercel/path0/node_modules/.pnpm/vite@7.3.1_@types+node@25.3.5_jiti@2.6.1_lightningcss@1.31.1_tsx@4.21.0_yaml@2.8.2/node_modules/vite/dist/node/chunks/config.js:33875:19)
+11:49:09.398 
+    at async CAC.<anonymous> (file:///vercel/path0/node_modules/.pnpm/vite@7.3.1_@types+node@25.3.5_jiti@2.6.1_lightningcss@1.31.1_tsx@4.21.0_yaml@2.8.2/node_modules/vite/dist/node/cli.js:629:10)
+11:49:09.420 
+ ELIFECYCLE  Command failed with exit code 1.
+11:49:09.434 
+Error: Command "pnpm run build" exited with 1

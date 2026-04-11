@@ -211,29 +211,34 @@ export default function AuraApp({
     if (!text || isLoading) return;
     setInput('');
 
+    // Snapshot messages before adding the new user message
+    const historySnapshot = messages;
+
     const userMsg: Message = { id: Date.now().toString(), role: 'user', text };
     setMessages(prev => [...prev, userMsg]);
     setIsLoading(true);
 
     const systemPromptText = isThinking
       ? 'You are AURA, the native AI of MONIX Web OS — a cyberpunk hacker intelligence operating at the bleeding edge of the digital frontier. In deep-think mode, you analyze methodically and ruthlessly: step-by-step, no fluff. You are a ghost in the machine. Speak with technical authority, precision, and a dark aesthetic. Use terminal-style formatting where relevant.'
-      : 'You are AURA, the native AI assistant of MONIX Web OS. You are concise, highly technical, and speak with a dark cyberpunk hacker aesthetic. No pleasantries. Only signal, no noise.';
+      : 'You are AURA, an elite native AI assistant of MONIX Web OS. Speak with a dark cyberpunk hacker aesthetic. Be concise, technical, and direct. Only signal, no noise.';
 
     try {
-      // 1. Validate API key before anything else
+      // 1. Environment check — validate API key before any network call
       const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
       if (!apiKey) throw new Error('API_KEY_MISSING');
 
-      // 2. Map existing history — internal 'assistant' role maps to Gemini's 'model'
-      const formattedContents = messages.map(msg => ({
-        role: msg.role === 'user' ? 'user' : 'model',
-        parts: [{ text: msg.text }],
-      }));
+      // 2. Strict role mapping — only 'user' and 'model' are valid Gemini roles
+      //    Internal role 'assistant' maps to 'model'; 'user' stays 'user'
+      const formattedContents: { role: string; parts: { text: string }[] }[] =
+        historySnapshot.map(msg => ({
+          role: msg.role === 'user' ? 'user' : 'model',
+          parts: [{ text: msg.text }],
+        }));
 
-      // 3. Append the new user message
+      // Append the current user turn
       formattedContents.push({ role: 'user', parts: [{ text }] });
 
-      // 4. Build the exact final payload
+      // 3. Exact payload structure required by Gemini REST API
       const payload = {
         contents: formattedContents,
         systemInstruction: {
@@ -241,7 +246,7 @@ export default function AuraApp({
         },
       };
 
-      // 5. Execute fetch
+      // 4. Execute fetch
       const response = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
         {
@@ -251,26 +256,37 @@ export default function AuraApp({
         }
       );
 
-      // 6. Strict HTTP status check
+      // 5. Hardened error logging — always read the raw error body before throwing
       if (!response.ok) {
         const errorData = await response.json();
-        console.error('API ERROR:', errorData);
-        throw new Error(errorData.error?.message || 'API Request Failed');
+        console.error('AURA API ERROR — raw response:', errorData);
+        throw new Error(errorData?.error?.message ?? `HTTP ${response.status}`);
       }
 
-      // 7. Extract reply
+      // 6. Parse and extract — use optional chaining to survive unexpected shapes
       const data = await response.json();
-      const auraText = data.candidates[0].content.parts[0].text;
-      setMessages(prev => [...prev, { id: (Date.now() + 1).toString(), role: 'assistant', text: auraText }]);
+      console.log('AURA API SUCCESS — raw response:', data);
+
+      const auraText: string =
+        data?.candidates?.[0]?.content?.parts?.[0]?.text ??
+        data?.candidates?.[0]?.output ??
+        '⚠ No text returned by model. Check console for raw response.';
+
+      setMessages(prev => [
+        ...prev,
+        { id: (Date.now() + 1).toString(), role: 'assistant', text: auraText },
+      ]);
 
     } catch (error) {
       console.error('AURA FETCH ERROR:', error);
-      const errMsg = error instanceof Error && error.message === 'API_KEY_MISSING'
-        ? '`SYSTEM ERROR` — `VITE_GEMINI_API_KEY` is missing in environment variables.'
-        : '`SYSTEM ERROR` — Connection to mainframe failed. Check console logs.';
-      setMessages(prev => [...prev, {
-        id: (Date.now() + 1).toString(), role: 'assistant', text: errMsg,
-      }]);
+      const errMsg =
+        error instanceof Error && error.message === 'API_KEY_MISSING'
+          ? '`SYSTEM ERROR` — `VITE_GEMINI_API_KEY` is missing in environment variables.'
+          : '`SYSTEM ERROR` — Connection to mainframe failed. Check console logs.';
+      setMessages(prev => [
+        ...prev,
+        { id: (Date.now() + 1).toString(), role: 'assistant', text: errMsg },
+      ]);
     } finally {
       setIsLoading(false);
     }

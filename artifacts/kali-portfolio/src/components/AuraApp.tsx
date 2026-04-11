@@ -216,8 +216,8 @@ export default function AuraApp({
     setIsLoading(true);
 
     const systemPrompt = isThinking
-      ? 'You are AURA, an advanced AI assistant with deep analytical capabilities. Think step-by-step and provide thorough, insightful responses. You run inside MONIX OS.'
-      : 'You are AURA, a fast and helpful AI assistant built into MONIX OS. Be concise, clear and friendly.';
+      ? 'You are AURA, the native AI of MONIX Web OS — a cyberpunk hacker intelligence operating at the bleeding edge of the digital frontier. In deep-think mode, you analyze methodically and ruthlessly: step-by-step, no fluff. You are a ghost in the machine. Speak with technical authority, precision, and a dark aesthetic. Use terminal-style formatting where relevant.'
+      : 'You are AURA, the native AI assistant of MONIX Web OS. You are concise, highly technical, and speak with a dark cyberpunk hacker aesthetic. Keep answers sharp and direct. No unnecessary pleasantries — only signal, no noise. Embrace the shadows of the digital frontier.';
 
     try {
       const response = await fetch(
@@ -504,8 +504,8 @@ export default function AuraApp({
                       <div className={cn(
                         'w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border',
                         msg.role === 'user'
-                          ? 'bg-zinc-900 border-zinc-800 text-zinc-400'
-                          : 'bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 text-white border-white/20 shadow-[0_0_15px_rgba(168,85,247,0.3)]'
+                          ? 'bg-cyan-950/60 border-cyan-500/30 text-cyan-400'
+                          : 'bg-gradient-to-br from-emerald-700 via-teal-600 to-cyan-700 text-white border-emerald-500/30 shadow-[0_0_14px_rgba(16,185,129,0.35)]'
                       )}>
                         {msg.role === 'user' ? <User className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
                       </div>
@@ -513,8 +513,8 @@ export default function AuraApp({
                       <div className={cn(
                         'max-w-[80%] px-4 py-3 rounded-2xl text-sm border shadow-lg',
                         msg.role === 'user'
-                          ? 'bg-white/5 border-white/10 text-zinc-200 rounded-tr-sm'
-                          : 'bg-black/40 border-white/5 backdrop-blur-xl rounded-tl-sm'
+                          ? 'bg-cyan-950/60 border-cyan-500/25 text-cyan-50 rounded-tr-sm shadow-[0_0_12px_rgba(6,182,212,0.12)]'
+                          : 'bg-[#020f06]/80 border-emerald-500/15 backdrop-blur-xl rounded-tl-sm text-emerald-50/90'
                       )}>
                         {msg.role === 'user' ? (
                           <p className="leading-relaxed whitespace-pre-wrap">{msg.text}</p>
@@ -534,19 +534,36 @@ export default function AuraApp({
                       animate={{ opacity: 1, y: 0 }}
                       className="flex gap-3 flex-row"
                     >
-                      <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 flex items-center justify-center border border-white/20 shadow-[0_0_15px_rgba(168,85,247,0.3)] shrink-0">
-                        <Sparkles className="w-4 h-4 text-white" />
-                      </div>
-                      <div className="px-4 py-3 bg-black/40 border border-white/5 rounded-2xl rounded-tl-sm backdrop-blur-xl flex items-center gap-2">
+                      {/* Pulsing Aura icon */}
+                      <motion.div
+                        animate={{
+                          boxShadow: [
+                            "0 0 8px rgba(16,185,129,0.3)",
+                            "0 0 22px rgba(16,185,129,0.75)",
+                            "0 0 8px rgba(16,185,129,0.3)",
+                          ],
+                        }}
+                        transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
+                        className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-700 via-teal-600 to-cyan-700 flex items-center justify-center border border-emerald-500/30 shrink-0"
+                      >
+                        <motion.div
+                          animate={{ rotate: [0, 15, -15, 0], scale: [1, 1.15, 1] }}
+                          transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+                        >
+                          <Sparkles className="w-4 h-4 text-white" />
+                        </motion.div>
+                      </motion.div>
+
+                      <div className="px-4 py-3 bg-[#020f06]/80 border border-emerald-500/15 rounded-2xl rounded-tl-sm backdrop-blur-xl flex items-center gap-2">
                         {[0, 1, 2].map(i => (
                           <motion.div
                             key={i}
-                            animate={{ y: [0, -5, 0] }}
-                            transition={{ duration: 0.6, delay: i * 0.15, repeat: Infinity }}
-                            className="w-1.5 h-1.5 rounded-full bg-purple-400"
+                            animate={{ y: [0, -5, 0], opacity: [0.4, 1, 0.4] }}
+                            transition={{ duration: 0.65, delay: i * 0.15, repeat: Infinity }}
+                            className="w-1.5 h-1.5 rounded-full bg-emerald-400"
                           />
                         ))}
-                        <span className="text-[10px] text-zinc-500 font-medium ml-1">AURA is thinking…</span>
+                        <span className="text-[10px] text-emerald-600 font-mono tracking-widest ml-1 uppercase">AURA processing…</span>
                       </div>
                     </motion.div>
                   )}

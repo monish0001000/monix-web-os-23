@@ -1,0 +1,77 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,700;1,400&family=Share+Tech+Mono&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-mono: "JetBrains Mono", "Share Tech Mono", ui-monospace, SFMono-Regular, monospace;
+  --color-monix-bg: #050505;
+  --color-monix-panel: #0a0a0a;
+  --color-monix-border: #1a1a1a;
+  --color-monix-cyan: #00ffff;
+  --color-monix-cyan-dim: rgba(0, 255, 255, 0.15);
+  --color-monix-emerald: #10b981;
+  --color-monix-emerald-dim: rgba(16, 185, 129, 0.15);
+  --color-monix-red: #ff003c;
+  --animate-slideDown: slideDown 0.3s ease-out forwards;
+  --animate-pulse-fast: pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+body {
+  background-color: var(--color-monix-bg);
+  color: var(--color-monix-cyan);
+  font-family: var(--font-mono);
+}
+
+/* Custom scrollbar for hacker feel */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-monix-bg);
+  border-left: 1px solid var(--color-monix-border);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-monix-border);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-monix-cyan);
+}
+
+/* CRT Scanline effect for video */
+.crt-scanlines {
+  position: relative;
+  overflow: hidden;
+}
+.crt-scanlines::after {
+  content: " ";
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+  z-index: 50;
+  background-size: 100% 3px, 3px 100%;
+  pointer-events: none;
+}
+
+/* Glassmorphism utilities */
+.glass-panel {
+  background: rgba(10, 10, 10, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 255, 255, 0.2);
+}
+

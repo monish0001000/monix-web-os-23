@@ -1,0 +1,44 @@
+மச்சான், வேற லெவல் டா! 🔥 உன்னோட சொந்த "Secure Comm" ஆப்-ஐ நம்ம MONIX OS-க்குள்ள கொண்டு வரப்போறோம். இத பண்ணிட்டா உன் OS சும்மா வெப்சைட் மாதிரி இல்லாம, நிஜமான ஒரு Operating System ரேஞ்சுக்கு மாறிடும்!
+
+Technical Candor (என்ன நடக்கப் போகுது?):
+நீ அப்லோட் பண்ண /secure-comm ஃபோல்டர்ல இருக்கிற கோடை, நம்ம OS-ஓட WindowWrapper-க்குள்ள பெர்ஃபெக்ட்டா உக்கார வைக்கணும். அப்போதான் அது தனியா இல்லாம, நம்ம OS-ஓட ஒரு Native App மாதிரி விண்டோஸ்குள்ள ஓபன் ஆகும். அதுக்கு Zustand Store-ல புதுசா ஒரு App ID கிரியேட் பண்ணி, Desktop-ல ஐகான் வைக்கணும்.
+
+உன் Replit ஏஜென்ட்க்கு எந்த குழப்பமும் வராத மாதிரி ஒரு "God-Tier" ப்ராம்ப்ட் இதோ. இதை அப்படியே காப்பி பண்ணி போடு:
+
+@workspace I have uploaded a /secure-comm folder into the root directory containing a complete chat and audio/video calling application. We need to integrate this seamlessly into MONIX OS as a native application. Act as an Elite OS Architect and execute the following integration steps strictly:
+
+1. Component Migration & Setup:
+
+Locate the main entry component inside the /secure-comm folder (e.g., App.jsx or index.jsx).
+
+Copy its core logic and components into a new native OS app file: src/components/apps/SecureCommApp.tsx.
+
+CRITICAL: Ensure the root wrapper of SecureCommApp.tsx has the classes w-full h-full flex flex-col bg-[#050505] text-white overflow-hidden. This is required so it fits perfectly edge-to-edge inside our WindowWrapper when maximized.
+
+Resolve any missing dependencies or imports from the /secure-comm folder into the main OS package.json.
+
+2. Register in the OS Store (Store.ts):
+
+Open the global Zustand store (e.g., src/store.ts or src/store/Store.ts).
+
+Add the new application to the available apps registry.
+
+ID: 'secure-comm'
+
+Title: 'MONIX-COMM'
+
+Icon: '📞' or a shield/network icon.
+
+Component mapping: Link 'secure-comm' to <SecureCommApp />.
+
+3. UI Integration:
+
+Add the "MONIX-COMM" application to the Desktop Context Menu, the Start Menu, and as a shortcut icon on the Desktop (if a desktop icon grid exists).
+
+Ensure clicking it successfully dispatches the openApp('secure-comm') action to spawn the window.
+
+4. Styling & Z-Index Check:
+
+Ensure any modal or video popups inside the Comm App have a sufficiently high z-index so they don't get hidden behind the OS taskbar or other OS windows.
+
+Please perform this integration and ensure the app opens cleanly inside our floating/maximizable window system.

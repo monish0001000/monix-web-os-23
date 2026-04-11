@@ -104,6 +104,15 @@ export default function RightClickMenu({ x, y, onClose, onOpenWindow, onOpenWall
         <span>CodePad</span>
       </div>
 
+      {/* MONIX-COMM */}
+      <div
+        className={item + " flex items-center gap-2"}
+        onClick={() => handleAction(() => onOpenWindow("securecomm"))}
+      >
+        <span>📞</span>
+        <span>MONIX-COMM</span>
+      </div>
+
       <div className="border-t border-white/10 my-1" />
 
       {/* 7. Settings */}

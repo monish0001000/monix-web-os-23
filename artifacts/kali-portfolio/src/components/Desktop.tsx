@@ -20,6 +20,7 @@ import TaskManagerApp from "./TaskManagerApp";
 import SettingsApp from "./SettingsApp";
 import ThreatMapApp from "./ThreatMapApp";
 import CodePadApp from "./CodePadApp";
+import SecureCommApp from "./SecureCommApp";
 import RightClickMenu from "./RightClickMenu";
 import MediaViewerApp, { type MediaType } from "./MediaViewerApp";
 import { useOSStore } from "@/lib/store";
@@ -44,6 +45,7 @@ const PROCESS_INFO: Record<string, { name: string; icon: string }> = {
   settings:        { name: "Settings",         icon: "⚙️" },
   threatmap:       { name: "Threat Map",       icon: "🗺️" },
   codepad:         { name: "CodePad",          icon: "📝" },
+  securecomm:      { name: "MONIX-COMM",       icon: "📞" },
 };
 
 function genPID(): string {
@@ -76,6 +78,7 @@ const WINDOW_LABELS: Record<string, string> = {
   settings:        "Settings",
   threatmap:       "Live Cyber Threat Map",
   codepad:         "CodePad",
+  securecomm:      "MONIX-COMM — Secure Channel",
 };
 
 interface SelectionBox {
@@ -312,6 +315,7 @@ export default function Desktop() {
       mediaviewer:     { x: window.innerWidth / 2 - 410, y: window.innerHeight / 2 - 280 },
       threatmap:       { x: window.innerWidth / 2 - 450, y: window.innerHeight / 2 - 280 },
       codepad:         { x: window.innerWidth / 2 - 410, y: window.innerHeight / 2 - 270 },
+      securecomm:      { x: window.innerWidth / 2 - 500, y: window.innerHeight / 2 - 310 },
     };
     return offsets[type] ?? { x: 120, y: 60 };
   };
@@ -646,6 +650,19 @@ export default function Desktop() {
             initialX={getInitialPosition("codepad").x}
             initialY={getInitialPosition("codepad").y}
             zIndex={getWin("codepad")!.zIndex}
+          />
+        )}
+
+        {getWin("securecomm") && !getWin("securecomm")!.minimized && (
+          <SecureCommApp
+            key="securecomm"
+            onClose={() => handleCloseWindow("securecomm")}
+            onMinimize={() => handleMinimizeWindow("securecomm")}
+            isActive={activeWindow === "securecomm"}
+            onFocus={() => bringToFront("securecomm")}
+            initialX={getInitialPosition("securecomm").x}
+            initialY={getInitialPosition("securecomm").y}
+            zIndex={getWin("securecomm")!.zIndex}
           />
         )}
 

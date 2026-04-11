@@ -1,0 +1,5 @@
+{
+  "name": "Secure Comm",
+  "description": "A real-time cyberpunk chat application with WebRTC audio/video calls and Supabase integration.",
+  "requestFramePermissions": ["camera", "microphone"]
+}

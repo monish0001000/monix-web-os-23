@@ -2,7 +2,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   TerminalSquare, FolderOpen, Monitor, Github, Trash2,
   Lock, Settings, Power, Search, Globe, Shield, Sparkles,
-  FlaskConical, Code2, PenTool, Crown, Activity, Cpu, Map, FileCode
+  FlaskConical, Code2, PenTool, Crown, Activity, Cpu, Map, FileCode, Phone
 } from "lucide-react";
 import { useOSStore } from "@/lib/store";
 
@@ -102,6 +102,13 @@ const APPS = [
     icon: <FileCode size={22} strokeWidth={1.6} />,
     color: "#00c4ff",
     bg: "rgba(0,196,255,0.1)",
+  },
+  {
+    id: "securecomm",
+    label: "MONIX-COMM",
+    icon: <Phone size={22} strokeWidth={1.6} />,
+    color: "#00ffff",
+    bg: "rgba(0,255,255,0.08)",
   },
 ];
 

@@ -1,0 +1,50 @@
+@workspace The previous API approach with environment variables and strict schemas keeps failing. We are ripping it out entirely. We will use a 100% free, keyless, zero-configuration public API (Pollinations Text API) to make AURA work instantly without any .env dependencies. Act as a Senior Frontend Developer and completely replace the handleSendMessage logic in AuraApp.tsx using this exact specification:
+
+1. Remove API Key Logic:
+
+Completely delete any code related to import.meta.env.VITE_GEMINI_API_KEY. We no longer need it.
+
+2. The Zero-Config Fetch Logic (Write this exactly):
+
+Inside your send message function, first update the UI with the user's message and set isLoading to true.
+
+Build the messages array for the new API. The roles must be ONLY "system", "user", or "assistant".
+
+JavaScript
+// 1. Map existing history
+const mappedHistory = messages.map(msg => ({
+  role: msg.role === 'aura' ? 'assistant' : 'user',
+  content: msg.text
+}));
+
+// 2. Add System Prompt and New Message
+const apiMessages = [
+  { role: "system", content: "You are AURA, an elite native AI assistant of MONIX Web OS. Speak with a dark cyberpunk hacker aesthetic. Be concise, technical, and direct." },
+  ...mappedHistory,
+  { role: "user", content: textToSend }
+];
+3. Execute Fetch & Parse Plain Text:
+
+The Pollinations API takes an OpenAI-formatted JSON body but returns pure text, making it incredibly easy to parse.
+
+JavaScript
+try {
+  const response = await fetch('https://text.pollinations.ai/', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ messages: apiMessages })
+  });
+
+  if (!response.ok) throw new Error("Network response was not ok");
+
+  // The API returns raw plain text, no complex JSON parsing needed!
+  const auraReply = await response.text(); 
+
+  setMessages(prev => [...prev, { role: 'aura', text: auraReply }]);
+} catch (error) {
+  console.error("AURA FETCH ERROR:", error);
+  setMessages(prev => [...prev, { role: 'aura', text: "SYSTEM ERROR — Connection to open relay failed." }]);
+} finally {
+  setIsLoading(false);
+}
+Please apply this exact refactor. It must rely on text.pollinations.ai to guarantee a completely frictionless, keyless experience.

@@ -211,9 +211,6 @@ export default function AuraApp({
     if (!text || isLoading) return;
     setInput('');
 
-    // Snapshot messages before adding the new user message
-    const historySnapshot = messages;
-
     const userMsg: Message = { id: Date.now().toString(), role: 'user', text };
     setMessages(prev => [...prev, userMsg]);
     setIsLoading(true);
@@ -223,29 +220,21 @@ export default function AuraApp({
       : 'You are AURA, an elite native AI assistant of MONIX Web OS. Speak with a dark cyberpunk hacker aesthetic. Be concise, technical, and direct.';
 
     try {
-      // 1. Build messages array — system prompt first, then history, then new user message
-      const messages_payload: { role: string; content: string }[] = [
-        { role: 'system', content: systemPromptText },
-        ...historySnapshot.map(msg => ({
-          role: msg.role === 'user' ? 'user' : 'assistant',
-          content: msg.text,
-        })),
-        { role: 'user', content: text },
-      ];
+      // 1. Build a single combined prompt string
+      const fullPrompt = systemPromptText + '\nQuery: ' + text;
 
-      // 2. POST to Pollinations — no API key required, returns plain text
-      const response = await fetch('https://text.pollinations.ai/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: messages_payload }),
-      });
+      // 2. URL-encode to make it safe for a GET request
+      const encodedPrompt = encodeURIComponent(fullPrompt);
+
+      // 3. Simple GET request — no JSON, no headers, no escaping issues
+      const response = await fetch('https://text.pollinations.ai/' + encodedPrompt);
 
       if (!response.ok) {
         console.error('AURA API ERROR — status:', response.status);
         throw new Error(`HTTP ${response.status}`);
       }
 
-      // 3. Parse as plain text — NOT JSON
+      // 4. Parse directly as plain text
       const auraText = await response.text();
 
       setMessages(prev => [

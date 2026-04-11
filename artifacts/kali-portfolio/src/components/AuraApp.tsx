@@ -215,45 +215,61 @@ export default function AuraApp({
     setMessages(prev => [...prev, userMsg]);
     setIsLoading(true);
 
-    const systemPrompt = isThinking
+    const systemPromptText = isThinking
       ? 'You are AURA, the native AI of MONIX Web OS — a cyberpunk hacker intelligence operating at the bleeding edge of the digital frontier. In deep-think mode, you analyze methodically and ruthlessly: step-by-step, no fluff. You are a ghost in the machine. Speak with technical authority, precision, and a dark aesthetic. Use terminal-style formatting where relevant.'
-      : 'You are AURA, the native AI assistant of MONIX Web OS. You are concise, highly technical, and speak with a dark cyberpunk hacker aesthetic. Keep answers sharp and direct. No unnecessary pleasantries — only signal, no noise. Embrace the shadows of the digital frontier.';
+      : 'You are AURA, the native AI assistant of MONIX Web OS. You are concise, highly technical, and speak with a dark cyberpunk hacker aesthetic. No pleasantries. Only signal, no noise.';
 
     try {
-      const contentsPayload = [
-        ...messages.map(m => ({
-          role: m.role === 'user' ? 'user' : 'model',
-          parts: [{ text: m.text }],
-        })),
-        { role: 'user', parts: [{ text }] },
-      ];
+      // 1. Validate API key before anything else
+      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+      if (!apiKey) throw new Error('API_KEY_MISSING');
 
+      // 2. Map existing history — internal 'assistant' role maps to Gemini's 'model'
+      const formattedContents = messages.map(msg => ({
+        role: msg.role === 'user' ? 'user' : 'model',
+        parts: [{ text: msg.text }],
+      }));
+
+      // 3. Append the new user message
+      formattedContents.push({ role: 'user', parts: [{ text }] });
+
+      // 4. Build the exact final payload
+      const payload = {
+        contents: formattedContents,
+        systemInstruction: {
+          parts: [{ text: systemPromptText }],
+        },
+      };
+
+      // 5. Execute fetch
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${import.meta.env.VITE_GEMINI_API_KEY}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            systemInstruction: { parts: [{ text: systemPrompt }] },
-            contents: contentsPayload,
-          }),
+          body: JSON.stringify(payload),
         }
       );
 
+      // 6. Strict HTTP status check
       if (!response.ok) {
         const errorData = await response.json();
         console.error('API ERROR:', errorData);
         throw new Error(errorData.error?.message || 'API Request Failed');
       }
 
+      // 7. Extract reply
       const data = await response.json();
       const auraText = data.candidates[0].content.parts[0].text;
       setMessages(prev => [...prev, { id: (Date.now() + 1).toString(), role: 'assistant', text: auraText }]);
+
     } catch (error) {
-      console.error('Aura Chat Error:', error);
+      console.error('AURA FETCH ERROR:', error);
+      const errMsg = error instanceof Error && error.message === 'API_KEY_MISSING'
+        ? '`SYSTEM ERROR` — `VITE_GEMINI_API_KEY` is missing in environment variables.'
+        : '`SYSTEM ERROR` — Connection to mainframe failed. Check console logs.';
       setMessages(prev => [...prev, {
-        id: (Date.now() + 1).toString(), role: 'assistant',
-        text: '`SYSTEM ERROR` — Connection to mainframe failed. Check console logs.',
+        id: (Date.now() + 1).toString(), role: 'assistant', text: errMsg,
       }]);
     } finally {
       setIsLoading(false);

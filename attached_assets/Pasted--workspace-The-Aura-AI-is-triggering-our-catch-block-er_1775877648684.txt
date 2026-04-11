@@ -1,0 +1,47 @@
+@workspace The Aura AI is triggering our catch block error because the Gemini API is rejecting the payload. We need to implement the exact, strict JSON schema required by Gemini and add a validation check for the API key. Act as a Senior AI Engineer and rewrite the message handling logic in AuraApp.tsx using this exact specification:
+
+1. Validate API Key First:
+
+Inside your send message function, before doing anything else, check:
+const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+if (!apiKey) { throw new Error("API_KEY_MISSING"); }
+
+2. Strict Payload Construction (Copy this logic):
+
+Replace the existing payload building logic with this exact code block to ensure the roles and structure match Gemini's strict requirements:
+
+JavaScript
+// 1. Map existing history to Gemini schema
+const formattedContents = messages.map(msg => ({
+  role: msg.role === 'aura' ? 'model' : 'user',
+  parts: [{ text: msg.text }]
+}));
+
+// 2. Add the new user message
+formattedContents.push({ 
+  role: 'user', 
+  parts: [{ text: inputValue }] 
+});
+
+// 3. Build the exact final payload
+const payload = {
+  contents: formattedContents,
+  systemInstruction: {
+    parts: [{ text: "You are AURA, the native AI assistant of MONIX Web OS. You are concise, highly technical, and speak with a dark cyberpunk hacker aesthetic. No pleasantries. Only signal, no noise." }]
+  }
+};
+3. The Fetch Execution:
+
+Ensure the fetch URL is: https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}
+
+Method: 'POST', Headers: { 'Content-Type': 'application/json' }, Body: JSON.stringify(payload).
+
+4. Error Catching UI:
+
+In the catch block, if error.message === "API_KEY_MISSING", push this message to the chat UI: "SYSTEM ERROR: VITE_GEMINI_API_KEY is missing in environment variables."
+
+Otherwise, push the standard fallback error.
+
+ALWAYS console.error("AURA FETCH ERROR:", error) so we can debug the exact network response in browser dev tools.
+
+Please apply this exact structure to AuraApp.tsx.

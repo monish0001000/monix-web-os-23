@@ -375,6 +375,37 @@ function CykryptIcon() {
   );
 }
 
+function SecureCommIcon() {
+  return (
+    <svg viewBox="0 0 36 36" width="36" height="36" fill="none">
+      <defs>
+        <linearGradient id="scBg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#001a1a" />
+          <stop offset="100%" stopColor="#000d0d" />
+        </linearGradient>
+        <radialGradient id="scGlow" cx="50%" cy="50%" r="55%">
+          <stop offset="0%" stopColor="#00ffff" stopOpacity="0.45" />
+          <stop offset="100%" stopColor="#00ffff" stopOpacity="0" />
+        </radialGradient>
+        <linearGradient id="scShield" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#00e5ff" />
+          <stop offset="100%" stopColor="#007acc" />
+        </linearGradient>
+      </defs>
+      <rect width="36" height="36" rx="6" fill="url(#scBg)" stroke="#003a3a" strokeWidth="0.8"/>
+      <circle cx="18" cy="18" r="13" fill="url(#scGlow)" opacity="0.35"/>
+      {/* Shield */}
+      <path d="M18 5 L28 9 L28 19 C28 25.5 18 32 18 32 C18 32 8 25.5 8 19 L8 9 Z" fill="url(#scShield)" opacity="0.15"/>
+      <path d="M18 6.5 L27 10 L27 19 C27 24.5 18 30.5 18 30.5 C18 30.5 9 24.5 9 19 L9 10 Z" fill="none" stroke="#00e5ff" strokeWidth="1.3" opacity="0.8"/>
+      {/* Phone handset */}
+      <path d="M13 13 C13 13 14 11 15.5 12 L17 13.5 C17.5 14 17.5 15 17 15.5 L16 16.5 C16 16.5 17 19 19.5 20 L20.5 19 C21 18.5 22 18.5 22.5 19 L24 20.5 C25 22 23 23 23 23 C23 23 19 24 14 18 C11 14.5 13 13 13 13 Z" fill="#00ffff" opacity="0.92" strokeWidth="0"/>
+      {/* Signal arcs */}
+      <path d="M21 10 C23.5 11.5 25 14 25 17" stroke="#00ffff" strokeWidth="1.2" strokeLinecap="round" fill="none" opacity="0.6"/>
+      <path d="M22.5 8 C26 10 28 13.5 28 17.5" stroke="#00ffff" strokeWidth="1" strokeLinecap="round" fill="none" opacity="0.35"/>
+    </svg>
+  );
+}
+
 function ThreatModelerIcon() {
   return (
     <svg viewBox="0 0 36 36" width="36" height="36" fill="none">
@@ -425,6 +456,7 @@ const ICONS_COL2 = [
   { id: "threatmodeler",label: "Threat Modeler",icon: <ThreatModelerIcon />,  window: "threatmodeler"},
   { id: "cykrypt",      label: "CYKRYPT",        icon: <CykryptIcon />,        window: "cykrypt"      },
   { id: "settings",     label: "Settings",      icon: <SettingsIcon />,       window: "settings"     },
+  { id: "securecomm",   label: "MONIX-COMM",    icon: <SecureCommIcon />,     window: "securecomm"   },
 ];
 
 function IconItem({

@@ -21,7 +21,9 @@ import SettingsApp from "./SettingsApp";
 import ThreatMapApp from "./ThreatMapApp";
 import CodePadApp from "./CodePadApp";
 import SecureCommApp from "./SecureCommApp";
+import DossierApp from "./DossierApp";
 import RightClickMenu from "./RightClickMenu";
+import { playClickSound, playCloseSound } from "@/utils/SoundEngine";
 import MediaViewerApp, { type MediaType } from "./MediaViewerApp";
 import { useOSStore } from "@/lib/store";
 
@@ -46,6 +48,7 @@ const PROCESS_INFO: Record<string, { name: string; icon: string }> = {
   threatmap:       { name: "Threat Map",       icon: "🗺️" },
   codepad:         { name: "CodePad",          icon: "📝" },
   securecomm:      { name: "MONIX-COMM",       icon: "📞" },
+  dossier:         { name: "Classified Dossier", icon: "🗃️" },
 };
 
 function genPID(): string {
@@ -79,6 +82,7 @@ const WINDOW_LABELS: Record<string, string> = {
   threatmap:       "Live Cyber Threat Map",
   codepad:         "CodePad",
   securecomm:      "MONIX-COMM — Secure Channel",
+  dossier:         "Classified Dossier — MONIX Intel Bureau",
 };
 
 interface SelectionBox {
@@ -168,6 +172,7 @@ export default function Desktop() {
   };
 
   const handleOpenWindow = (id: string) => {
+    playClickSound();
     // Check before setWindows so we don't rely on setter callback side-effects
     const isNew = !windows.some((w) => w.id === id);
     setWindows((prev) => {
@@ -195,6 +200,7 @@ export default function Desktop() {
   };
 
   const handleCloseWindow = (id: string) => {
+    playCloseSound();
     setWindows((prev) => prev.filter((w) => w.id !== id));
     setActiveWindow((prev) => {
       if (prev !== id) return prev;
@@ -316,6 +322,7 @@ export default function Desktop() {
       threatmap:       { x: window.innerWidth / 2 - 450, y: window.innerHeight / 2 - 280 },
       codepad:         { x: window.innerWidth / 2 - 410, y: window.innerHeight / 2 - 270 },
       securecomm:      { x: window.innerWidth / 2 - 500, y: window.innerHeight / 2 - 310 },
+      dossier:         { x: window.innerWidth / 2 - 380, y: window.innerHeight / 2 - 280 },
     };
     return offsets[type] ?? { x: 120, y: 60 };
   };
@@ -663,6 +670,19 @@ export default function Desktop() {
             initialX={getInitialPosition("securecomm").x}
             initialY={getInitialPosition("securecomm").y}
             zIndex={getWin("securecomm")!.zIndex}
+          />
+        )}
+
+        {getWin("dossier") && !getWin("dossier")!.minimized && (
+          <DossierApp
+            key="dossier"
+            onClose={() => handleCloseWindow("dossier")}
+            onMinimize={() => handleMinimizeWindow("dossier")}
+            isActive={activeWindow === "dossier"}
+            onFocus={() => bringToFront("dossier")}
+            initialX={getInitialPosition("dossier").x}
+            initialY={getInitialPosition("dossier").y}
+            zIndex={getWin("dossier")!.zIndex}
           />
         )}
 

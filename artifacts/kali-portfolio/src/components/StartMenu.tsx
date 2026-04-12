@@ -2,7 +2,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   TerminalSquare, FolderOpen, Monitor, Github, Trash2,
   Lock, Settings, Power, Search, Globe, Shield, Sparkles,
-  FlaskConical, Code2, PenTool, Crown, Activity, Cpu, Map, FileCode, Phone
+  FlaskConical, Code2, PenTool, Crown, Activity, Cpu, Map, FileCode, Phone, FileWarning
 } from "lucide-react";
 import { useOSStore } from "@/lib/store";
 
@@ -109,6 +109,13 @@ const APPS = [
     icon: <Phone size={22} strokeWidth={1.6} />,
     color: "#00ffff",
     bg: "rgba(0,255,255,0.08)",
+  },
+  {
+    id: "dossier",
+    label: "Classified Dossier",
+    icon: <FileWarning size={22} strokeWidth={1.6} />,
+    color: "#ff4444",
+    bg: "rgba(255,68,68,0.08)",
   },
 ];
 

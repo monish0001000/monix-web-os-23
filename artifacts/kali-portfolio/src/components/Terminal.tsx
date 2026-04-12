@@ -96,6 +96,7 @@ export default function Terminal({
   const [isProcessing, setIsProcessing] = useState(false);
   const [commandHistory, setCommandHistory] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
+  const [hackMode, setHackMode] = useState(false);
 
   const inputRef = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -154,6 +155,33 @@ export default function Terminal({
 
       push({ type: isRoot ? "root-input" : "input", content: trimmed });
 
+      if (hackMode) {
+        if (trimmed === 'flag{m0n1x_r00t}') {
+          push(
+            { type: "output", content: "" },
+            { type: "output", content: "  ██████████████████████████████████████████████", color: "green" },
+            { type: "output", content: "  ██  [ACCESS GRANTED] — Welcome back, Admin.  ██", color: "green" },
+            { type: "output", content: "  ██████████████████████████████████████████████", color: "green" },
+            { type: "output", content: "" },
+            { type: "output", content: "  Root override accepted. System lockdown aborted.", color: "green" },
+            { type: "output", content: "  All security protocols suspended for 60 seconds.", color: "green" },
+            { type: "output", content: "" },
+          );
+        } else {
+          push(
+            { type: "output", content: "" },
+            { type: "output", content: "  ██████████████████████████", color: "red" },
+            { type: "output", content: "  ██  [ACCESS DENIED]      ██", color: "red" },
+            { type: "output", content: "  ██████████████████████████", color: "red" },
+            { type: "output", content: "" },
+            { type: "output", content: "  Invalid flag. Intrusion logged. IP blacklisted.", color: "red" },
+            { type: "output", content: "" },
+          );
+        }
+        setHackMode(false);
+        return;
+      }
+
       switch (cmd) {
         case "help": {
           push(
@@ -191,6 +219,9 @@ export default function Terminal({
             { type: "output", content: "  │ sudo su              │ Escalate to root                       │", color: "cyan" },
             { type: "output", content: "  │ exit                 │ Drop root / close terminal             │", color: "cyan" },
             { type: "output", content: "  │ clear                │ Clear screen                           │", color: "cyan" },
+            { type: "output", content: "  ├──────────────────────┼────────────────────────────────────────┤", color: "cyan" },
+            { type: "output", content: "  │ ── MINI CTF ──       │                                        │", color: "red" },
+            { type: "output", content: "  │ hack --start         │ Initiate CTF breach sequence           │", color: "red" },
             { type: "output", content: "  └──────────────────────┴────────────────────────────────────────┘", color: "cyan" },
             { type: "output", content: "" }
           );
@@ -531,6 +562,27 @@ export default function Terminal({
           break;
         }
 
+        case "hack": {
+          if (args[0] === "--start") {
+            scheduleLines([
+              { delay: 100,  line: { type: "output", content: "" } },
+              { delay: 200,  line: { type: "output", content: "  ╔══════════════════════════════════════════╗", color: "red" } },
+              { delay: 300,  line: { type: "output", content: "  ║   ██████╗██╗   ██╗██████╗ ███████╗██████╗  ║", color: "red" } },
+              { delay: 400,  line: { type: "output", content: "  ║  ██╔════╝╚██╗ ██╔╝██╔══██╗██╔════╝██╔══██╗ ║", color: "red" } },
+              { delay: 500,  line: { type: "output", content: "  ║  ██║      ╚████╔╝ ██████╔╝█████╗  ██████╔╝ ║", color: "red" } },
+              { delay: 600,  line: { type: "output", content: "  ╚══════════════════════════════════════════╝", color: "red" } },
+              { delay: 700,  line: { type: "output", content: "" } },
+              { delay: 800,  line: { type: "output", content: "  [SYSTEM COMPROMISED] — Kernel integrity: FAILED", color: "red" } },
+              { delay: 950,  line: { type: "output", content: "  [WARNING] Root filesystem encrypted. Countdown: 60s", color: "red" } },
+              { delay: 1100, line: { type: "output", content: "  [MONIX-SEC] Enter root override flag to abort:", color: "red" } },
+              { delay: 1200, line: { type: "output", content: "" } },
+            ], () => setHackMode(true));
+          } else {
+            push({ type: "error", content: "  Usage: hack --start" });
+          }
+          break;
+        }
+
         default: {
           if (fullCmd === "sudo su") {
             setIsRoot(true);
@@ -545,7 +597,7 @@ export default function Terminal({
         }
       }
     },
-    [isRoot, matrixMode, commandHistory, push, scheduleLines, onClose, onOpenWindow, getUptime]
+    [isRoot, matrixMode, hackMode, commandHistory, push, scheduleLines, onClose, onOpenWindow, getUptime]
   );
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {

@@ -113,6 +113,15 @@ export default function RightClickMenu({ x, y, onClose, onOpenWindow, onOpenWall
         <span>MONIX-COMM</span>
       </div>
 
+      {/* Classified Dossier */}
+      <div
+        className={item + " flex items-center gap-2"}
+        onClick={() => handleAction(() => onOpenWindow("dossier"))}
+      >
+        <span>🗃️</span>
+        <span>Classified Dossier</span>
+      </div>
+
       <div className="border-t border-white/10 my-1" />
 
       {/* 7. Settings */}

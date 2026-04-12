@@ -1,0 +1,42 @@
+@workspace We have limited agent execution quota remaining, so we need to execute our final OS polish and deployment in a single, flawless run. Act as a Lead OS Architect and execute these 4 steps sequentially:
+
+1. Build "The Classified Dossier" App (DossierApp.tsx):
+
+Create a new application component src/components/apps/DossierApp.tsx.
+
+Aesthetic: FBI/CIA Top Secret terminal. Pure black background, red and white monospace text.
+
+Content: Display Monish S's profile: "B.E. CSE-Cybersecurity Specialist". List projects: "Sentinel NextGen SOC" and "CYKRYPT CTF Organizer".
+
+Animation: Implement a simple React useEffect to reveal the text character-by-character (Typewriter effect) over 2 seconds.
+
+Register it in Store.ts as dossier with a 🗃️ or 💀 icon, and add it to the Desktop/Start menu.
+
+2. Terminal Gamification (Mini-CTF):
+
+Open TerminalApp.tsx (or your command parser file).
+
+Add a new command: hack --start.
+
+When triggered, print: [SYSTEM COMPROMISED] - Enter root override flag to abort:.
+
+If the user types the exact flag flag{m0n1x_r00t}, print [ACCESS GRANTED] - Welcome back, Admin. in bright green. If wrong, print [ACCESS DENIED].
+
+3. Add OS Sound Engine (Web Audio API):
+
+We want zero external dependencies for sounds. Create a small utility src/utils/SoundEngine.ts.
+
+Use the native window.AudioContext to synthesize a short, low-pitch "click/thud" sound.
+
+Export a function playClickSound().
+
+Import and trigger playClickSound() inside the openApp and closeApp actions in your UI or Store so that every time a window opens or closes, it makes a subtle sci-fi tech sound.
+
+4. Version Control & GitHub Push:
+
+Open the shell and execute the following git commands to push this masterpiece:
+git add .
+git commit -m "feat: Final OS Polish - Added Dossier, CTF, Sound Engine, and WebRTC Comm"
+git push origin main (or the respective default branch).
+
+Ensure all UI changes adhere to the strict w-full h-full maximization rules we established earlier. Do not break existing layouts.

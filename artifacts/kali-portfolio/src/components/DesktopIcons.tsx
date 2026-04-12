@@ -375,6 +375,33 @@ function CykryptIcon() {
   );
 }
 
+function DossierIcon() {
+  return (
+    <svg viewBox="0 0 36 36" width="36" height="36" fill="none">
+      <defs>
+        <linearGradient id="dossBg" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#1a0000" />
+          <stop offset="100%" stopColor="#0a0000" />
+        </linearGradient>
+        <linearGradient id="dossRed" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#cc0000" />
+          <stop offset="100%" stopColor="#880000" />
+        </linearGradient>
+      </defs>
+      <rect width="36" height="36" rx="5" fill="url(#dossBg)" stroke="#4a0000" strokeWidth="0.8"/>
+      <rect x="5" y="6" width="26" height="24" rx="2" fill="#120000" stroke="#660000" strokeWidth="0.8"/>
+      <rect x="5" y="6" width="26" height="5" rx="2" fill="#220000"/>
+      <rect x="13" y="4" width="10" height="4" rx="1.5" fill="#1a0000" stroke="#550000" strokeWidth="0.7"/>
+      <line x1="9" y1="15" x2="27" y2="15" stroke="#cc0000" strokeWidth="0.8" strokeLinecap="round" opacity="0.7"/>
+      <line x1="9" y1="18.5" x2="27" y2="18.5" stroke="#880000" strokeWidth="0.7" strokeLinecap="round" opacity="0.5"/>
+      <line x1="9" y1="22" x2="20" y2="22" stroke="#880000" strokeWidth="0.7" strokeLinecap="round" opacity="0.5"/>
+      <rect x="18" y="21" width="9" height="5" rx="1" fill="#1a0000" stroke="#cc0000" strokeWidth="0.7" opacity="0.9"/>
+      <text x="20" y="25" fontSize="4" fill="#cc0000" fontFamily="monospace" fontWeight="bold">TOP</text>
+      <circle cx="10" cy="8.5" r="1" fill="#cc0000" opacity="0.9"/>
+    </svg>
+  );
+}
+
 function SecureCommIcon() {
   return (
     <svg viewBox="0 0 36 36" width="36" height="36" fill="none">
@@ -457,6 +484,7 @@ const ICONS_COL2 = [
   { id: "cykrypt",      label: "CYKRYPT",        icon: <CykryptIcon />,        window: "cykrypt"      },
   { id: "settings",     label: "Settings",      icon: <SettingsIcon />,       window: "settings"     },
   { id: "securecomm",   label: "MONIX-COMM",    icon: <SecureCommIcon />,     window: "securecomm"   },
+  { id: "dossier",      label: "Dossier",       icon: <DossierIcon />,        window: "dossier"      },
 ];
 
 function IconItem({

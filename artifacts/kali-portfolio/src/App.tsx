@@ -8,6 +8,7 @@ import LoginScreen from "./components/LoginScreen";
 import Desktop from "./components/Desktop";
 import NetworkHandler from "./components/NetworkHandler";
 import { useOSStore } from "./lib/store";
+import { preCacheWakeAudio } from "./lib/AuraService";
 
 const queryClient = new QueryClient();
 
@@ -20,58 +21,34 @@ function useDisplayFilter() {
   return hasFilter ? `brightness(${brightness / 100}) sepia(${warmth / 50})` : undefined;
 }
 
-// ── Global AURA Wake Glow — sleek multi-color gradient border ─────────────────
-// Fix #2: thin elegant neon-cycling border replaces heavy box-shadow.
+// ── Global AURA Wake Glow — clean neon border, NO corner symbols ──────────────
+// Fix #4: corner L-brackets removed entirely — only the sleek cycling border.
 function AuraWakeGlow() {
   const auraWakeActive   = useOSStore((s) => s.auraWakeActive);
   const auraHearingSound = useOSStore((s) => s.auraHearingSound);
 
+  // Fix #5: pre-cache "Yes, Sir." audio on first render so wake is instant
+  useEffect(() => {
+    preCacheWakeAudio();
+  }, []);
+
   return (
     <AnimatePresence>
       {auraWakeActive && (
-        <>
-          {/* Primary neon border — thin, multi-color, cycling */}
-          <motion.div
-            key="aura-neon-border"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0, transition: { duration: 0.4 } }}
-            transition={{ duration: 0.2 }}
-            className={auraHearingSound ? 'aura-neon-border-active' : 'aura-neon-border'}
-            style={{
-              position: 'fixed',
-              inset: 0,
-              zIndex: 99999,
-              pointerEvents: 'none',
-            }}
-          />
-          {/* Corner L-brackets — 12 × 12 px, no blur, crisp */}
-          {(['tl','tr','bl','br'] as const).map((c) => (
-            <motion.div
-              key={`corner-${c}`}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: [0.6, 1, 0.6] }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: auraHearingSound ? 0.7 : 1.4, repeat: Infinity, ease: 'easeInOut' }}
-              className={auraHearingSound ? 'aura-corner-active' : 'aura-corner'}
-              style={{
-                position: 'fixed',
-                zIndex: 99999,
-                pointerEvents: 'none',
-                width: 14,
-                height: 14,
-                top:    c.startsWith('t') ? 0 : undefined,
-                bottom: c.startsWith('b') ? 0 : undefined,
-                left:   c.endsWith('l')   ? 0 : undefined,
-                right:  c.endsWith('r')   ? 0 : undefined,
-                borderTop:    c.startsWith('t') ? '2px solid currentColor' : undefined,
-                borderBottom: c.startsWith('b') ? '2px solid currentColor' : undefined,
-                borderLeft:   c.endsWith('l')   ? '2px solid currentColor' : undefined,
-                borderRight:  c.endsWith('r')   ? '2px solid currentColor' : undefined,
-              }}
-            />
-          ))}
-        </>
+        <motion.div
+          key="aura-neon-border"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0, transition: { duration: 0.4 } }}
+          transition={{ duration: 0.2 }}
+          className={auraHearingSound ? 'aura-neon-border-active' : 'aura-neon-border'}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 99999,
+            pointerEvents: 'none',
+          }}
+        />
       )}
     </AnimatePresence>
   );

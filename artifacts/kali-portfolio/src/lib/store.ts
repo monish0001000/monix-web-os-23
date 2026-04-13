@@ -235,7 +235,7 @@ export const useOSStore = create<OSState>((set, get) => ({
   auraArmed:           false,
   auraWakeActive:      false,
   auraHearingSound:    false,
-  auraVoicePreference: 'female' as 'female' | 'male',
+  auraVoicePreference: 'male' as 'female' | 'male',
   auraMessages:        [],
 
   setAuraMuted:           (muted)  => set({ auraMuted: muted }),

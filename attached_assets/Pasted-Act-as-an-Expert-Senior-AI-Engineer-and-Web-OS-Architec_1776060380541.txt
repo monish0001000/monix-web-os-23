@@ -1,0 +1,35 @@
+Act as an Expert Senior AI Engineer and Web OS Architect. I need a deep, comprehensive overhaul of the "Aura" AI assistant inside my Web OS. The current implementation suffers from audio state dropoffs, overlapping voices, poor language adaptation, and a clunky UI element.
+
+Please analyze the codebase and implement the following architectural fixes to achieve an ultra-fast, perfectly conversational, real Google Assistant experience:
+
+1. Unbreakable Wake-Word Loop (Always Listening)
+
+The Bug: The assistant stops listening for "Hey Buddy" after executing an operation.
+
+The Fix: Implement an unbreakable audio loop. Once the user grants microphone permission on the first click, the microphone stream must NEVER close.
+
+If the Speech Recognition or Wake-Word engine throws an error, times out, or finishes an operation, it must automatically and instantly restart itself in the background. The assistant MUST wake up instantly whenever "Hey Buddy" is spoken, no matter what operation was just performed.
+
+2. Strict Voice Management & Male Default
+
+The Bug: Both male and female voices are playing simultaneously, causing a chaotic overlap.
+
+The Fix: Set the deep, clear Male Voice as the absolute default.
+
+Before playing any new audio, you MUST strictly call window.speechSynthesis.cancel() to clear the queue and stop any overlapping voices. Ensure the TTS singleton is properly managed.
+
+3. Flawless Speech Recognition & Auto-Language Mirroring
+
+Enhance the STT accuracy. Ensure it waits patiently until the user completely finishes their sentence before processing.
+
+Dynamic Language Response: Update the Gemini LLM system prompt with this strict rule: "Analyze the user's input language. If the user speaks in English, reply in English. If the user speaks in Tamil, reply in native Tamil text. If the user speaks in Tanglish (Tamil written in English), reply in Tanglish. Your personality is helpful, ultra-fast, and instant."
+
+4. Complete Removal of Corner UI Symbols
+
+Find the debug symbol, wake-word badge, or any rogue UI element appearing in the corner of the screen and completely remove it from the DOM or set display: none !important. The UI must remain entirely clean, showing only the sleek cyber-neon glowing border when active.
+
+5. Ultra-Fast Hybrid Execution (Zero Latency)
+
+Maintain the fast-path local RegEx parser for instant OS actions (e.g., "open browser", "browser open pannu").
+
+For conversational queries that go to the LLM, optimize the API call. The moment "Hey Buddy" is heard, instantly play the pre-cached "Yes, Sir" audio without waiting for any network request, so the user immediately knows the assistant is ready.

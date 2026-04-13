@@ -106,17 +106,63 @@ function pickMaleVoice(): SpeechSynthesisVoice | null {
   );
 }
 
-// ─── sayInstant() — zero-latency wake response, no voice-load wait ───────────
-// Fix #3: fires synchronously with whatever voice is currently loaded.
+// ─── Pre-cached "Yes, Sir." utterance — built once at startup ─────────────────
+// Fix #5 + Fix #2: Pre-warms TTS engine so the wake response is instant.
+// We keep a single SpeechSynthesisUtterance in memory and replay it.
+let _cachedYesSirUtterance: SpeechSynthesisUtterance | null = null;
+
+export function preCacheWakeAudio() {
+  if (!window.speechSynthesis || _cachedYesSirUtterance) return;
+  // Warm the engine: a zero-volume silent utterance forces browser to load voices
+  const silence = new SpeechSynthesisUtterance(' ');
+  silence.volume = 0;
+  silence.rate   = 2.0;
+  window.speechSynthesis.speak(silence);
+
+  // Build the real utterance once voices are loaded
+  function build() {
+    const u = new SpeechSynthesisUtterance('Yes, Sir.');
+    const v = pickMaleVoice();
+    if (v) u.voice = v;
+    u.rate   = 0.95;
+    u.pitch  = 0.70;
+    u.volume = 1.0;
+    u.lang   = 'en-IN';
+    _cachedYesSirUtterance = u;
+  }
+  if (window.speechSynthesis.getVoices().length > 0) {
+    build();
+  } else {
+    window.speechSynthesis.onvoiceschanged = () => {
+      window.speechSynthesis.onvoiceschanged = null;
+      build();
+    };
+  }
+}
+
+// ─── sayInstant() — zero-latency wake response using pre-cached utterance ─────
+// Fix #2: always cancels first (no overlap). Fix #5: uses male voice cache.
 export function sayInstant(text: string) {
   if (!window.speechSynthesis) return;
   window.speechSynthesis.cancel();
+  // Use pre-cached utterance if available and text matches, else build fresh
+  if (_cachedYesSirUtterance && text === 'Yes, Sir.') {
+    // Re-create from same config (utterances can't be re-played after onend)
+    const u = new SpeechSynthesisUtterance('Yes, Sir.');
+    if (_cachedYesSirUtterance.voice) u.voice = _cachedYesSirUtterance.voice;
+    u.rate   = _cachedYesSirUtterance.rate;
+    u.pitch  = _cachedYesSirUtterance.pitch;
+    u.volume = 1.0;
+    u.lang   = 'en-IN';
+    window.speechSynthesis.speak(u);
+    return;
+  }
+  // Fallback: pick male voice immediately from whatever is loaded
   const u = new SpeechSynthesisUtterance(text);
-  // Use first available voice — don't wait for full voice list
-  const voices = window.speechSynthesis.getVoices();
-  if (voices.length > 0) u.voice = voices[0];
-  u.rate   = 1.1;
-  u.pitch  = 1.15;
+  const voice = pickMaleVoice();
+  if (voice) u.voice = voice;
+  u.rate   = 0.95;
+  u.pitch  = 0.70;
   u.volume = 1.0;
   u.lang   = 'en-IN';
   window.speechSynthesis.speak(u);
@@ -553,10 +599,12 @@ export function createAuraService(cb: AuraServiceCallbacks): AuraServiceHandle {
     };
 
     rec.onend = () => {
+      // Fix #1 — Unbreakable loop: ALWAYS restart unless explicitly stopped or mic denied
       recognition = null;
       cb.setHearingSound(false);
       if (running && !cb.isMuted()) {
-        setTimeout(startRecognition, 300);
+        // Brief pause before restart so browser doesn't rate-limit us
+        setTimeout(startRecognition, 250);
       } else {
         cb.setArmed(false);
       }
@@ -566,15 +614,22 @@ export function createAuraService(cb: AuraServiceCallbacks): AuraServiceHandle {
     rec.onerror = (event: any) => {
       const fatal = event.error === 'not-allowed' || event.error === 'service-not-allowed';
       if (fatal) {
-        console.warn('[AURA] Mic access denied.');
+        console.warn('[AURA] Mic access denied — cannot listen.');
         running = false;
         recognition = null;
         cb.setArmed(false);
         cb.setHearingSound(false);
         return;
       }
+      // Fix #1 — All non-fatal errors (no-speech, network, aborted, audio-capture):
+      // do NOT just null-out; schedule an immediate restart so we never go deaf.
       recognition = null;
       cb.setHearingSound(false);
+      if (running && !cb.isMuted()) {
+        // no-speech = short retry; everything else = slightly longer
+        const delay = event.error === 'no-speech' ? 100 : 400;
+        setTimeout(startRecognition, delay);
+      }
     };
 
     recognition = rec;

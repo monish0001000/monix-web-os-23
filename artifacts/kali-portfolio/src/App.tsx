@@ -20,64 +20,54 @@ function useDisplayFilter() {
   return hasFilter ? `brightness(${brightness / 100}) sepia(${warmth / 50})` : undefined;
 }
 
-// ── Global AURA Wake Glow — immersive pulsing screen border ──────────────────
+// ── Global AURA Wake Glow — sleek multi-color gradient border ─────────────────
+// Fix #2: thin elegant neon-cycling border replaces heavy box-shadow.
 function AuraWakeGlow() {
-  const auraWakeActive  = useOSStore((s) => s.auraWakeActive);
+  const auraWakeActive   = useOSStore((s) => s.auraWakeActive);
   const auraHearingSound = useOSStore((s) => s.auraHearingSound);
 
   return (
     <AnimatePresence>
       {auraWakeActive && (
         <>
-          {/* Outer border glow — pulses on the screen edge */}
+          {/* Primary neon border — thin, multi-color, cycling */}
           <motion.div
-            key="aura-wake-border"
+            key="aura-neon-border"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
+            exit={{ opacity: 0, transition: { duration: 0.4 } }}
+            transition={{ duration: 0.2 }}
+            className={auraHearingSound ? 'aura-neon-border-active' : 'aura-neon-border'}
             style={{
               position: 'fixed',
               inset: 0,
               zIndex: 99999,
               pointerEvents: 'none',
-              border: auraHearingSound
-                ? '2.5px solid rgba(52,211,153,0.9)'
-                : '2px solid rgba(0,240,255,0.65)',
-              boxShadow: auraHearingSound
-                ? 'inset 0 0 60px 20px rgba(52,211,153,0.18), inset 0 0 130px 50px rgba(0,255,180,0.08), 0 0 40px 8px rgba(52,211,153,0.35)'
-                : 'inset 0 0 70px 18px rgba(0,240,255,0.22), inset 0 0 150px 50px rgba(0,200,255,0.10), 0 0 30px 6px rgba(0,240,255,0.28)',
-              animation: auraHearingSound
-                ? 'aura-wake-pulse-active 1.0s ease-in-out infinite'
-                : 'aura-wake-pulse 1.8s ease-in-out infinite',
-              transition: 'box-shadow 0.2s, border-color 0.2s',
-              borderRadius: 2,
             }}
           />
-          {/* Corner accent lights */}
-          {(['top-left','top-right','bottom-left','bottom-right'] as const).map((corner) => (
+          {/* Corner L-brackets — 12 × 12 px, no blur, crisp */}
+          {(['tl','tr','bl','br'] as const).map((c) => (
             <motion.div
-              key={`aura-corner-${corner}`}
-              initial={{ opacity: 0, scale: 0.5 }}
-              animate={{ opacity: [0.7, 1, 0.7], scale: [1, 1.15, 1] }}
-              exit={{ opacity: 0, scale: 0.5 }}
-              transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
+              key={`corner-${c}`}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: [0.6, 1, 0.6] }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: auraHearingSound ? 0.7 : 1.4, repeat: Infinity, ease: 'easeInOut' }}
+              className={auraHearingSound ? 'aura-corner-active' : 'aura-corner'}
               style={{
                 position: 'fixed',
                 zIndex: 99999,
                 pointerEvents: 'none',
-                width: 20,
-                height: 20,
-                ...(corner.includes('top')    ? { top: 0 }    : { bottom: 0 }),
-                ...(corner.includes('left')   ? { left: 0 }   : { right: 0 }),
-                background: auraHearingSound
-                  ? 'rgba(52,211,153,0.9)'
-                  : 'rgba(0,240,255,0.8)',
-                clipPath: corner === 'top-left'     ? 'polygon(0 0, 100% 0, 0 100%)'   :
-                          corner === 'top-right'    ? 'polygon(0 0, 100% 0, 100% 100%)' :
-                          corner === 'bottom-left'  ? 'polygon(0 0, 100% 100%, 0 100%)' :
-                                                      'polygon(100% 0, 100% 100%, 0 100%)',
-                filter: 'blur(1px)',
+                width: 14,
+                height: 14,
+                top:    c.startsWith('t') ? 0 : undefined,
+                bottom: c.startsWith('b') ? 0 : undefined,
+                left:   c.endsWith('l')   ? 0 : undefined,
+                right:  c.endsWith('r')   ? 0 : undefined,
+                borderTop:    c.startsWith('t') ? '2px solid currentColor' : undefined,
+                borderBottom: c.startsWith('b') ? '2px solid currentColor' : undefined,
+                borderLeft:   c.endsWith('l')   ? '2px solid currentColor' : undefined,
+                borderRight:  c.endsWith('r')   ? '2px solid currentColor' : undefined,
               }}
             />
           ))}

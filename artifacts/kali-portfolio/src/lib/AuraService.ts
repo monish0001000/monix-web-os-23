@@ -106,7 +106,23 @@ function pickMaleVoice(): SpeechSynthesisVoice | null {
   );
 }
 
-// ─── speak() ─────────────────────────────────────────────────────────────────
+// ─── sayInstant() — zero-latency wake response, no voice-load wait ───────────
+// Fix #3: fires synchronously with whatever voice is currently loaded.
+export function sayInstant(text: string) {
+  if (!window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  // Use first available voice — don't wait for full voice list
+  const voices = window.speechSynthesis.getVoices();
+  if (voices.length > 0) u.voice = voices[0];
+  u.rate   = 1.1;
+  u.pitch  = 1.15;
+  u.volume = 1.0;
+  u.lang   = 'en-IN';
+  window.speechSynthesis.speak(u);
+}
+
+// ─── speak() — full quality TTS with preferred voice ─────────────────────────
 export function speak(text: string, preference: 'female' | 'male' = 'female') {
   if (!window.speechSynthesis) return;
   window.speechSynthesis.cancel();
@@ -225,40 +241,87 @@ async function pollinationsFallback(text: string): Promise<GeminiCommand> {
   }
 }
 
+// ─── Tanglish app-keyword extractor ──────────────────────────────────────────
+// Tries to pull an app name from Tamil-inflected phrases like
+// "browser ah open pannu" / "terminal open pannuda" / "settings paarunga"
+function extractTanglishApp(lower: string): string | null {
+  // Remove common Tamil filler words and verbs, leaving the app keyword
+  const cleaned = lower
+    .replace(/\b(?:ah|da|pa|la|nga|di|bro|machi|macha|yov)\b/gi, '')
+    .replace(/\b(?:open\s+)?(?:pannu|pannuda|panndra|panna|pannunga|panrom|pannalam|pannuvom|venum|vendum|yedu|yeduka|paarunga|paaru|paakanum|paako|kaatu|kaattu|tirappu|tirap|cheyyi|cheyyunga|open|start|launch|run|boot)\b/gi, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!cleaned) return null;
+
+  // Check each cleaned word against the app map
+  const words = cleaned.split(/\s+/);
+  for (const word of words) {
+    if (VOICE_APP_MAP[word]) return VOICE_APP_MAP[word];
+  }
+  // Multi-word match
+  for (const key of Object.keys(VOICE_APP_MAP)) {
+    if (cleaned.includes(key)) return VOICE_APP_MAP[key];
+  }
+  return null;
+}
+
 // ─── Local fast-path command parsing (runs before hitting the LLM) ───────────
+// Fix #5: Expanded with Tamil & Tanglish regex matchers — zero LLM cost.
 function fastParseCommand(lower: string): GeminiCommand | null {
-  // Voice switching
-  if (/change\s+voice\s+(into|to)\s+macha/i.test(lower))
+  // ── Voice switching ────────────────────────────────────────────────────────
+  if (/(?:change|switch|set)\s+voice\s+(?:into|to|as)?\s*macha/i.test(lower) ||
+      /macha\s+(?:voice|mode)/i.test(lower))
     return { action: 'voice_male', target: '', reply: 'Done macha, deep mode activated.', query: '' };
-  if (/change\s+voice\s+(into|to)\s+machi/i.test(lower))
+  if (/(?:change|switch|set)\s+voice\s+(?:into|to|as)?\s*machi/i.test(lower) ||
+      /machi\s+(?:voice|mode)/i.test(lower))
     return { action: 'voice_female', target: '', reply: 'Sure machi, I am here for you.', query: '' };
 
-  // Clear chat
-  if (/^clear\s*(chat|aura|history)?$/.test(lower))
+  // ── Clear chat ─────────────────────────────────────────────────────────────
+  if (/^(?:clear|reset|clean)\s*(?:chat|aura|history|screen)?$/.test(lower) ||
+      /(?:chat|history)\s+(?:clear|delete|remove)\s*(?:pannu|pannuda|panna|panndra)?/.test(lower))
     return { action: 'clear_chat', target: '', reply: 'Chat cleared.', query: '' };
 
-  // Close all
-  if (/close\s*all/.test(lower))
+  // ── Close all ──────────────────────────────────────────────────────────────
+  if (/close\s*all|all\s*(?:window|app)s?\s*(?:close|band|off)|ella\s*(?:window|app)s?\s*(?:close|pannu|band)/i.test(lower))
     return { action: 'close_all', target: '', reply: 'All windows closed.', query: '' };
 
-  // Open app — direct match
-  const openMatch = lower.match(/^(?:please\s+)?open\s+(.+)/);
+  // ── English "open X" ───────────────────────────────────────────────────────
+  const openMatch = lower.match(/^(?:please\s+)?(?:open|launch|start|run|show)\s+(.+)/);
   if (openMatch) {
-    const key = openMatch[1].trim();
-    const id  = VOICE_APP_MAP[key];
-    if (id) return { action: 'open', target: id, reply: 'Launching ' + key + '.', query: '' };
+    const key = openMatch[1].replace(/\s*(please|now|fast|quickly)\s*/gi, '').trim();
+    const id  = VOICE_APP_MAP[key] ?? VOICE_APP_MAP[key.split(' ')[0]];
+    if (id) return { action: 'open', target: id, reply: 'Launching.', query: '' };
   }
 
-  // Search
-  const searchMatch =
-    lower.match(/^search\s+(.+?)\s+on\s+google$/) ||
-    lower.match(/^google\s+(.+)/)                  ||
-    lower.match(/^search\s+(.+)/);
-  if (searchMatch)
-    return { action: 'search', target: 'browser', reply: 'Searching now.', query: searchMatch[1].trim() };
+  // ── Tanglish "X open pannu" / "X ah open pannu" / "X pannu" ───────────────
+  const isTanglishOpen =
+    /(?:pannu|pannuda|panndra|panna|pannunga|yedu|yeduka|tirappu|tirap|paaru|paarunga|kaatu|open\s+pannu|open\s+panna|open\s+pannuda)/i.test(lower);
+  if (isTanglishOpen) {
+    const appId = extractTanglishApp(lower);
+    if (appId) return { action: 'open', target: appId, reply: 'Launching.', query: '' };
+  }
 
-  // Type
-  const typeMatch = lower.match(/^type\s+(.+)/);
+  // ── Tanglish direct: "X-ah open" / "X open" without verb suffix ───────────
+  const tanglishNoVerb = lower.match(/^(browser|terminal|files|github|settings|chess|aura|sentinel|cyberchef|codestudio|cykrypt|taskmanager|securecomm|dossier|trash|threatmap|codepad|portfolio)\s*(?:ah|la|da)?\s*(?:open|tirappu|kaatu)?$/i);
+  if (tanglishNoVerb) {
+    const key = tanglishNoVerb[1].toLowerCase();
+    const id  = VOICE_APP_MAP[key];
+    if (id) return { action: 'open', target: id, reply: 'Launching.', query: '' };
+  }
+
+  // ── Search ─────────────────────────────────────────────────────────────────
+  const searchMatch =
+    lower.match(/^(?:search|find|look\s+up|google)\s+(.+?)\s+(?:on\s+)?(?:google|internet|web)?$/) ||
+    lower.match(/^(?:google|search)\s+(.+)/) ||
+    lower.match(/(.+)\s+(?:google|search)\s+(?:pannu|pannuda|panna|panndra)/i);
+  if (searchMatch) {
+    const q = (searchMatch[1] || searchMatch[0]).trim();
+    if (q.length > 1)
+      return { action: 'search', target: 'browser', reply: 'Searching now.', query: q };
+  }
+
+  // ── Type ───────────────────────────────────────────────────────────────────
+  const typeMatch = lower.match(/^(?:type|write|input|enter)\s+(.+)/);
   if (typeMatch)
     return { action: 'type', target: typeMatch[1].trim(), reply: 'Typing now.', query: '' };
 
@@ -347,8 +410,13 @@ export function createAuraService(cb: AuraServiceCallbacks): AuraServiceHandle {
   }
 
   // ── Wake-active management ─────────────────────────────────────────────────
+  // Fix #1: always reset hearingSound when deactivating so glow never sticks.
   function setWakeActiveLocal(active: boolean) {
     cb.setWakeActive(active);
+    if (!active) {
+      cb.setHearingSound(false); // guaranteed cleanup — glow off immediately
+      commandBuffer = '';
+    }
     if (wakeTimer) { clearTimeout(wakeTimer); wakeTimer = null; }
     if (active) {
       wakeTimer = setTimeout(() => {
@@ -389,6 +457,7 @@ export function createAuraService(cb: AuraServiceCallbacks): AuraServiceHandle {
   }
 
   // ── Wake trigger ───────────────────────────────────────────────────────────
+  // Fix #3: instant "Yes, Sir." — zero-latency via sayInstant(), no async wait.
   function triggerWake(afterText: string) {
     const now = Date.now();
     if (now - wakeFiredAt < WAKE_COOLDOWN_MS) return;
@@ -396,14 +465,15 @@ export function createAuraService(cb: AuraServiceCallbacks): AuraServiceHandle {
 
     playWakeSound();
     setWakeActiveLocal(true);
-    commandBuffer = '';
+
+    // Immediate spoken acknowledgement — fires before any voice-load delay
+    sayInstant('Yes, Sir.');
 
     if (afterText.length > 2) {
-      say('Yes, I am listening.');
-      setTimeout(() => processUtterance(afterText), 1200);
-    } else {
-      say('Yes, I am here. Ready for your command.');
+      // Command was already spoken after the wake word — process it fast
+      setTimeout(() => processUtterance(afterText), 800);
     }
+    // Otherwise just wait for user's next utterance (already armed)
   }
 
   // ── Recognition lifecycle ──────────────────────────────────────────────────
@@ -470,13 +540,13 @@ export function createAuraService(cb: AuraServiceCallbacks): AuraServiceHandle {
             commandBuffer = cleaned;
             cb.setHearingSound(true);
             if (pauseTimer) clearTimeout(pauseTimer);
-            // Auto-flush after 2.5 s silence (user stopped speaking mid-interim)
+            // Fix #4: auto-flush after 1.0 s silence — light-speed response
             pauseTimer = setTimeout(() => {
               if (commandBuffer.length > 2) {
                 processUtterance(commandBuffer);
                 commandBuffer = '';
               }
-            }, 2500);
+            }, 1000);
           }
         }
       }

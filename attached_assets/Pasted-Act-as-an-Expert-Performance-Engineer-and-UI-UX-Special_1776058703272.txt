@@ -1,0 +1,33 @@
+Act as an Expert Performance Engineer and UI/UX Specialist. We need to optimize the AURA AI Assistant in my Web OS. The current implementation has a state management bug, the UI is too clunky, and the response time is far too slow.
+
+Please implement the following 5 high-priority fixes:
+
+1. Fix State Management Bug (Infinite Glow)
+
+The green glowing effect currently stays on even after a task is completed.
+
+Fix: Implement a strict state reset. Ensure the listening and processing CSS classes are completely removed, and the UI returns to the neutral sleep state immediately after an action is executed, or if the STT engine times out or fails.
+
+2. Sleek & Colorful UI Redesign
+
+The current thick green glow is too heavy.
+
+Fix: Redesign the CSS for the active/listening state to be a "sleek and colourful design". Replace the heavy box-shadow with a thin, elegant, animated multi-color gradient border (e.g., cyber-neon style using background-clip or border-image). Keep the opacity subtle and premium.
+
+3. Instant Wake Response ("Yes, Sir")
+
+Fix: When the wake word "Hey Buddy" is detected, AURA must instantly (zero latency) reply with "Yes, Sir".
+
+Do not use network-dependent TTS for this specific reply. Use the fastest local window.speechSynthesis with pre-configured parameters, or play a pre-cached audio blob to ensure light-speed response.
+
+4. Ultra-Fast STT Processing (Reduce Latency)
+
+Fix: The current commandBuffer silence timer of 2.5 seconds is making the assistant feel sluggish. Reduce this timer to 1.0 second. As soon as the user stops speaking, it should immediately process the command.
+
+5. Aggressive Local Parsing for Tanglish Commands (Bypass LLM)
+
+Fix: The AI is slow because it's relying too much on the Gemini LLM for basic actions. Expand the "fast-path local parser" using RegEx to catch English, Tamil, and Tanglish phrases instantly.
+
+Add robust matchers for commands like: "open browser", "browser ah open panndra", "browser open pannu", "terminal open pannu", etc.
+
+If the local parser catches these keywords, execute the OS action deterministically and instantly, completely bypassing the Gemini API to achieve light-speed execution.

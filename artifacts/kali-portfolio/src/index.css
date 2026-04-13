@@ -177,17 +177,45 @@
     100% { --aura-glow-angle: 360deg; }
   }
 
-  @keyframes aura-wake-pulse {
-    0%   { opacity: 0.6;  box-shadow: inset 0 0 50px 12px rgba(0,240,255,0.18), inset 0 0 120px 40px rgba(0,200,255,0.08), 0 0 20px 4px rgba(0,240,255,0.22); }
-    25%  { opacity: 0.85; box-shadow: inset 0 0 80px 24px rgba(0,240,255,0.28), inset 0 0 160px 60px rgba(0,200,255,0.14), 0 0 40px 10px rgba(0,240,255,0.35); }
-    50%  { opacity: 1.0;  box-shadow: inset 0 0 100px 32px rgba(0,240,255,0.36), inset 0 0 200px 80px rgba(0,200,255,0.18), 0 0 60px 16px rgba(0,240,255,0.45); }
-    75%  { opacity: 0.85; box-shadow: inset 0 0 80px 24px rgba(0,240,255,0.28), inset 0 0 160px 60px rgba(0,200,255,0.14), 0 0 40px 10px rgba(0,240,255,0.35); }
-    100% { opacity: 0.6;  box-shadow: inset 0 0 50px 12px rgba(0,240,255,0.18), inset 0 0 120px 40px rgba(0,200,255,0.08), 0 0 20px 4px rgba(0,240,255,0.22); }
+  /* ── AURA Neon Border — Fix #2: sleek thin multi-color cycling border ──────── */
+  @property --aura-neon-hue {
+    syntax: '<angle>';
+    initial-value: 0deg;
+    inherits: false;
   }
-  @keyframes aura-wake-pulse-active {
-    0%   { opacity: 0.7;  box-shadow: inset 0 0 60px 16px rgba(52,211,153,0.22), inset 0 0 140px 50px rgba(0,255,180,0.10), 0 0 30px 6px rgba(52,211,153,0.32); }
-    50%  { opacity: 1.0;  box-shadow: inset 0 0 110px 36px rgba(52,211,153,0.40), inset 0 0 220px 90px rgba(0,255,180,0.20), 0 0 70px 18px rgba(52,211,153,0.55); }
-    100% { opacity: 0.7;  box-shadow: inset 0 0 60px 16px rgba(52,211,153,0.22), inset 0 0 140px 50px rgba(0,255,180,0.10), 0 0 30px 6px rgba(52,211,153,0.32); }
+  @keyframes aura-neon-spin {
+    to { --aura-neon-hue: 360deg; }
+  }
+  /* Idle/armed state — slow 3 s cycle, thin 1.5 px, subtle outer glow */
+  .aura-neon-border {
+    outline: 1.5px solid transparent;
+    outline-offset: -1.5px;
+    box-shadow:
+      0 0 0 1.5px hsl(calc(var(--aura-neon-hue)) 100% 60% / 0.85),
+      inset 0 0 0 1.5px hsl(calc(var(--aura-neon-hue)) 100% 60% / 0.85),
+      0 0 10px 2px hsl(calc(var(--aura-neon-hue)) 100% 60% / 0.30),
+      inset 0 0 18px 4px hsl(calc(var(--aura-neon-hue)) 100% 60% / 0.08);
+    animation: aura-neon-spin 3s linear infinite;
+  }
+  /* Listening/hearing state — fast 1 s cycle, slightly brighter */
+  .aura-neon-border-active {
+    outline: 2px solid transparent;
+    outline-offset: -2px;
+    box-shadow:
+      0 0 0 2px hsl(calc(var(--aura-neon-hue)) 100% 65% / 0.95),
+      inset 0 0 0 2px hsl(calc(var(--aura-neon-hue)) 100% 65% / 0.95),
+      0 0 16px 4px hsl(calc(var(--aura-neon-hue)) 100% 65% / 0.45),
+      inset 0 0 28px 8px hsl(calc(var(--aura-neon-hue)) 100% 65% / 0.12);
+    animation: aura-neon-spin 1s linear infinite;
+  }
+  /* Corner L-brackets */
+  .aura-corner {
+    color: hsl(calc(var(--aura-neon-hue)) 100% 60%);
+    animation: aura-neon-spin 3s linear infinite;
+  }
+  .aura-corner-active {
+    color: hsl(calc(var(--aura-neon-hue)) 100% 65%);
+    animation: aura-neon-spin 1s linear infinite;
   }
 
   .aura-text-glow {

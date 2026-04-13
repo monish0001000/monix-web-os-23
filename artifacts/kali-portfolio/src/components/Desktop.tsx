@@ -176,7 +176,30 @@ export default function Desktop() {
       setActiveWindow("");
     };
     window.addEventListener("aura-close-all", handleCloseAll);
-    return () => window.removeEventListener("aura-close-all", handleCloseAll);
+
+    // AURA voice "Type [text]" — inject text into focused input
+    const handleTypeText = (e: Event) => {
+      const text = (e as CustomEvent<{ text: string }>).detail?.text;
+      if (!text) return;
+      const el = document.activeElement as HTMLInputElement | HTMLTextAreaElement | null;
+      if (el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA")) {
+        const nativeSetter = Object.getOwnPropertyDescriptor(
+          el.tagName === "INPUT"
+            ? HTMLInputElement.prototype
+            : HTMLTextAreaElement.prototype,
+          "value"
+        )?.set;
+        const newVal = el.value + text;
+        nativeSetter?.call(el, newVal);
+        el.dispatchEvent(new Event("input", { bubbles: true }));
+      }
+    };
+    window.addEventListener("aura-type-text", handleTypeText);
+
+    return () => {
+      window.removeEventListener("aura-close-all", handleCloseAll);
+      window.removeEventListener("aura-type-text", handleTypeText);
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

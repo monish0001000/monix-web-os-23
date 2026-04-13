@@ -122,8 +122,9 @@ export default function TopPanel({ openWindows: _openWindows = [], onOpenWindow,
   const osVolume = useOSStore((s) => s.osVolume);
   const setOsVolume = useOSStore((s) => s.setOsVolume);
   const activeProcesses = useOSStore((s) => s.activeProcesses);
-  const auraMuted = useOSStore((s) => s.auraMuted);
+  const auraMuted      = useOSStore((s) => s.auraMuted);
   const toggleAuraMute = useOSStore((s) => s.toggleAuraMute);
+  const manualWakeAura = useOSStore((s) => s.manualWakeAura);
 
   // Clock + network + screen size
   useEffect(() => {
@@ -535,12 +536,13 @@ export default function TopPanel({ openWindows: _openWindows = [], onOpenWindow,
             )}
           </div>
 
-          {/* AURA Mute Toggle */}
+          {/* AURA Mute Toggle — single click mutes, double click manual wake */}
           <div
             className={btnClass}
-            title={auraMuted ? "AURA Muted — click to unmute" : "AURA Listening — click to mute"}
+            title={auraMuted ? "AURA Muted — click to unmute  |  double-click to force wake" : 'AURA Armed — click to mute  |  double-click to wake "Hey Buddy"'}
             onClick={() => toggleAuraMute()}
-            style={{ position: "relative" }}
+            onDoubleClick={(e) => { e.stopPropagation(); manualWakeAura(); }}
+            style={{ position: "relative", userSelect: "none" }}
           >
             {auraMuted
               ? <MicOff size={14} color="rgba(255,100,100,0.8)" />

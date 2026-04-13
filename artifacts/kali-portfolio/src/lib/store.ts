@@ -90,16 +90,19 @@ interface OSState {
   auraMuted: boolean;
   auraArmed: boolean;
   auraWakeActive: boolean;
+  auraHearingSound: boolean;
   auraMessages: AuraMessage[];
   setAuraMuted: (muted: boolean) => void;
   setAuraArmed: (armed: boolean) => void;
   setAuraWakeActive: (active: boolean) => void;
+  setAuraHearingSound: (v: boolean) => void;
   addAuraMessage: (msg: AuraMessage) => void;
   clearAuraMessages: () => void;
   setOpenWindowCallback: (fn: (id: string) => void) => void;
   startAuraListening: () => void;
   stopAuraListening: () => void;
   toggleAuraMute: () => void;
+  manualWakeAura: () => void;
 }
 
 export const useOSStore = create<OSState>((set, get) => ({
@@ -193,11 +196,10 @@ export const useOSStore = create<OSState>((set, get) => ({
     })),
 
   setKillCallback: (cb) => { _killCallbackRef = cb; },
+  killProcess:     (id) => { _killCallbackRef?.(id); },
 
-  killProcess: (id) => { _killCallbackRef?.(id); },
-
-  setLocked: (locked) => set({ isLocked: locked }),
-  setTaskbarPosition: (pos) => set({ taskbarPosition: pos }),
+  setLocked:          (locked) => set({ isLocked: locked }),
+  setTaskbarPosition: (pos)    => set({ taskbarPosition: pos }),
 
   setWallpaper: (path) =>
     set((state) => ({
@@ -217,41 +219,43 @@ export const useOSStore = create<OSState>((set, get) => ({
       wallpaperIndex: state.wallpapers.indexOf(state.defaultWallpaper),
     })),
 
-  setDefaultWallpaper: (path) =>
-    set({ defaultWallpaper: path, currentWallpaper: path }),
+  setDefaultWallpaper: (path) => set({ defaultWallpaper: path, currentWallpaper: path }),
 
-  setOsVolume: (vol) => set({ osVolume: Math.max(0, Math.min(100, vol)) }),
-  setBrightness: (val) => set({ brightness: Math.max(0, Math.min(150, val)) }),
-  setWarmth: (val) => set({ warmth: Math.max(0, Math.min(50, val)) }),
-  setCursorStyle: (style) => set({ cursorStyle: style }),
-  setCursorColor: (color) => set({ cursorColor: color }),
-  setThemeAccent: (color) => set({ themeAccent: color }),
+  setOsVolume:   (vol)   => set({ osVolume: Math.max(0, Math.min(100, vol)) }),
+  setBrightness: (val)   => set({ brightness: Math.max(0, Math.min(150, val)) }),
+  setWarmth:     (val)   => set({ warmth: Math.max(0, Math.min(50, val)) }),
+  setCursorStyle:(style) => set({ cursorStyle: style }),
+  setCursorColor:(color) => set({ cursorColor: color }),
+  setThemeAccent:(color) => set({ themeAccent: color }),
 
-  // AURA global state
-  auraMuted: false,
-  auraArmed: false,
-  auraWakeActive: false,
-  auraMessages: [],
-  setAuraMuted: (muted) => set({ auraMuted: muted }),
-  setAuraArmed:  (armed)  => set({ auraArmed: armed }),
-  setAuraWakeActive: (active) => set({ auraWakeActive: active }),
-  addAuraMessage: (msg) => set((state) => ({ auraMessages: [...state.auraMessages, msg] })),
-  clearAuraMessages: () => set({ auraMessages: [] }),
+  // ── AURA state ─────────────────────────────────────────────────────────────
+  auraMuted:        false,
+  auraArmed:        false,
+  auraWakeActive:   false,
+  auraHearingSound: false,
+  auraMessages:     [],
+
+  setAuraMuted:        (muted) => set({ auraMuted: muted }),
+  setAuraArmed:        (armed) => set({ auraArmed: armed }),
+  setAuraWakeActive:   (active) => set({ auraWakeActive: active }),
+  setAuraHearingSound: (v) => set({ auraHearingSound: v }),
+  addAuraMessage:      (msg) => set((s) => ({ auraMessages: [...s.auraMessages, msg] })),
+  clearAuraMessages:   () => set({ auraMessages: [] }),
 
   setOpenWindowCallback: (fn) => { _openWindowFn = fn; },
 
   startAuraListening: () => {
     if (_auraService) return;
-    const store = get();
     _auraService = createAuraService({
-      isArmed:      () => get().auraArmed,
-      isWakeActive: () => get().auraWakeActive,
-      isMuted:      () => get().auraMuted,
-      setArmed:     (v) => set({ auraArmed: v }),
-      setWakeActive:(v) => set({ auraWakeActive: v }),
-      addMessage:   (msg) => set((s) => ({ auraMessages: [...s.auraMessages, msg] })),
-      clearMessages:() => set({ auraMessages: [] }),
-      openWindow:   (id) => _openWindowFn?.(id),
+      isArmed:        () => get().auraArmed,
+      isWakeActive:   () => get().auraWakeActive,
+      isMuted:        () => get().auraMuted,
+      setArmed:       (v) => set({ auraArmed: v }),
+      setWakeActive:  (v) => set({ auraWakeActive: v }),
+      setHearingSound:(v) => set({ auraHearingSound: v }),
+      addMessage:     (msg) => set((s) => ({ auraMessages: [...s.auraMessages, msg] })),
+      clearMessages:  () => set({ auraMessages: [] }),
+      openWindow:     (id) => _openWindowFn?.(id),
     });
     _auraService.start();
   },
@@ -259,7 +263,7 @@ export const useOSStore = create<OSState>((set, get) => ({
   stopAuraListening: () => {
     _auraService?.stop();
     _auraService = null;
-    set({ auraArmed: false, auraWakeActive: false });
+    set({ auraArmed: false, auraWakeActive: false, auraHearingSound: false });
   },
 
   toggleAuraMute: () => {
@@ -268,9 +272,20 @@ export const useOSStore = create<OSState>((set, get) => ({
     if (muted) {
       _auraService?.stop();
       _auraService = null;
-      set({ auraArmed: false, auraWakeActive: false });
+      set({ auraArmed: false, auraWakeActive: false, auraHearingSound: false });
     } else {
       get().startAuraListening();
+    }
+  },
+
+  manualWakeAura: () => {
+    // If not yet armed, start the listener first then wake
+    if (!_auraService) {
+      get().startAuraListening();
+      // Give recognition a moment to init before waking
+      setTimeout(() => _auraService?.manualWake(), 600);
+    } else {
+      _auraService.manualWake();
     }
   },
 }));

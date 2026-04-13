@@ -168,26 +168,58 @@ export function sayInstant(text: string) {
   window.speechSynthesis.speak(u);
 }
 
+// ─── Tamil Unicode detector ───────────────────────────────────────────────────
+// Returns true when the text contains native Tamil script characters.
+function isTamilScript(text: string): boolean {
+  return /[\u0B80-\u0BFF]/.test(text);
+}
+
+// ─── Tamil/Indian voice picker ────────────────────────────────────────────────
+// Bug #3 fix: never use en-GB/en-US to read Tamil or Indian-English text.
+function pickTamilVoice(): SpeechSynthesisVoice | null {
+  const voices = window.speechSynthesis.getVoices();
+  // 1. Native Tamil voice (ta-IN)
+  const tamil = voices.find(v => v.lang === 'ta-IN');
+  if (tamil) return tamil;
+  // 2. Any Indian voice as fallback
+  const indian = voices.find(v => v.lang.endsWith('-IN'));
+  if (indian) return indian;
+  return null;
+}
+
 // ─── speak() — full quality TTS with preferred voice ─────────────────────────
-export function speak(text: string, preference: 'female' | 'male' = 'female') {
+// Bug #3 fix: detects Tamil text and uses ta-IN lang + Tamil voice.
+export function speak(text: string, preference: 'female' | 'male' = 'male') {
   if (!window.speechSynthesis) return;
+  // Fix #2 (overlap): always cancel before speaking
   window.speechSynthesis.cancel();
 
-  function doSpeak() {
-    const u     = new SpeechSynthesisUtterance(text);
-    const voice = preference === 'male' ? pickMaleVoice() : pickFemaleVoice();
-    if (voice) u.voice = voice;
+  const hasTamil   = isTamilScript(text);
 
-    if (preference === 'male') {
-      u.rate   = 0.92;
-      u.pitch  = 0.65;
-      u.volume = 1.0;
+  function doSpeak() {
+    const u = new SpeechSynthesisUtterance(text);
+
+    if (hasTamil) {
+      // Native Tamil script — use ta-IN voice; browser handles pronunciation
+      u.lang = 'ta-IN';
+      const tamilVoice = pickTamilVoice();
+      if (tamilVoice) u.voice = tamilVoice;
+      u.rate  = 0.90;
+      u.pitch = 1.0;
     } else {
-      u.rate   = 1.05;
-      u.pitch  = 1.25;
-      u.volume = 1.0;
+      // English or Tanglish — use preferred gender, always Indian English
+      const voice = preference === 'male' ? pickMaleVoice() : pickFemaleVoice();
+      if (voice) u.voice = voice;
+      u.lang = 'en-IN';
+      if (preference === 'male') {
+        u.rate  = 0.92;
+        u.pitch = 0.65;
+      } else {
+        u.rate  = 1.05;
+        u.pitch = 1.25;
+      }
     }
-    u.lang = 'en-IN';
+    u.volume = 1.0;
     window.speechSynthesis.speak(u);
   }
 
@@ -375,6 +407,8 @@ function fastParseCommand(lower: string): GeminiCommand | null {
 }
 
 // ─── Execute a structured command from Gemini or fast-path ───────────────────
+// Bug #2 fix: ONLY execute the exact commanded action — no side-effect windows.
+// 'answer' adds to chat but does NOT auto-open AURA unless explicitly asked.
 function executeCommand(
   cmd: GeminiCommand,
   cb: AuraServiceCallbacks,
@@ -383,21 +417,24 @@ function executeCommand(
   sendToAI: (text: string) => void,
 ) {
   switch (cmd.action) {
-    case 'open':
+    case 'open': {
+      const windowId = VOICE_APP_MAP[cmd.target] ?? cmd.target;
       if (VOICE_APP_MAP[cmd.target] || Object.values(VOICE_APP_MAP).includes(cmd.target)) {
         say(cmd.reply);
-        cb.openWindow(VOICE_APP_MAP[cmd.target] ?? cmd.target);
+        cb.openWindow(windowId); // opens ONLY the requested app — nothing else
       } else {
-        say('App not found: ' + cmd.target);
+        say('App not found.');
       }
       break;
+    }
 
     case 'search':
       say(cmd.reply);
       cb.openWindow('browser');
+      // Dispatch search after browser has mounted (~600ms is sufficient)
       setTimeout(() => window.dispatchEvent(
         new CustomEvent('aura-browser-search', { detail: { query: cmd.query } })
-      ), 900);
+      ), 600);
       break;
 
     case 'type':
@@ -412,12 +449,12 @@ function executeCommand(
 
     case 'voice_male':
       cb.setVoicePreference('male');
-      setTimeout(() => speak(cmd.reply, 'male'), 100);
+      speak(cmd.reply, 'male'); // no setTimeout needed — cancel() guards overlap
       break;
 
     case 'voice_female':
       cb.setVoicePreference('female');
-      setTimeout(() => speak(cmd.reply, 'female'), 100);
+      speak(cmd.reply, 'female');
       break;
 
     case 'clear_chat':
@@ -426,10 +463,14 @@ function executeCommand(
       break;
 
     case 'answer':
-    default:
-      say(cmd.reply);
+      // Conversational reply — add to chat and speak, but do NOT force AURA open
       cb.addMessage({ id: (Date.now() + 1).toString(), role: 'assistant', text: cmd.reply });
-      cb.openWindow('aura');
+      say(cmd.reply);
+      break;
+
+    default:
+      // Unknown action from LLM — just speak, no window side-effects
+      say(cmd.reply || 'Done.');
       break;
   }
   setWakeActive(false);

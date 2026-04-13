@@ -1,0 +1,27 @@
+Act as an Expert Web OS Architect and Senior Performance Engineer. We have 4 critical bugs in the AURA AI assistant that are completely ruining the user experience. You must analyze the codebase and fix these immediately to make it function like a true, ultra-fast Google Assistant:
+
+1. CSS Desktop Icon Displacement Bug (Strict Layout Isolation)
+
+The Bug: When the assistant executes an action (e.g., opening the browser), the desktop icons lose their layout and displace. Reloading the page temporarily fixes it.
+
+The Fix: Completely isolate the CSS of the desktop icon grid. Ensure the icon container uses strict styling (like position: absolute, or a fixed CSS Grid) that is entirely decoupled from the AI's state changes. Executing an action or changing the AI's state MUST NOT trigger a DOM reflow that breaks the desktop icons.
+
+2. The "Ghost" App Launch Bug (Strict Intent Execution)
+
+The Bug: When the user gives a command like "browser ah open pannu" (open browser), the assistant opens the browser but ALSO automatically launches the "Aura AI" app window on the desktop without being told to.
+
+The Fix: Audit the local parser and the intent router. The assistant must ONLY execute the exact commanded action. Remove any default fallbacks, event listeners, or side-effects that auto-launch the Aura UI. If the command is to open the browser, ONLY the browser should open. Do exactly what is commanded and nothing else.
+
+3. Terrible Tamil Pronunciation (Fixing the British Accent)
+
+The Bug: When the AI responds in Tamil or Tanglish, it uses a default Western/British TTS voice, which sounds terrible and unnatural.
+
+The Fix: Overhaul the window.speechSynthesis voice selection logic. You MUST explicitly filter the speechSynthesis.getVoices() array to find and prioritize native Indian voices.
+
+For Tamil or Tanglish responses, dynamically set utterance.lang = 'ta-IN' or en-IN and strictly select a matching voice. Never use en-GB or en-US to read Tamil text.
+
+4. Sluggish, High-Latency Conversations (Achieve Light-Speed)
+
+The Bug: The conversation feels incredibly slow compared to a real Google Assistant.
+
+The Fix: Optimize the Gemini LLM integration for speed. First, instruct the LLM in the system prompt to keep conversational replies extremely concise (under 10-15 words) to minimize generation time. Second, ensure the TTS engine fires instantly the millisecond the LLM returns the payload. Remove any artificial delays in the processing pipeline.

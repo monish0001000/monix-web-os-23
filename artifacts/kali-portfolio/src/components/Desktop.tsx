@@ -473,25 +473,32 @@ export default function Desktop() {
         )}
       </AnimatePresence>
 
-      {/* Desktop icons wrapper with refresh animation */}
+      {/* Desktop icons — absolutely isolated layer (z-0), never affected by windows */}
       <div
-        className={isRefreshing ? "cyber-glitch-refresh" : undefined}
         style={{
-          transformOrigin: "center center",
-          width: "100%",
-          height: "100%",
           position: "absolute",
           inset: 0,
-          pointerEvents: isRefreshing ? "none" : "auto",
+          zIndex: 0,
+          pointerEvents: "none",   // let clicks fall through to desktop bg
         }}
       >
-        <DesktopIcons
-          onOpenWindow={handleOpenWindow}
-          selectedIcon={selectedIcon}
-          onSelectIcon={setSelectedIcon}
-          dragConstraintsRef={desktopRef}
-          onLongPress={(x, y) => setContextMenu({ x, y })}
-        />
+        <div
+          className={isRefreshing ? "cyber-glitch-refresh" : undefined}
+          style={{
+            transformOrigin: "center center",
+            position: "absolute",
+            inset: 0,
+            pointerEvents: isRefreshing ? "none" : "auto",
+          }}
+        >
+          <DesktopIcons
+            onOpenWindow={handleOpenWindow}
+            selectedIcon={selectedIcon}
+            onSelectIcon={setSelectedIcon}
+            dragConstraintsRef={desktopRef}
+            onLongPress={(x, y) => setContextMenu({ x, y })}
+          />
+        </div>
       </div>
 
       {/* Selection box */}
@@ -512,6 +519,8 @@ export default function Desktop() {
         />
       )}
 
+      {/* App windows — separate layer above icons, never interferes with icon flex layout */}
+      <div style={{ position: "absolute", inset: 0, zIndex: 10, pointerEvents: "none" }}>
       <AnimatePresence>
         {getWin("terminal") && !getWin("terminal")!.minimized && (
           <Terminal
@@ -791,6 +800,7 @@ export default function Desktop() {
           />
         ))}
       </AnimatePresence>
+      </div>{/* end windows layer */}
 
       <AnimatePresence>
         {contextMenu && (

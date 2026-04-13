@@ -1,0 +1,37 @@
+@workspace We need to refine AURA's accuracy, add dynamic voice switching, and fix a critical dynamic layout shift bug on the Desktop. The desktop icons layout breaks/misplaces ONLY after an app is opened via the assistant, and fixes upon reload. Execute these steps precisely:
+
+1. Fix Dynamic Layout Shift (Desktop Icons Bug):
+
+The issue occurs because the opened App Windows are likely interfering with the Desktop Icons' flex container during re-renders.
+
+Open Desktop.tsx. You must strictly isolate the Icon Layer from the Window rendering layer.
+
+Create a dedicated, absolutely positioned wrapper for the icons: <div className="absolute inset-0 p-4 flex flex-col flex-wrap content-start gap-4 h-[calc(100vh-3rem)] z-0 pointer-events-none">
+
+Make sure the individual icons have pointer-events-auto so they are clickable.
+
+Ensure that the component rendering the Open Apps/Windows is in a completely separate sibling container with a higher z-index (e.g., <div className="absolute inset-0 z-10 pointer-events-none">...</div>).
+
+This guarantees that opening a window will NEVER push or alter the flex-wrap flow of the desktop icons.
+
+2. Fix Speech Recognition Accuracy & Tanglish Support:
+
+In AuraService.ts or the Voice Store, set recognition.lang = 'en-IN'; to perfectly catch Tamil, English, and Tanglish.
+
+Wait for full sentence: Do NOT execute commands based on interimResults. Wait until event.results[i].isFinal === true before parsing the transcript. This ensures AURA listens completely before doing operations.
+
+3. Dynamic Voice Switching (Macha/Machi Mode):
+
+Add a voicePreference state to the global Store (default 'female').
+
+Update the command parser:
+
+If user says "change voice into macha": Set state to 'male', and say "Done macha, I am your buddy now" in a deep male voice.
+
+If user says "change voice into machi": Set state to 'female', and say "Sure machi, I am here" in a clear female voice.
+
+Update the speak(text) utility to filter dynamically:
+
+Male ('macha'): Filter speechSynthesis.getVoices() for 'Male', 'David', or 'Google UK English Male'. Set pitch = 0.8.
+
+Female ('machi'): Filter for 'Female', 'Zira', 'Samantha', or 'Google US English'. Set pitch = 1.2.

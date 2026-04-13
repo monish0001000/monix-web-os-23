@@ -91,11 +91,13 @@ interface OSState {
   auraArmed: boolean;
   auraWakeActive: boolean;
   auraHearingSound: boolean;
+  auraVoicePreference: 'female' | 'male';
   auraMessages: AuraMessage[];
   setAuraMuted: (muted: boolean) => void;
   setAuraArmed: (armed: boolean) => void;
   setAuraWakeActive: (active: boolean) => void;
   setAuraHearingSound: (v: boolean) => void;
+  setAuraVoicePreference: (v: 'female' | 'male') => void;
   addAuraMessage: (msg: AuraMessage) => void;
   clearAuraMessages: () => void;
   setOpenWindowCallback: (fn: (id: string) => void) => void;
@@ -229,33 +231,37 @@ export const useOSStore = create<OSState>((set, get) => ({
   setThemeAccent:(color) => set({ themeAccent: color }),
 
   // ── AURA state ─────────────────────────────────────────────────────────────
-  auraMuted:        false,
-  auraArmed:        false,
-  auraWakeActive:   false,
-  auraHearingSound: false,
-  auraMessages:     [],
+  auraMuted:           false,
+  auraArmed:           false,
+  auraWakeActive:      false,
+  auraHearingSound:    false,
+  auraVoicePreference: 'female' as 'female' | 'male',
+  auraMessages:        [],
 
-  setAuraMuted:        (muted) => set({ auraMuted: muted }),
-  setAuraArmed:        (armed) => set({ auraArmed: armed }),
-  setAuraWakeActive:   (active) => set({ auraWakeActive: active }),
-  setAuraHearingSound: (v) => set({ auraHearingSound: v }),
-  addAuraMessage:      (msg) => set((s) => ({ auraMessages: [...s.auraMessages, msg] })),
-  clearAuraMessages:   () => set({ auraMessages: [] }),
+  setAuraMuted:           (muted)  => set({ auraMuted: muted }),
+  setAuraArmed:           (armed)  => set({ auraArmed: armed }),
+  setAuraWakeActive:      (active) => set({ auraWakeActive: active }),
+  setAuraHearingSound:    (v)      => set({ auraHearingSound: v }),
+  setAuraVoicePreference: (v)      => set({ auraVoicePreference: v }),
+  addAuraMessage:         (msg)    => set((s) => ({ auraMessages: [...s.auraMessages, msg] })),
+  clearAuraMessages:      ()       => set({ auraMessages: [] }),
 
   setOpenWindowCallback: (fn) => { _openWindowFn = fn; },
 
   startAuraListening: () => {
     if (_auraService) return;
     _auraService = createAuraService({
-      isArmed:        () => get().auraArmed,
-      isWakeActive:   () => get().auraWakeActive,
-      isMuted:        () => get().auraMuted,
-      setArmed:       (v) => set({ auraArmed: v }),
-      setWakeActive:  (v) => set({ auraWakeActive: v }),
-      setHearingSound:(v) => set({ auraHearingSound: v }),
-      addMessage:     (msg) => set((s) => ({ auraMessages: [...s.auraMessages, msg] })),
-      clearMessages:  () => set({ auraMessages: [] }),
-      openWindow:     (id) => _openWindowFn?.(id),
+      isArmed:            () => get().auraArmed,
+      isWakeActive:       () => get().auraWakeActive,
+      isMuted:            () => get().auraMuted,
+      getVoicePreference: () => get().auraVoicePreference,
+      setArmed:           (v) => set({ auraArmed: v }),
+      setWakeActive:      (v) => set({ auraWakeActive: v }),
+      setHearingSound:    (v) => set({ auraHearingSound: v }),
+      setVoicePreference: (v) => set({ auraVoicePreference: v }),
+      addMessage:         (msg) => set((s) => ({ auraMessages: [...s.auraMessages, msg] })),
+      clearMessages:      () => set({ auraMessages: [] }),
+      openWindow:         (id) => _openWindowFn?.(id),
     });
     _auraService.start();
   },

@@ -8,26 +8,28 @@ export interface AuraMessage {
 }
 
 export interface AuraServiceCallbacks {
-  isArmed:        () => boolean;
-  isWakeActive:   () => boolean;
-  isMuted:        () => boolean;
-  setArmed:       (v: boolean) => void;
-  setWakeActive:  (v: boolean) => void;
-  setHearingSound:(v: boolean) => void;
-  addMessage:     (msg: AuraMessage) => void;
-  clearMessages:  () => void;
-  openWindow:     (id: string) => void;
+  isArmed:            () => boolean;
+  isWakeActive:       () => boolean;
+  isMuted:            () => boolean;
+  getVoicePreference: () => 'female' | 'male';
+  setArmed:           (v: boolean) => void;
+  setWakeActive:      (v: boolean) => void;
+  setHearingSound:    (v: boolean) => void;
+  setVoicePreference: (v: 'female' | 'male') => void;
+  addMessage:         (msg: AuraMessage) => void;
+  clearMessages:      () => void;
+  openWindow:         (id: string) => void;
 }
 
 export interface AuraServiceHandle {
-  start:       () => void;
-  stop:        () => void;
-  manualWake:  () => void;
+  start:      () => void;
+  stop:       () => void;
+  manualWake: () => void;
 }
 
 // ─── Wake word ────────────────────────────────────────────────────────────────
-const WAKE_WORD       = 'hey buddy';
-const WAKE_WORD_RE    = /hey\s+buddy/i;
+const WAKE_WORD    = 'hey buddy';
+const WAKE_WORD_RE = /hey\s+buddy/i;
 
 // ─── App → Window ID map ─────────────────────────────────────────────────────
 export const VOICE_APP_MAP: Record<string, string> = {
@@ -49,7 +51,7 @@ export const VOICE_APP_MAP: Record<string, string> = {
   aura: 'aura',
 };
 
-// ─── Female voice picker ──────────────────────────────────────────────────────
+// ─── Voice pickers ────────────────────────────────────────────────────────────
 function pickFemaleVoice(): SpeechSynthesisVoice | null {
   const voices = window.speechSynthesis.getVoices();
   if (!voices.length) return null;
@@ -65,34 +67,55 @@ function pickFemaleVoice(): SpeechSynthesisVoice | null {
     'Tessa',
     'Fiona',
   ];
-
   for (const name of priority) {
     const v = voices.find(v => v.name === name);
     if (v) return v;
   }
-
-  const enUS = voices.filter(v => v.lang.startsWith('en'));
+  const en = voices.filter(v => v.lang.startsWith('en'));
   return (
-    enUS.find(v => /female|woman|girl|zira|jenny|ana|samantha|karen|moira|tessa|fiona/i.test(v.name)) ||
-    enUS[0] ||
-    voices[0] ||
-    null
+    en.find(v => /female|woman|zira|jenny|ana|samantha|karen|moira|tessa|fiona/i.test(v.name)) ||
+    en[0] || voices[0] || null
   );
 }
 
-// ─── speak() with clear female voice ─────────────────────────────────────────
-export function speak(text: string) {
+function pickMaleVoice(): SpeechSynthesisVoice | null {
+  const voices = window.speechSynthesis.getVoices();
+  if (!voices.length) return null;
+
+  const priority = [
+    'Google UK English Male',
+    'Microsoft David - English (United States)',
+    'Microsoft Mark - English (United States)',
+    'Microsoft James Online (Natural) - English (United Kingdom)',
+    'Daniel',
+    'Alex',
+    'Fred',
+  ];
+  for (const name of priority) {
+    const v = voices.find(v => v.name === name);
+    if (v) return v;
+  }
+  const en = voices.filter(v => v.lang.startsWith('en'));
+  return (
+    en.find(v => /male|man|david|daniel|alex|fred|james|mark/i.test(v.name)) ||
+    en[en.length - 1] || voices[0] || null
+  );
+}
+
+// ─── speak() — dynamically selects voice based on current preference ──────────
+// getPreference is injected so speak() always reads live state.
+export function speak(text: string, preference: 'female' | 'male' = 'female') {
   if (!window.speechSynthesis) return;
   window.speechSynthesis.cancel();
 
   function doSpeak() {
-    const u   = new SpeechSynthesisUtterance(text);
-    const voice = pickFemaleVoice();
+    const u     = new SpeechSynthesisUtterance(text);
+    const voice = preference === 'male' ? pickMaleVoice() : pickFemaleVoice();
     if (voice) u.voice = voice;
-    u.rate   = 1.0;   // clear, natural speed
-    u.pitch  = 1.2;   // distinctly female
+    u.rate   = 1.0;
+    u.pitch  = preference === 'male' ? 0.8 : 1.2;
     u.volume = 0.95;
-    u.lang   = 'en-US';
+    u.lang   = 'en-IN';   // supports Tanglish / Indian English accent recognition
     window.speechSynthesis.speak(u);
   }
 
@@ -127,17 +150,14 @@ export function playWakeSound() {
   } catch (_) {}
 }
 
-// ─── Sliding-window wake-word check ──────────────────────────────────────────
-// Returns the text that came AFTER the wake word, or null if no match.
+// ─── Sliding-window wake-word check (interim results only) ───────────────────
+// Returns the text after the wake word, or null if no match.
 function slidingWindowCheck(transcript: string): string | null {
-  const lower = transcript.toLowerCase();
-
-  // Check the last 5 words for the wake word (sliding window)
-  const words    = lower.trim().split(/\s+/);
-  const window5  = words.slice(-5).join(' ');
+  const lower   = transcript.toLowerCase().trim();
+  const words   = lower.split(/\s+/);
+  const window5 = words.slice(-5).join(' ');
 
   if (WAKE_WORD_RE.test(window5) || WAKE_WORD_RE.test(lower)) {
-    // Extract any command text that follows the wake word
     const match = lower.match(new RegExp(WAKE_WORD + '\\s*(.*)', 'i'));
     return match ? match[1].trim() : '';
   }
@@ -152,9 +172,13 @@ export function createAuraService(cb: AuraServiceCallbacks): AuraServiceHandle {
   let wakeTimer:    ReturnType<typeof setTimeout> | null = null;
   let aiDebounce:   ReturnType<typeof setTimeout> | null = null;
 
-  // Dedup guard — prevents the same spoken phrase from double-triggering wake
   let wakeFiredAt        = 0;
   const WAKE_COOLDOWN_MS = 3000;
+
+  // Shorthand to always speak with current voice preference
+  function say(text: string) {
+    speak(text, cb.getVoicePreference());
+  }
 
   // ── Wake-active management ─────────────────────────────────────────────────
   function setWakeActive(active: boolean) {
@@ -164,7 +188,7 @@ export function createAuraService(cb: AuraServiceCallbacks): AuraServiceHandle {
       wakeTimer = setTimeout(() => {
         cb.setWakeActive(false);
         cb.setHearingSound(false);
-        speak('Standing by, Sir.');
+        say('Standing by.');
       }, 18000);
     }
   }
@@ -181,7 +205,7 @@ export function createAuraService(cb: AuraServiceCallbacks): AuraServiceHandle {
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const reply = await res.text();
       cb.addMessage({ id: (Date.now() + 1).toString(), role: 'assistant', text: reply });
-      speak(reply.slice(0, 220));
+      say(reply.slice(0, 220));
     } catch (_) {
       cb.addMessage({
         id: (Date.now() + 1).toString(), role: 'assistant',
@@ -192,33 +216,47 @@ export function createAuraService(cb: AuraServiceCallbacks): AuraServiceHandle {
 
   // ── Command parser ─────────────────────────────────────────────────────────
   function parseCommand(transcript: string) {
-    // Strip any residual wake word fragments
     const clean = transcript.replace(WAKE_WORD_RE, '').trim();
     const lower = clean.toLowerCase();
 
     if (!lower || lower.length < 2) return;
 
-    // open [app]
+    // ── Voice switching: "change voice into macha" / "change voice into machi" ──
+    if (/change\s+voice\s+(into|to)\s+macha/i.test(lower)) {
+      cb.setVoicePreference('male');
+      // Respond in the new male voice
+      setTimeout(() => speak('Done macha, I am your buddy now.', 'male'), 100);
+      setWakeActive(false);
+      return;
+    }
+    if (/change\s+voice\s+(into|to)\s+machi/i.test(lower)) {
+      cb.setVoicePreference('female');
+      setTimeout(() => speak('Sure machi, I am here.', 'female'), 100);
+      setWakeActive(false);
+      return;
+    }
+
+    // ── open [app] ─────────────────────────────────────────────────────────
     const openMatch = lower.match(/^(?:please\s+)?open\s+(.+)/);
     if (openMatch) {
       const appKey = openMatch[1].replace(/\s+/g, ' ').trim();
       const appId  = VOICE_APP_MAP[appKey];
       if (appId) {
-        speak('Executing now, Sir.');
+        say('Executing now.');
         cb.openWindow(appId);
         setWakeActive(false);
         return;
       }
     }
 
-    // search [query] on google / search [query] / google [query]
+    // ── search [query] ─────────────────────────────────────────────────────
     const searchMatch =
       lower.match(/^search\s+(.+?)\s+on\s+google$/) ||
       lower.match(/^google\s+(.+)/)                  ||
       lower.match(/^search\s+(.+)/);
     if (searchMatch) {
       const query = searchMatch[1].trim();
-      speak('Executing now, Sir.');
+      say('Executing now.');
       cb.openWindow('browser');
       setTimeout(
         () => window.dispatchEvent(new CustomEvent('aura-browser-search', { detail: { query } })),
@@ -228,49 +266,48 @@ export function createAuraService(cb: AuraServiceCallbacks): AuraServiceHandle {
       return;
     }
 
-    // type [text] — finds the focused input and types
+    // ── type [text] ────────────────────────────────────────────────────────
     const typeMatch = lower.match(/^type\s+(.+)/);
     if (typeMatch) {
-      const textToType = typeMatch[1].trim();
-      speak('Typing now, Sir.');
-      window.dispatchEvent(new CustomEvent('aura-type-text', { detail: { text: textToType } }));
+      say('Typing now.');
+      window.dispatchEvent(new CustomEvent('aura-type-text', { detail: { text: typeMatch[1].trim() } }));
       setWakeActive(false);
       return;
     }
 
-    // tell me about / what is / explain
+    // ── tell me about / what is / explain ──────────────────────────────────
     const tellMatch = lower.match(/^(?:tell me about|what is|explain)\s+(.+)/);
     if (tellMatch) {
       const topic = tellMatch[1].trim();
       cb.addMessage({ id: Date.now().toString(), role: 'user', text: `Tell me about ${topic}` });
       cb.openWindow('aura');
-      speak('Executing now, Sir.');
+      say('Executing now.');
       setWakeActive(false);
       if (aiDebounce) clearTimeout(aiDebounce);
       aiDebounce = setTimeout(() => sendToAI(`Tell me about ${topic}`), 450);
       return;
     }
 
-    // clear chat
+    // ── clear chat ─────────────────────────────────────────────────────────
     if (/clear\s*(chat|aura|history)?/.test(lower)) {
       cb.clearMessages();
-      speak('Chat cleared, Sir.');
+      say('Chat cleared.');
       setWakeActive(false);
       return;
     }
 
-    // close all
+    // ── close all ──────────────────────────────────────────────────────────
     if (lower.includes('close all')) {
       window.dispatchEvent(new CustomEvent('aura-close-all'));
-      speak('All windows closed, Sir.');
+      say('All windows closed.');
       setWakeActive(false);
       return;
     }
 
-    // Generic AI query
+    // ── Generic AI query ───────────────────────────────────────────────────
     cb.addMessage({ id: Date.now().toString(), role: 'user', text: clean || transcript });
     cb.openWindow('aura');
-    speak('On it, Sir.');
+    say('On it.');
     if (aiDebounce) clearTimeout(aiDebounce);
     aiDebounce = setTimeout(() => sendToAI(clean || transcript), 450);
     setWakeActive(false);
@@ -286,10 +323,10 @@ export function createAuraService(cb: AuraServiceCallbacks): AuraServiceHandle {
     setWakeActive(true);
 
     if (afterText.length > 2) {
-      speak('Yes Sir, I am listening.');
+      say('Yes, I am listening.');
       setTimeout(() => parseCommand(afterText), 1300);
     } else {
-      speak('Yes Sir, I am here. Ready for your command.');
+      say('Yes, I am here. Ready for your command.');
     }
   }
 
@@ -300,14 +337,13 @@ export function createAuraService(cb: AuraServiceCallbacks): AuraServiceHandle {
     if (!API || recognition) return;
 
     const rec = new API();
-    rec.continuous     = true;
-    rec.interimResults = true;   // fire on PARTIAL speech → instant wake detection
-    rec.lang           = 'en-US';
+    rec.continuous      = true;
+    rec.interimResults  = true;   // needed to catch wake word on interim results
+    rec.lang            = 'en-IN'; // catches Tamil + English (Tanglish) accurately
     rec.maxAlternatives = 1;
 
     rec.onstart = () => { cb.setArmed(true); };
 
-    // Sound-level callbacks — used to pulse AuraBall in sync
     rec.onsoundstart = () => { if (cb.isWakeActive()) cb.setHearingSound(true); };
     rec.onsoundend   = () => { cb.setHearingSound(false); };
     rec.onspeechend  = () => { cb.setHearingSound(false); };
@@ -321,7 +357,7 @@ export function createAuraService(cb: AuraServiceCallbacks): AuraServiceHandle {
         const lower      = transcript.toLowerCase().trim();
         const isFinal    = result.isFinal;
 
-        // ── Wake word: check every chunk (interim + final) with sliding window ──
+        // ── Wake word: check INTERIM results via sliding window for instant trigger ──
         if (!cb.isWakeActive()) {
           const afterText = slidingWindowCheck(lower);
           if (afterText !== null) {
@@ -330,7 +366,7 @@ export function createAuraService(cb: AuraServiceCallbacks): AuraServiceHandle {
           }
         }
 
-        // ── Command: only final results to avoid noise ──
+        // ── Command: ONLY on isFinal===true — ensures full sentence accuracy ──
         if (isFinal && cb.isWakeActive()) {
           const cleaned = lower.replace(WAKE_WORD_RE, '').trim();
           if (cleaned.length > 1) {
@@ -344,7 +380,6 @@ export function createAuraService(cb: AuraServiceCallbacks): AuraServiceHandle {
       recognition = null;
       cb.setHearingSound(false);
       if (running && !cb.isMuted()) {
-        // Immediately restart — AURA must always be listening
         setTimeout(startRecognition, 250);
       } else {
         cb.setArmed(false);
@@ -362,7 +397,6 @@ export function createAuraService(cb: AuraServiceCallbacks): AuraServiceHandle {
         cb.setHearingSound(false);
         return;
       }
-      // Non-fatal (no-speech, network, aborted) — clear ref, let onend restart
       recognition = null;
       cb.setHearingSound(false);
     };

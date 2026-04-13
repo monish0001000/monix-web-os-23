@@ -527,6 +527,7 @@ export default function Desktop() {
             initialX={getInitialPosition("aura").x}
             initialY={getInitialPosition("aura").y}
             zIndex={getWin("aura")!.zIndex}
+            onOpenWindow={handleOpenWindow}
           />
         )}
 

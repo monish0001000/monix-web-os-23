@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight, ExternalLink, Shield } from "lucide-react";
 import WindowChrome from "./WindowChrome";
@@ -31,7 +31,30 @@ interface SentinelAppProps {
   zIndex?: number;
 }
 
-type Tab = "dashboard" | "gallery";
+type Tab = "dashboard" | "gallery" | "threatfeed";
+
+const ThreatFeedIframe = memo(function ThreatFeedIframe() {
+  return (
+    <div style={{ width: "100%", height: "100%", position: "relative", background: "#050a0e" }}>
+      <iframe
+        src="https://threatmap.checkpoint.com/ThreatPortal/livemap.html"
+        title="Check Point Global Threat Map"
+        style={{ width: "100%", height: "100%", border: "none", display: "block" }}
+        sandbox="allow-scripts allow-same-origin allow-popups"
+        referrerPolicy="no-referrer"
+      />
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          pointerEvents: "none",
+          background:
+            "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px)",
+        }}
+      />
+    </div>
+  );
+});
 
 export default function SentinelApp({
   onClose,
@@ -186,10 +209,11 @@ export default function SentinelApp({
             borderBottom: "1px solid rgba(255,255,255,0.07)",
           }}
         >
-          {(["dashboard", "gallery"] as Tab[]).map((tab) => {
+          {(["dashboard", "gallery", "threatfeed"] as Tab[]).map((tab) => {
             const labels: Record<Tab, string> = {
               dashboard: "⬡  Live Dashboard",
               gallery: "▶  Production Gallery",
+              threatfeed: "🌐  Global Threat Feed",
             };
             const isSelected = activeTab === tab;
             return (
@@ -255,6 +279,61 @@ export default function SentinelApp({
                     "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.04) 2px, rgba(0,0,0,0.04) 4px)",
                 }}
               />
+            </div>
+          )}
+
+          {/* Global Threat Feed */}
+          {activeTab === "threatfeed" && (
+            <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", background: "#050a0e" }}>
+              {/* Info bar */}
+              <div
+                style={{
+                  flexShrink: 0,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  padding: "6px 14px",
+                  background: "rgba(0,163,255,0.05)",
+                  borderBottom: "1px solid rgba(0,163,255,0.15)",
+                }}
+              >
+                <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#00ff88", boxShadow: "0 0 6px #00ff88", flexShrink: 0 }} />
+                <span style={{ fontSize: 10, color: "rgba(0,196,255,0.8)", fontFamily: "inherit", letterSpacing: "0.06em" }}>
+                  LIVE — Check Point Global Threat Intelligence Map
+                </span>
+                <a
+                  href="https://threatmap.checkpoint.com/ThreatPortal/livemap.html"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  style={{
+                    marginLeft: "auto",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 4,
+                    padding: "3px 10px",
+                    background: "rgba(0,163,255,0.1)",
+                    border: "1px solid rgba(0,163,255,0.3)",
+                    borderRadius: 4,
+                    color: "#00c4ff",
+                    fontSize: 10,
+                    fontWeight: 700,
+                    textDecoration: "none",
+                    letterSpacing: "0.05em",
+                    flexShrink: 0,
+                    transition: "background 0.15s",
+                  }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = "rgba(0,163,255,0.2)"; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = "rgba(0,163,255,0.1)"; }}
+                >
+                  <ExternalLink size={9} strokeWidth={2.2} />
+                  Open Full
+                </a>
+              </div>
+              {/* Memoized iframe */}
+              <div style={{ flex: 1, overflow: "hidden" }}>
+                <ThreatFeedIframe />
+              </div>
             </div>
           )}
 

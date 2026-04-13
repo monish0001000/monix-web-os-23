@@ -4,7 +4,7 @@ import ReactMarkdown from 'react-markdown';
 import {
   Send, Loader2, Sparkles, User, Bot,
   ArrowRight, Brain, Zap, Search, Image as ImageIcon,
-  Home, History, Settings, X, Github, Twitter, Moon, Sun,
+  Home, History, Settings, X, Github, Twitter, Moon, Sun, Mic, MicOff,
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import WindowChrome from './WindowChrome';
@@ -29,7 +29,26 @@ interface AuraAppProps {
   initialX?: number;
   initialY?: number;
   zIndex?: number;
+  onOpenWindow?: (id: string) => void;
 }
+
+const VOICE_APP_MAP: Record<string, string> = {
+  browser: 'browser', chrome: 'browser',
+  files: 'files', 'file manager': 'files', 'file explorer': 'files',
+  github: 'github',
+  portfolio: 'portfolio',
+  settings: 'settings',
+  sentinel: 'sentinel', soc: 'sentinel', 'sentinel soc': 'sentinel',
+  cyberchef: 'cyberchef', 'cyber chef': 'cyberchef',
+  'code studio': 'codestudio', codestudio: 'codestudio', 'code editor': 'codestudio',
+  chess: 'chess',
+  cykrypt: 'cykrypt',
+  'task manager': 'taskmanager', taskmanager: 'taskmanager',
+  terminal: 'terminal',
+  dossier: 'dossier', classified: 'dossier',
+  trash: 'trash',
+  'secure comm': 'securecomm', securecomm: 'securecomm',
+};
 
 // ── About Modal ─────────────────────────────────────────────────────────────
 
@@ -179,7 +198,7 @@ function SettingsModal({
 // ── Main App ────────────────────────────────────────────────────────────────
 
 export default function AuraApp({
-  onClose, onMinimize, isActive, onFocus, initialX, initialY, zIndex,
+  onClose, onMinimize, isActive, onFocus, initialX, initialY, zIndex, onOpenWindow,
 }: AuraAppProps) {
   const [isIntro, setIsIntro]           = useState(true);
   const [introFading, setIntroFading]   = useState(false);
@@ -191,8 +210,12 @@ export default function AuraApp({
   const [isDark, setIsDark]             = useState(true);
   const [showAbout, setShowAbout]       = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [isListening, setIsListening]   = useState(false);
 
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const bottomRef      = useRef<HTMLDivElement>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const recognitionRef = useRef<any>(null);
+  const debounceRef    = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Splash: show for 2500ms, then fade out and reveal
   useEffect(() => {
@@ -206,10 +229,19 @@ export default function AuraApp({
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isLoading]);
 
-  const handleSend = async () => {
-    const text = input.trim();
+  // Cleanup voice recognition on unmount
+  useEffect(() => {
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+        recognitionRef.current = null;
+      }
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, []);
+
+  const sendMessage = async (text: string) => {
     if (!text || isLoading) return;
-    setInput('');
 
     const userMsg: Message = { id: Date.now().toString(), role: 'user', text };
     setMessages(prev => [...prev, userMsg]);
@@ -220,13 +252,8 @@ export default function AuraApp({
       : 'You are AURA, an elite native AI assistant of MONIX Web OS. Speak with a dark cyberpunk hacker aesthetic. Be concise, technical, and direct.';
 
     try {
-      // 1. Build a single combined prompt string
       const fullPrompt = systemPromptText + '\nQuery: ' + text;
-
-      // 2. URL-encode to make it safe for a GET request
       const encodedPrompt = encodeURIComponent(fullPrompt);
-
-      // 3. Simple GET request — no JSON, no headers, no escaping issues
       const response = await fetch('https://text.pollinations.ai/' + encodedPrompt);
 
       if (!response.ok) {
@@ -234,14 +261,11 @@ export default function AuraApp({
         throw new Error(`HTTP ${response.status}`);
       }
 
-      // 4. Parse directly as plain text
       const auraText = await response.text();
-
       setMessages(prev => [
         ...prev,
         { id: (Date.now() + 1).toString(), role: 'assistant', text: auraText },
       ]);
-
     } catch (error) {
       console.error('AURA FETCH ERROR:', error);
       setMessages(prev => [
@@ -254,6 +278,80 @@ export default function AuraApp({
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleSend = async () => {
+    const text = input.trim();
+    if (!text) return;
+    setInput('');
+    await sendMessage(text);
+  };
+
+  const handleVoiceTranscript = (transcript: string) => {
+    const lower = transcript.toLowerCase().trim();
+
+    // "open [app]" command
+    const openMatch = lower.match(/^open\s+(.+)/);
+    if (openMatch && onOpenWindow) {
+      const appKey = openMatch[1].trim();
+      const appId = VOICE_APP_MAP[appKey];
+      if (appId) { onOpenWindow(appId); return; }
+    }
+
+    // "clear chat / clear terminal" command
+    if (lower === 'clear' || lower.includes('clear chat') || lower.includes('clear terminal') || lower.includes('clear history')) {
+      setMessages([]);
+      return;
+    }
+
+    // "close all" command
+    if (lower.includes('close all')) {
+      onClose();
+      return;
+    }
+
+    // Otherwise debounce and send as AI query
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      sendMessage(transcript.trim());
+    }, 500);
+  };
+
+  const toggleListening = () => {
+    if (isListening) {
+      recognitionRef.current?.stop();
+      setIsListening(false);
+      return;
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const SpeechRecognitionAPI = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognitionAPI) {
+      setMessages(prev => [...prev, {
+        id: Date.now().toString(), role: 'assistant',
+        text: '`VOICE ERROR` — Speech recognition is not supported in this browser. Use Chrome or Edge.',
+      }]);
+      return;
+    }
+    setView('conversation');
+    const recognition = new SpeechRecognitionAPI();
+    recognition.continuous = true;
+    recognition.interimResults = false;
+    recognition.lang = 'en-US';
+
+    recognition.onresult = (event: SpeechRecognitionEvent) => {
+      const transcript = Array.from(event.results)
+        .slice(event.resultIndex)
+        .filter((r: SpeechRecognitionResult) => r.isFinal)
+        .map((r: SpeechRecognitionResult) => r[0].transcript)
+        .join('');
+      if (transcript.trim()) handleVoiceTranscript(transcript.trim());
+    };
+    recognition.onend = () => setIsListening(false);
+    recognition.onerror = () => setIsListening(false);
+
+    recognitionRef.current = recognition;
+    recognition.start();
+    setIsListening(true);
   };
 
   return (
@@ -582,7 +680,27 @@ export default function AuraApp({
             <footer className="px-4 pb-4 pt-3 flex-shrink-0">
               <div className="max-w-2xl mx-auto">
                 <div className="relative group">
-                  <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-3xl opacity-20 group-focus-within:opacity-60 blur transition duration-500" />
+                  {/* Listening pulse ring */}
+                  {isListening && (
+                    <motion.div
+                      className="absolute -inset-1 rounded-3xl pointer-events-none"
+                      animate={{
+                        boxShadow: [
+                          '0 0 0 0px rgba(0,240,255,0.5)',
+                          '0 0 0 6px rgba(0,240,255,0.15)',
+                          '0 0 0 0px rgba(0,240,255,0)',
+                        ],
+                      }}
+                      transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
+                      style={{ border: '1.5px solid rgba(0,240,255,0.5)', borderRadius: '1.75rem' }}
+                    />
+                  )}
+                  <div className={cn(
+                    'absolute -inset-0.5 bg-gradient-to-r rounded-3xl blur transition duration-500',
+                    isListening
+                      ? 'from-cyan-400 via-cyan-500 to-cyan-400 opacity-50'
+                      : 'from-blue-500 via-purple-500 to-pink-500 opacity-20 group-focus-within:opacity-60'
+                  )} />
                   <div className="relative flex items-end gap-2 p-2 bg-zinc-950/90 backdrop-blur-3xl rounded-[1.75rem] shadow-2xl">
                     <textarea
                       value={input}
@@ -593,7 +711,7 @@ export default function AuraApp({
                           handleSend();
                         }
                       }}
-                      placeholder="Ask AURA anything…"
+                      placeholder={isListening ? '🎙 Listening… speak now' : 'Ask AURA anything…'}
                       rows={1}
                       disabled={isLoading}
                       className="flex-1 bg-transparent border-0 outline-none ring-0 text-white py-3 px-3 resize-none max-h-36 text-sm placeholder:text-zinc-600 disabled:opacity-50"
@@ -604,6 +722,22 @@ export default function AuraApp({
                         t.style.height = `${t.scrollHeight}px`;
                       }}
                     />
+                    {/* Mic button */}
+                    <button
+                      onClick={toggleListening}
+                      title={isListening ? 'Stop listening' : 'Voice input'}
+                      className={cn(
+                        'p-3 rounded-2xl transition-all flex items-center justify-center shrink-0',
+                        isListening
+                          ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/40 shadow-[0_0_16px_rgba(0,240,255,0.3)]'
+                          : 'text-zinc-600 hover:text-zinc-300 hover:bg-white/5'
+                      )}
+                    >
+                      {isListening
+                        ? <MicOff className="w-5 h-5" />
+                        : <Mic className="w-5 h-5" />
+                      }
+                    </button>
                     <button
                       onClick={handleSend}
                       disabled={isLoading || !input.trim()}
@@ -622,7 +756,9 @@ export default function AuraApp({
                   </div>
                 </div>
                 <p className="text-[8px] text-center text-zinc-700 font-black uppercase tracking-widest mt-2">
-                  AURA Intelligence • Powered by Gemini • MONIX OS
+                  {isListening
+                    ? '🎙 AURA Voice Active — say "open [app]", "clear chat", or ask anything'
+                    : 'AURA Intelligence • Powered by Pollinations • MONIX OS'}
                 </p>
               </div>
             </footer>

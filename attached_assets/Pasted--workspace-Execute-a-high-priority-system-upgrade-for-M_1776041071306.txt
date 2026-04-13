@@ -1,0 +1,22 @@
+**@workspace** Execute a high-priority system upgrade for MONIX OS focusing on SOC enhancement and Voice Integration:
+> **1. SOC App Enhancement (External Monitoring Dashboard):**
+>  * Modify the existing SOC application (src/components/apps/SOCApp.tsx).
+>  * Introduce a **Tabs System** inside the app: "System Logs" and "Global Threat Feed".
+>  * In the **"Global Threat Feed"** tab, integrate a real-time cybersecurity dashboard using an <iframe> to embed a live threat map (e.g., Check Point Threat Map).
+>  * **UI Polish:** Add a sidebar or top navigation inside the app window to switch between these views seamlessly.
+> **2. Ultra-Fast Voice Command for AURA (Web Speech API):**
+>  * Implement a native Voice Recognition system in the AURA AI component using the window.SpeechRecognition (or webkitSpeechRecognition) API for zero-latency local processing.
+>  * **Logic:** Add a microphone icon in the AURA chat input.
+>  * When active, it must continuously listen and convert speech to text instantly.
+>  * **Command Execution Engine:**
+>    * If the voice input contains words like "open [app name]", trigger the openApp action from the Store.
+>    * If the input is a question (e.g., "What is SQL Injection?"), automatically send it as a prompt to the AURA AI (Pollinations API).
+>    * If the input says "clear terminal" or "close all", execute the respective OS functions.
+>  * Provide visual feedback in the UI (e.g., a pulsating neon cyan ring) while AURA is listening.
+> **3. Component Integration:**
+>  * Ensure the SpeechRecognition instance is properly cleaned up (destroyed) when the AURA window is closed to prevent memory leaks and unnecessary microphone usage.
+>  * The SOC app must remain responsive and maintain the cyberpunk dark aesthetic with 100% width/height.
+> **4. Performance Optimization:**
+>  * Use React.memo for the Threat Map iframe to prevent unnecessary re-renders when the user switches tabs.
+>  * Apply a debounce to the voice-to-text input to ensure the AI doesn't trigger multiple times for the same sentence.
+> 

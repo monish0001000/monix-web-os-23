@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Tab, Download, Extension, HistoryEntry } from './types';
 import { TabBar } from './TabBar';
 import { NavigationBar } from './NavigationBar';
@@ -111,6 +111,17 @@ export function Browser() {
     setIsAIPanelOpen(true);
     setInitialAIQuery(query);
   };
+
+  useEffect(() => {
+    function onAuraSearch(e: Event) {
+      const query = (e as CustomEvent<{ query: string }>).detail?.query;
+      if (!query) return;
+      handleNavigate(`https://www.google.com/search?q=${encodeURIComponent(query)}&igu=1`);
+    }
+    window.addEventListener('aura-browser-search', onAuraSearch);
+    return () => window.removeEventListener('aura-browser-search', onAuraSearch);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTabId, isIncognito]);
 
   return (
     <div

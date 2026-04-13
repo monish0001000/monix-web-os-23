@@ -4,7 +4,7 @@ import ReactMarkdown from 'react-markdown';
 import {
   Send, Loader2, Sparkles, User, Bot,
   ArrowRight, Brain, Zap, Search, Image as ImageIcon,
-  Home, History, Settings, X, Github, Twitter, Moon, Sun,
+  Home, History, Settings, X, Github, Twitter, Moon, Sun, Mic, MicOff,
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import WindowChrome from './WindowChrome';
@@ -192,6 +192,37 @@ export default function AuraApp({
   const auraWakeActive  = useOSStore((s) => s.auraWakeActive);
 
   const bottomRef = useRef<HTMLDivElement>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const micRecRef = useRef<any>(null);
+  const [isMicListening, setIsMicListening] = useState(false);
+
+  function startMicInput() {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const API = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!API) return;
+    if (micRecRef.current) {
+      try { micRecRef.current.abort(); } catch (_) {}
+      micRecRef.current = null;
+      setIsMicListening(false);
+      return;
+    }
+    const rec = new API();
+    rec.continuous = false;
+    rec.interimResults = false;
+    rec.lang = 'en-US';
+    rec.onstart = () => setIsMicListening(true);
+    rec.onresult = (event: SpeechRecognitionEvent) => {
+      const text = Array.from(event.results)
+        .filter((r: SpeechRecognitionResult) => r.isFinal)
+        .map((r: SpeechRecognitionResult) => r[0].transcript)
+        .join('').trim();
+      if (text) setInput(prev => prev ? prev + ' ' + text : text);
+    };
+    rec.onend = () => { micRecRef.current = null; setIsMicListening(false); };
+    rec.onerror = () => { micRecRef.current = null; setIsMicListening(false); };
+    micRecRef.current = rec;
+    try { rec.start(); } catch (_) { micRecRef.current = null; setIsMicListening(false); }
+  }
 
   // Splash: show for 2500ms, then fade out and reveal
   useEffect(() => {
@@ -617,6 +648,21 @@ export default function AuraApp({
                         t.style.height = `${t.scrollHeight}px`;
                       }}
                     />
+                    <button
+                      onClick={startMicInput}
+                      title={isMicListening ? 'Stop mic' : 'Speak to AURA'}
+                      className={cn(
+                        'p-3 rounded-2xl transition-all flex items-center justify-center shrink-0',
+                        isMicListening
+                          ? 'bg-cyan-500/20 text-cyan-300 shadow-[0_0_14px_rgba(0,240,255,0.5)] animate-pulse'
+                          : 'bg-zinc-800/70 text-zinc-400 hover:text-cyan-300 hover:bg-cyan-500/10'
+                      )}
+                    >
+                      {isMicListening
+                        ? <MicOff className="w-4 h-4" />
+                        : <Mic className="w-4 h-4" />
+                      }
+                    </button>
                     <button
                       onClick={handleSend}
                       disabled={isLoading || !input.trim()}

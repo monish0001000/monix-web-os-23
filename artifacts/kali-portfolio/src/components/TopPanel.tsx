@@ -6,7 +6,6 @@ import {
   Wifi, WifiOff, FolderOpen, TerminalSquare, Monitor,
   Github, Trash2, Power, Globe, Sparkles, Mic, MicOff,
 } from "lucide-react";
-import { toggleAuraMute } from "@/lib/AuraService";
 import { SiFirefox } from "react-icons/si";
 import { useOSStore } from "@/lib/store";
 import StartMenu from "./StartMenu";
@@ -124,6 +123,7 @@ export default function TopPanel({ openWindows: _openWindows = [], onOpenWindow,
   const setOsVolume = useOSStore((s) => s.setOsVolume);
   const activeProcesses = useOSStore((s) => s.activeProcesses);
   const auraMuted = useOSStore((s) => s.auraMuted);
+  const toggleAuraMute = useOSStore((s) => s.toggleAuraMute);
 
   // Clock + network + screen size
   useEffect(() => {

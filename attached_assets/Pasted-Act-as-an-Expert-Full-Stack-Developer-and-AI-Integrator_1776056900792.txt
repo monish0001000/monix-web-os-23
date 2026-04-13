@@ -1,0 +1,47 @@
+Act as an Expert Full-Stack Developer and AI Integrator. I need to upgrade "Aura", the AI assistant operating inside my custom Web OS, to function at the level of Google Assistant. Please implement the following 5 core architectural upgrades to the existing Web OS codebase:
+
+1. Wake Word Engine Integration ("Hey Buddy")
+
+Replace the continuous active microphone state with an offline, lightweight wake-word listener (e.g., Picovoice Porcupine or a similar efficient Web Audio API solution).
+
+The microphone should remain in a low-resource sleep state until it specifically hears the wake word: "HEY BUDDY".
+
+Only trigger the main speech recognition engine after this wake word is successfully detected.
+
+2. Multi-Language Continuous Listening (STT)
+
+Upgrade the Speech-to-Text (STT) functionality to handle continuous listening without cutting off mid-sentence. Implement audio chunking if necessary.
+
+Ensure the STT engine (preferably integrating Whisper API or Google Cloud Speech-to-Text) can accurately understand English, Tamil, and "Tanglish" (Tamil + English mixed).
+
+The assistant must wait until the user has completely finished speaking before processing the command.
+
+3. Smart OS Operations & Strict State Management (LLM Brain)
+
+Route the transcribed text to an LLM (like Gemini API) to act as the "brain".
+
+The LLM must return structured JSON commands for the Web OS to execute (e.g., {"action": "open", "target": "browser"}).
+
+CRITICAL FIX: Implement strict state management for the CSS and DOM. When the assistant executes an action (like opening a browser window or reloading a component), the desktop icons and background elements MUST NOT displace or break their layout. Ensure absolute stability of the desktop grid.
+
+4. Dynamic & Expressive Text-to-Speech (TTS)
+
+Replace the default robotic browser speech synthesis with a high-quality TTS API (like ElevenLabs or Google TTS).
+
+Implement dynamic voice switching based on user commands:
+
+If the user says, "Change the voice into macha", switch parameters to a deep, loud, clear male voice.
+
+If the user says, "Change voice into machi", switch parameters to an attractive, loud, clear female voice.
+
+The audio playback must be natural, loud, and responsive.
+
+5. Immersive UI / UX Visual Feedback
+
+When the wake word "Hey Buddy" is triggered and the assistant is actively listening, add an immersive visual cue.
+
+Apply an attractive glowing CSS box-shadow animation around the entire outline of the Web OS screen.
+
+This glowing outline should pulse naturally while listening and seamlessly disappear once the assistant finishes its operation and returns to sleep mode.
+
+Please analyze the current codebase, ensure all necessary API keys are provisioned in .env, and provide the updated code for the audio handling, state management, LLM routing, and CSS animations

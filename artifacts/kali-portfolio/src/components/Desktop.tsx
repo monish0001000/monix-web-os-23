@@ -121,6 +121,7 @@ export default function Desktop() {
   const focusWindow = useOSStore((s) => s.focusWindow);
   const toggleMinimize = useOSStore((s) => s.toggleMinimize);
   const setKillCallback = useOSStore((s) => s.setKillCallback);
+  const auraWakeActive = useOSStore((s) => s.auraWakeActive);
 
   const computedCursor =
     cursorStyle === "crosshair" || cursorStyle === "target" ? "crosshair" : "default";

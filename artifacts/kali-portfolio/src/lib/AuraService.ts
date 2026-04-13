@@ -1,5 +1,10 @@
-// ─── AuraService — Pure factory, no store dependency ─────────────────────────
-// All store interaction is done via the callbacks injected at creation time.
+// ─── AuraService — Upgraded v2 ────────────────────────────────────────────────
+// 5-feature upgrade:
+//  1. Two-stage wake word detection (sleep → armed → active)
+//  2. Multi-language continuous listening (en-IN / Tamil / Tanglish)
+//  3. Gemini LLM brain with structured JSON OS commands
+//  4. Dynamic expressive TTS (macha = deep male, machi = female)
+//  5. Immersive glow feedback (handled in App.tsx / CSS)
 
 export interface AuraMessage {
   id: string;
@@ -28,8 +33,13 @@ export interface AuraServiceHandle {
 }
 
 // ─── Wake word ────────────────────────────────────────────────────────────────
-const WAKE_WORD    = 'hey buddy';
 const WAKE_WORD_RE = /hey\s+buddy/i;
+
+// ─── API base path ────────────────────────────────────────────────────────────
+function getApiBase(): string {
+  const base = import.meta.env.BASE_URL ?? '/';
+  return base.replace(/\/$/, '') + '/api';
+}
 
 // ─── App → Window ID map ─────────────────────────────────────────────────────
 export const VOICE_APP_MAP: Record<string, string> = {
@@ -49,23 +59,20 @@ export const VOICE_APP_MAP: Record<string, string> = {
   trash: 'trash',
   'secure comm': 'securecomm', securecomm: 'securecomm',
   aura: 'aura',
+  threatmap: 'threatmap', 'threat map': 'threatmap',
+  codepad: 'codepad', notepad: 'codepad',
 };
 
 // ─── Voice pickers ────────────────────────────────────────────────────────────
 function pickFemaleVoice(): SpeechSynthesisVoice | null {
   const voices = window.speechSynthesis.getVoices();
   if (!voices.length) return null;
-
   const priority = [
     'Google US English',
-    'Microsoft Zira - English (United States)',
     'Microsoft Jenny Online (Natural) - English (United States)',
     'Microsoft Ana Online (Natural) - English (United States)',
-    'Samantha',
-    'Karen',
-    'Moira',
-    'Tessa',
-    'Fiona',
+    'Microsoft Zira - English (United States)',
+    'Samantha', 'Karen', 'Moira', 'Tessa', 'Fiona',
   ];
   for (const name of priority) {
     const v = voices.find(v => v.name === name);
@@ -81,15 +88,12 @@ function pickFemaleVoice(): SpeechSynthesisVoice | null {
 function pickMaleVoice(): SpeechSynthesisVoice | null {
   const voices = window.speechSynthesis.getVoices();
   if (!voices.length) return null;
-
   const priority = [
     'Google UK English Male',
+    'Microsoft James Online (Natural) - English (United Kingdom)',
     'Microsoft David - English (United States)',
     'Microsoft Mark - English (United States)',
-    'Microsoft James Online (Natural) - English (United Kingdom)',
-    'Daniel',
-    'Alex',
-    'Fred',
+    'Daniel', 'Alex', 'Fred',
   ];
   for (const name of priority) {
     const v = voices.find(v => v.name === name);
@@ -102,8 +106,7 @@ function pickMaleVoice(): SpeechSynthesisVoice | null {
   );
 }
 
-// ─── speak() — dynamically selects voice based on current preference ──────────
-// getPreference is injected so speak() always reads live state.
+// ─── speak() ─────────────────────────────────────────────────────────────────
 export function speak(text: string, preference: 'female' | 'male' = 'female') {
   if (!window.speechSynthesis) return;
   window.speechSynthesis.cancel();
@@ -112,10 +115,17 @@ export function speak(text: string, preference: 'female' | 'male' = 'female') {
     const u     = new SpeechSynthesisUtterance(text);
     const voice = preference === 'male' ? pickMaleVoice() : pickFemaleVoice();
     if (voice) u.voice = voice;
-    u.rate   = 1.0;
-    u.pitch  = preference === 'male' ? 0.8 : 1.2;
-    u.volume = 0.95;
-    u.lang   = 'en-IN';   // supports Tanglish / Indian English accent recognition
+
+    if (preference === 'male') {
+      u.rate   = 0.92;
+      u.pitch  = 0.65;
+      u.volume = 1.0;
+    } else {
+      u.rate   = 1.05;
+      u.pitch  = 1.25;
+      u.volume = 1.0;
+    }
+    u.lang = 'en-IN';
     window.speechSynthesis.speak(u);
   }
 
@@ -129,12 +139,12 @@ export function speak(text: string, preference: 'female' | 'male' = 'female') {
   }
 }
 
-// ─── Wake chime ───────────────────────────────────────────────────────────────
+// ─── Wake chime (dual-tone) ───────────────────────────────────────────────────
 export function playWakeSound() {
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-    [[880, 0], [1100, 0.14]].forEach(([freq, delay]) => {
+    [[880, 0, 0.18], [1100, 0.14, 0.18], [1320, 0.28, 0.14]].forEach(([freq, delay, vol]) => {
       const osc  = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.connect(gain);
@@ -142,26 +152,178 @@ export function playWakeSound() {
       osc.type = 'sine';
       osc.frequency.value = freq;
       gain.gain.setValueAtTime(0, ctx.currentTime + delay);
-      gain.gain.linearRampToValueAtTime(0.15, ctx.currentTime + delay + 0.03);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + 0.25);
+      gain.gain.linearRampToValueAtTime(vol, ctx.currentTime + delay + 0.03);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + 0.3);
       osc.start(ctx.currentTime + delay);
-      osc.stop(ctx.currentTime + delay + 0.28);
+      osc.stop(ctx.currentTime + delay + 0.35);
     });
   } catch (_) {}
 }
 
-// ─── Sliding-window wake-word check (interim results only) ───────────────────
-// Returns the text after the wake word, or null if no match.
+// ─── Sliding-window wake-word check ──────────────────────────────────────────
 function slidingWindowCheck(transcript: string): string | null {
   const lower   = transcript.toLowerCase().trim();
   const words   = lower.split(/\s+/);
   const window5 = words.slice(-5).join(' ');
 
   if (WAKE_WORD_RE.test(window5) || WAKE_WORD_RE.test(lower)) {
-    const match = lower.match(new RegExp(WAKE_WORD + '\\s*(.*)', 'i'));
+    const match = lower.match(/hey\s+buddy\s*(.*)/i);
     return match ? match[1].trim() : '';
   }
   return null;
+}
+
+// ─── Gemini Brain: structured JSON command via API server ─────────────────────
+interface GeminiCommand {
+  action: string;
+  target: string;
+  reply:  string;
+  query:  string;
+}
+
+async function queryGeminiBrain(text: string, history: AuraMessage[]): Promise<GeminiCommand> {
+  const fallback: GeminiCommand = {
+    action: 'answer', target: '', query: '',
+    reply: 'Neural link degraded. Command received but mainframe unreachable.',
+  };
+
+  try {
+    const res = await fetch(`${getApiBase()}/aura/chat`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message: text,
+        history: history.slice(-6).map(m => ({ role: m.role, text: m.text })),
+      }),
+    });
+
+    if (!res.ok) {
+      // Fallback to Pollinations if API server down
+      return pollinationsFallback(text);
+    }
+
+    const data = await res.json() as GeminiCommand;
+    return data;
+  } catch {
+    return pollinationsFallback(text);
+  }
+}
+
+async function pollinationsFallback(text: string): Promise<GeminiCommand> {
+  try {
+    const prompt =
+      'You are AURA, the AI of MONIX Web OS. Reply in max 2 sentences, no markdown. Query: ' + text;
+    const res = await fetch('https://text.pollinations.ai/' + encodeURIComponent(prompt));
+    if (!res.ok) throw new Error('Pollinations fail');
+    const reply = (await res.text()).slice(0, 300);
+    return { action: 'answer', target: '', query: '', reply };
+  } catch {
+    return {
+      action: 'answer', target: '', query: '',
+      reply: 'Mainframe connection failed. Standing by.',
+    };
+  }
+}
+
+// ─── Local fast-path command parsing (runs before hitting the LLM) ───────────
+function fastParseCommand(lower: string): GeminiCommand | null {
+  // Voice switching
+  if (/change\s+voice\s+(into|to)\s+macha/i.test(lower))
+    return { action: 'voice_male', target: '', reply: 'Done macha, deep mode activated.', query: '' };
+  if (/change\s+voice\s+(into|to)\s+machi/i.test(lower))
+    return { action: 'voice_female', target: '', reply: 'Sure machi, I am here for you.', query: '' };
+
+  // Clear chat
+  if (/^clear\s*(chat|aura|history)?$/.test(lower))
+    return { action: 'clear_chat', target: '', reply: 'Chat cleared.', query: '' };
+
+  // Close all
+  if (/close\s*all/.test(lower))
+    return { action: 'close_all', target: '', reply: 'All windows closed.', query: '' };
+
+  // Open app — direct match
+  const openMatch = lower.match(/^(?:please\s+)?open\s+(.+)/);
+  if (openMatch) {
+    const key = openMatch[1].trim();
+    const id  = VOICE_APP_MAP[key];
+    if (id) return { action: 'open', target: id, reply: 'Launching ' + key + '.', query: '' };
+  }
+
+  // Search
+  const searchMatch =
+    lower.match(/^search\s+(.+?)\s+on\s+google$/) ||
+    lower.match(/^google\s+(.+)/)                  ||
+    lower.match(/^search\s+(.+)/);
+  if (searchMatch)
+    return { action: 'search', target: 'browser', reply: 'Searching now.', query: searchMatch[1].trim() };
+
+  // Type
+  const typeMatch = lower.match(/^type\s+(.+)/);
+  if (typeMatch)
+    return { action: 'type', target: typeMatch[1].trim(), reply: 'Typing now.', query: '' };
+
+  return null;
+}
+
+// ─── Execute a structured command from Gemini or fast-path ───────────────────
+function executeCommand(
+  cmd: GeminiCommand,
+  cb: AuraServiceCallbacks,
+  say: (t: string) => void,
+  setWakeActive: (v: boolean) => void,
+  sendToAI: (text: string) => void,
+) {
+  switch (cmd.action) {
+    case 'open':
+      if (VOICE_APP_MAP[cmd.target] || Object.values(VOICE_APP_MAP).includes(cmd.target)) {
+        say(cmd.reply);
+        cb.openWindow(VOICE_APP_MAP[cmd.target] ?? cmd.target);
+      } else {
+        say('App not found: ' + cmd.target);
+      }
+      break;
+
+    case 'search':
+      say(cmd.reply);
+      cb.openWindow('browser');
+      setTimeout(() => window.dispatchEvent(
+        new CustomEvent('aura-browser-search', { detail: { query: cmd.query } })
+      ), 900);
+      break;
+
+    case 'type':
+      say(cmd.reply);
+      window.dispatchEvent(new CustomEvent('aura-type-text', { detail: { text: cmd.target } }));
+      break;
+
+    case 'close_all':
+      say(cmd.reply);
+      window.dispatchEvent(new CustomEvent('aura-close-all'));
+      break;
+
+    case 'voice_male':
+      cb.setVoicePreference('male');
+      setTimeout(() => speak(cmd.reply, 'male'), 100);
+      break;
+
+    case 'voice_female':
+      cb.setVoicePreference('female');
+      setTimeout(() => speak(cmd.reply, 'female'), 100);
+      break;
+
+    case 'clear_chat':
+      cb.clearMessages();
+      say(cmd.reply);
+      break;
+
+    case 'answer':
+    default:
+      say(cmd.reply);
+      cb.addMessage({ id: (Date.now() + 1).toString(), role: 'assistant', text: cmd.reply });
+      cb.openWindow('aura');
+      break;
+  }
+  setWakeActive(false);
 }
 
 // ─── Service Factory ──────────────────────────────────────────────────────────
@@ -171,160 +333,74 @@ export function createAuraService(cb: AuraServiceCallbacks): AuraServiceHandle {
   let running          = false;
   let wakeTimer:    ReturnType<typeof setTimeout> | null = null;
   let aiDebounce:   ReturnType<typeof setTimeout> | null = null;
+  let commandBuffer = '';
+  let pauseTimer:   ReturnType<typeof setTimeout> | null = null;
 
   let wakeFiredAt        = 0;
   const WAKE_COOLDOWN_MS = 3000;
 
-  // Shorthand to always speak with current voice preference
+  // Local conversation history for context
+  const localHistory: AuraMessage[] = [];
+
   function say(text: string) {
     speak(text, cb.getVoicePreference());
   }
 
   // ── Wake-active management ─────────────────────────────────────────────────
-  function setWakeActive(active: boolean) {
+  function setWakeActiveLocal(active: boolean) {
     cb.setWakeActive(active);
     if (wakeTimer) { clearTimeout(wakeTimer); wakeTimer = null; }
     if (active) {
       wakeTimer = setTimeout(() => {
         cb.setWakeActive(false);
         cb.setHearingSound(false);
+        commandBuffer = '';
         say('Standing by.');
-      }, 18000);
+      }, 20000);
     }
   }
 
-  // ── AI fallback ────────────────────────────────────────────────────────────
-  async function sendToAI(text: string) {
-    const systemPrompt =
-      'You are AURA, an elite native AI of MONIX Web OS. Cyberpunk hacker aesthetic. Max 3 sentences. No markdown.';
-    try {
-      const res = await fetch(
-        'https://text.pollinations.ai/' +
-        encodeURIComponent(systemPrompt + '\nQuery: ' + text)
-      );
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-      const reply = await res.text();
-      cb.addMessage({ id: (Date.now() + 1).toString(), role: 'assistant', text: reply });
-      say(reply.slice(0, 220));
-    } catch (_) {
-      cb.addMessage({
-        id: (Date.now() + 1).toString(), role: 'assistant',
-        text: '`SYSTEM ERROR` — Mainframe connection failed.',
-      });
-    }
-  }
-
-  // ── Command parser ─────────────────────────────────────────────────────────
-  function parseCommand(transcript: string) {
+  // ── Process a complete utterance (called after pause or final result) ───────
+  async function processUtterance(transcript: string) {
+    if (pauseTimer) { clearTimeout(pauseTimer); pauseTimer = null; }
     const clean = transcript.replace(WAKE_WORD_RE, '').trim();
     const lower = clean.toLowerCase();
 
     if (!lower || lower.length < 2) return;
 
-    // ── Voice switching: "change voice into macha" / "change voice into machi" ──
-    if (/change\s+voice\s+(into|to)\s+macha/i.test(lower)) {
-      cb.setVoicePreference('male');
-      // Respond in the new male voice
-      setTimeout(() => speak('Done macha, I am your buddy now.', 'male'), 100);
-      setWakeActive(false);
-      return;
-    }
-    if (/change\s+voice\s+(into|to)\s+machi/i.test(lower)) {
-      cb.setVoicePreference('female');
-      setTimeout(() => speak('Sure machi, I am here.', 'female'), 100);
-      setWakeActive(false);
+    cb.addMessage({ id: Date.now().toString(), role: 'user', text: clean });
+    localHistory.push({ id: Date.now().toString(), role: 'user', text: clean });
+
+    // Fast-path local commands (no LLM needed)
+    const fastCmd = fastParseCommand(lower);
+    if (fastCmd) {
+      executeCommand(fastCmd, cb, say, setWakeActiveLocal, () => {});
       return;
     }
 
-    // ── open [app] ─────────────────────────────────────────────────────────
-    const openMatch = lower.match(/^(?:please\s+)?open\s+(.+)/);
-    if (openMatch) {
-      const appKey = openMatch[1].replace(/\s+/g, ' ').trim();
-      const appId  = VOICE_APP_MAP[appKey];
-      if (appId) {
-        say('Executing now.');
-        cb.openWindow(appId);
-        setWakeActive(false);
-        return;
-      }
-    }
-
-    // ── search [query] ─────────────────────────────────────────────────────
-    const searchMatch =
-      lower.match(/^search\s+(.+?)\s+on\s+google$/) ||
-      lower.match(/^google\s+(.+)/)                  ||
-      lower.match(/^search\s+(.+)/);
-    if (searchMatch) {
-      const query = searchMatch[1].trim();
-      say('Executing now.');
-      cb.openWindow('browser');
-      setTimeout(
-        () => window.dispatchEvent(new CustomEvent('aura-browser-search', { detail: { query } })),
-        900
-      );
-      setWakeActive(false);
-      return;
-    }
-
-    // ── type [text] ────────────────────────────────────────────────────────
-    const typeMatch = lower.match(/^type\s+(.+)/);
-    if (typeMatch) {
-      say('Typing now.');
-      window.dispatchEvent(new CustomEvent('aura-type-text', { detail: { text: typeMatch[1].trim() } }));
-      setWakeActive(false);
-      return;
-    }
-
-    // ── tell me about / what is / explain ──────────────────────────────────
-    const tellMatch = lower.match(/^(?:tell me about|what is|explain)\s+(.+)/);
-    if (tellMatch) {
-      const topic = tellMatch[1].trim();
-      cb.addMessage({ id: Date.now().toString(), role: 'user', text: `Tell me about ${topic}` });
-      cb.openWindow('aura');
-      say('Executing now.');
-      setWakeActive(false);
-      if (aiDebounce) clearTimeout(aiDebounce);
-      aiDebounce = setTimeout(() => sendToAI(`Tell me about ${topic}`), 450);
-      return;
-    }
-
-    // ── clear chat ─────────────────────────────────────────────────────────
-    if (/clear\s*(chat|aura|history)?/.test(lower)) {
-      cb.clearMessages();
-      say('Chat cleared.');
-      setWakeActive(false);
-      return;
-    }
-
-    // ── close all ──────────────────────────────────────────────────────────
-    if (lower.includes('close all')) {
-      window.dispatchEvent(new CustomEvent('aura-close-all'));
-      say('All windows closed.');
-      setWakeActive(false);
-      return;
-    }
-
-    // ── Generic AI query ───────────────────────────────────────────────────
-    cb.addMessage({ id: Date.now().toString(), role: 'user', text: clean || transcript });
-    cb.openWindow('aura');
+    // LLM brain: call Gemini via API server
     say('On it.');
     if (aiDebounce) clearTimeout(aiDebounce);
-    aiDebounce = setTimeout(() => sendToAI(clean || transcript), 450);
-    setWakeActive(false);
+    aiDebounce = setTimeout(async () => {
+      const cmd = await queryGeminiBrain(clean, localHistory);
+      localHistory.push({ id: (Date.now() + 1).toString(), role: 'assistant', text: cmd.reply });
+      executeCommand(cmd, cb, say, setWakeActiveLocal, () => {});
+    }, 350);
   }
 
-  // ── Wake trigger (from voice OR manual) ───────────────────────────────────
+  // ── Wake trigger ───────────────────────────────────────────────────────────
   function triggerWake(afterText: string) {
     const now = Date.now();
     if (now - wakeFiredAt < WAKE_COOLDOWN_MS) return;
     wakeFiredAt = now;
 
     playWakeSound();
-    setWakeActive(true);
+    setWakeActiveLocal(true);
+    commandBuffer = '';
 
     if (afterText.length > 2) {
       say('Yes, I am listening.');
-      setTimeout(() => parseCommand(afterText), 1300);
+      setTimeout(() => processUtterance(afterText), 1200);
     } else {
       say('Yes, I am here. Ready for your command.');
     }
@@ -338,15 +414,27 @@ export function createAuraService(cb: AuraServiceCallbacks): AuraServiceHandle {
 
     const rec = new API();
     rec.continuous      = true;
-    rec.interimResults  = true;   // needed to catch wake word on interim results
-    rec.lang            = 'en-IN'; // catches Tamil + English (Tanglish) accurately
-    rec.maxAlternatives = 1;
+    rec.interimResults  = true;
+    rec.lang            = 'en-IN';
+    rec.maxAlternatives = 3;
 
     rec.onstart = () => { cb.setArmed(true); };
 
-    rec.onsoundstart = () => { if (cb.isWakeActive()) cb.setHearingSound(true); };
-    rec.onsoundend   = () => { cb.setHearingSound(false); };
-    rec.onspeechend  = () => { cb.setHearingSound(false); };
+    rec.onsoundstart = () => {
+      if (cb.isWakeActive()) cb.setHearingSound(true);
+    };
+    rec.onsoundend = () => { cb.setHearingSound(false); };
+    rec.onspeechend = () => {
+      cb.setHearingSound(false);
+      // If we were collecting a command, flush it after speech ends
+      if (cb.isWakeActive() && commandBuffer.length > 2) {
+        if (pauseTimer) clearTimeout(pauseTimer);
+        pauseTimer = setTimeout(() => {
+          processUtterance(commandBuffer);
+          commandBuffer = '';
+        }, 600);
+      }
+    };
 
     rec.onresult = (event: SpeechRecognitionEvent) => {
       if (cb.isMuted()) return;
@@ -357,7 +445,7 @@ export function createAuraService(cb: AuraServiceCallbacks): AuraServiceHandle {
         const lower      = transcript.toLowerCase().trim();
         const isFinal    = result.isFinal;
 
-        // ── Wake word: check INTERIM results via sliding window for instant trigger ──
+        // ── Sleep mode: check INTERIM results for wake word ──────────────────
         if (!cb.isWakeActive()) {
           const afterText = slidingWindowCheck(lower);
           if (afterText !== null) {
@@ -366,11 +454,29 @@ export function createAuraService(cb: AuraServiceCallbacks): AuraServiceHandle {
           }
         }
 
-        // ── Command: ONLY on isFinal===true — ensures full sentence accuracy ──
-        if (isFinal && cb.isWakeActive()) {
-          const cleaned = lower.replace(WAKE_WORD_RE, '').trim();
-          if (cleaned.length > 1) {
-            parseCommand(transcript);
+        // ── Command mode: accumulate speech until pause ───────────────────────
+        if (cb.isWakeActive()) {
+          const cleaned = transcript.replace(WAKE_WORD_RE, '').trim();
+          if (!cleaned) continue;
+
+          if (isFinal) {
+            // Final result — flush immediately
+            const full = (commandBuffer + ' ' + cleaned).trim();
+            commandBuffer = '';
+            if (pauseTimer) { clearTimeout(pauseTimer); pauseTimer = null; }
+            if (full.length > 1) processUtterance(full);
+          } else {
+            // Interim — accumulate and reset pause timer
+            commandBuffer = cleaned;
+            cb.setHearingSound(true);
+            if (pauseTimer) clearTimeout(pauseTimer);
+            // Auto-flush after 2.5 s silence (user stopped speaking mid-interim)
+            pauseTimer = setTimeout(() => {
+              if (commandBuffer.length > 2) {
+                processUtterance(commandBuffer);
+                commandBuffer = '';
+              }
+            }, 2500);
           }
         }
       }
@@ -380,7 +486,7 @@ export function createAuraService(cb: AuraServiceCallbacks): AuraServiceHandle {
       recognition = null;
       cb.setHearingSound(false);
       if (running && !cb.isMuted()) {
-        setTimeout(startRecognition, 250);
+        setTimeout(startRecognition, 300);
       } else {
         cb.setArmed(false);
       }
@@ -420,11 +526,13 @@ export function createAuraService(cb: AuraServiceCallbacks): AuraServiceHandle {
       running = false;
       try { recognition?.abort(); } catch (_) {}
       recognition = null;
+      commandBuffer = '';
       cb.setArmed(false);
       cb.setWakeActive(false);
       cb.setHearingSound(false);
       if (wakeTimer)  { clearTimeout(wakeTimer);  wakeTimer  = null; }
       if (aiDebounce) { clearTimeout(aiDebounce); aiDebounce = null; }
+      if (pauseTimer) { clearTimeout(pauseTimer); pauseTimer = null; }
     },
     manualWake() {
       triggerWake('');

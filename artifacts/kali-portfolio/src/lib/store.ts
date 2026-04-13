@@ -1,6 +1,12 @@
 import { create } from "zustand";
 import { type VFSNode, scanStorage } from "./vfsUtils";
 
+export interface AuraMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  text: string;
+}
+
 export const WALLPAPERS: string[] = [
   "/wallpaper_1.webp",
   "/wallpaper_2.webp",
@@ -78,6 +84,15 @@ interface OSState {
   setCursorStyle: (style: string) => void;
   setCursorColor: (color: string) => void;
   setThemeAccent: (color: string) => void;
+
+  // AURA global state
+  auraMuted: boolean;
+  auraWakeActive: boolean;
+  auraMessages: AuraMessage[];
+  setAuraMuted: (muted: boolean) => void;
+  setAuraWakeActive: (active: boolean) => void;
+  addAuraMessage: (msg: AuraMessage) => void;
+  clearAuraMessages: () => void;
 }
 
 export const useOSStore = create<OSState>((set, get) => ({
@@ -204,4 +219,13 @@ export const useOSStore = create<OSState>((set, get) => ({
   setCursorStyle: (style) => set({ cursorStyle: style }),
   setCursorColor: (color) => set({ cursorColor: color }),
   setThemeAccent: (color) => set({ themeAccent: color }),
+
+  // AURA global state
+  auraMuted: false,
+  auraWakeActive: false,
+  auraMessages: [],
+  setAuraMuted: (muted) => set({ auraMuted: muted }),
+  setAuraWakeActive: (active) => set({ auraWakeActive: active }),
+  addAuraMessage: (msg) => set((state) => ({ auraMessages: [...state.auraMessages, msg] })),
+  clearAuraMessages: () => set({ auraMessages: [] }),
 }));

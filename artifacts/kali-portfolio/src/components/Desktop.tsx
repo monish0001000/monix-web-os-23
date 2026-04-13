@@ -26,6 +26,8 @@ import RightClickMenu from "./RightClickMenu";
 import { playClickSound, playCloseSound } from "@/utils/SoundEngine";
 import MediaViewerApp, { type MediaType } from "./MediaViewerApp";
 import { useOSStore } from "@/lib/store";
+import { startAuraService, stopAuraService } from "@/lib/AuraService";
+import { toast } from "sonner";
 
 // ── Process info registry ─────────────────────────────────────────────────────
 const PROCESS_INFO: Record<string, { name: string; icon: string }> = {
@@ -113,6 +115,7 @@ export default function Desktop() {
   const cursorStyle = useOSStore((s) => s.cursorStyle);
   const cursorColor = useOSStore((s) => s.cursorColor);
   const preloadLocalFS = useOSStore((s) => s.preloadLocalFS);
+  const auraWakeActive = useOSStore((s) => s.auraWakeActive);
   const registerProcess = useOSStore((s) => s.registerProcess);
   const unregisterProcess = useOSStore((s) => s.unregisterProcess);
   const updateProcessMinimized = useOSStore((s) => s.updateProcessMinimized);
@@ -123,8 +126,9 @@ export default function Desktop() {
   const computedCursor =
     cursorStyle === "crosshair" || cursorStyle === "target" ? "crosshair" : "default";
 
-  // Stable ref so the kill callback never closes over stale state
+  // Stable refs so callbacks never close over stale state
   const handleCloseWindowRef = useRef<(id: string) => void>(() => {});
+  const handleOpenWindowRef  = useRef<(id: string) => void>(() => {});
 
   // Preload the static VFS once on desktop mount (synchronous — zero UI delay)
   useEffect(() => {
@@ -161,6 +165,32 @@ export default function Desktop() {
     };
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  // ── AURA Global Background Service ───────────────────────────────────────
+  useEffect(() => {
+    const openWindowStable = (id: string) => handleOpenWindowRef.current(id);
+    const delay = setTimeout(() => {
+      startAuraService(openWindowStable);
+      toast("AURA Intelligence System Active", {
+        description: "Say 'Hey Aura' to begin. The system is always listening.",
+        duration: 6000,
+        icon: "🎙",
+      });
+    }, 2000);
+
+    const handleCloseAll = () => {
+      setWindows([]);
+      setActiveWindow("");
+    };
+    window.addEventListener("aura-close-all", handleCloseAll);
+
+    return () => {
+      clearTimeout(delay);
+      stopAuraService();
+      window.removeEventListener("aura-close-all", handleCloseAll);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const bringToFront = (id: string) => {
@@ -210,8 +240,9 @@ export default function Desktop() {
     unregisterProcess(id);
   };
 
-  // Keep ref in sync so the kill callback is never stale
+  // Keep refs in sync so callbacks are never stale
   handleCloseWindowRef.current = handleCloseWindow;
+  handleOpenWindowRef.current  = handleOpenWindow;
 
   const handleMinimizeWindow = (id: string) => {
     setWindows((prev) => prev.map((w) => (w.id === id ? { ...w, minimized: true } : w)));
@@ -385,6 +416,29 @@ export default function Desktop() {
         onTouchEnd={handleTouchEnd}
         onTouchMove={handleTouchMove}
       >
+      {/* AURA Wake-Mode Global Glow Overlay */}
+      <AnimatePresence>
+        {auraWakeActive && (
+          <motion.div
+            key="aura-wake-glow"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            style={{
+              position: "absolute",
+              inset: 0,
+              zIndex: 9999,
+              pointerEvents: "none",
+              boxShadow: "inset 0 0 60px 12px rgba(0,240,255,0.35), inset 0 0 120px 30px rgba(0,200,255,0.15)",
+              border: "2px solid rgba(0,240,255,0.5)",
+              borderRadius: 0,
+              animation: "aura-wake-pulse 1.6s ease-in-out infinite",
+            }}
+          />
+        )}
+      </AnimatePresence>
+
       {/* Desktop icons wrapper with refresh animation */}
       <div
         className={isRefreshing ? "cyber-glitch-refresh" : undefined}

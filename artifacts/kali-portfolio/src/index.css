@@ -177,6 +177,21 @@
     100% { --aura-glow-angle: 360deg; }
   }
 
+  @keyframes aura-wake-pulse {
+    0%, 100% {
+      box-shadow:
+        inset 0 0 50px 10px rgba(0,240,255,0.28),
+        inset 0 0 100px 24px rgba(0,200,255,0.10);
+      border-color: rgba(0,240,255,0.45);
+    }
+    50% {
+      box-shadow:
+        inset 0 0 80px 18px rgba(0,240,255,0.45),
+        inset 0 0 140px 40px rgba(0,200,255,0.20);
+      border-color: rgba(0,240,255,0.75);
+    }
+  }
+
   .aura-text-glow {
     text-shadow:
       0 0 10px rgba(168, 85, 247, 0.5),

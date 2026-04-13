@@ -4,8 +4,9 @@ import { format } from "date-fns";
 import {
   Volume2, VolumeX, Bell, BatteryCharging, Battery,
   Wifi, WifiOff, FolderOpen, TerminalSquare, Monitor,
-  Github, Trash2, Power, Globe, Sparkles
+  Github, Trash2, Power, Globe, Sparkles, Mic, MicOff,
 } from "lucide-react";
+import { toggleAuraMute } from "@/lib/AuraService";
 import { SiFirefox } from "react-icons/si";
 import { useOSStore } from "@/lib/store";
 import StartMenu from "./StartMenu";
@@ -122,6 +123,7 @@ export default function TopPanel({ openWindows: _openWindows = [], onOpenWindow,
   const osVolume = useOSStore((s) => s.osVolume);
   const setOsVolume = useOSStore((s) => s.setOsVolume);
   const activeProcesses = useOSStore((s) => s.activeProcesses);
+  const auraMuted = useOSStore((s) => s.auraMuted);
 
   // Clock + network + screen size
   useEffect(() => {
@@ -531,6 +533,19 @@ export default function TopPanel({ openWindows: _openWindows = [], onOpenWindow,
                 </div>
               </div>
             )}
+          </div>
+
+          {/* AURA Mute Toggle */}
+          <div
+            className={btnClass}
+            title={auraMuted ? "AURA Muted — click to unmute" : "AURA Listening — click to mute"}
+            onClick={() => toggleAuraMute()}
+            style={{ position: "relative" }}
+          >
+            {auraMuted
+              ? <MicOff size={14} color="rgba(255,100,100,0.8)" />
+              : <Mic    size={14} color="rgba(0,240,255,0.85)"  style={{ filter: "drop-shadow(0 0 4px rgba(0,240,255,0.6))" }} />
+            }
           </div>
 
           <div style={{ width: 1, height: 22, background: "rgba(255,255,255,0.1)" }} />

@@ -410,19 +410,43 @@ export default function Desktop() {
             key="aura-wake-glow"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
+            exit={{ opacity: 0, transition: { duration: 0.25 } }}
+            transition={{ duration: 0.22 }}
             style={{
-              position: "absolute",
+              position: "fixed",
               inset: 0,
               zIndex: 9999,
               pointerEvents: "none",
-              boxShadow: "inset 0 0 60px 12px rgba(0,240,255,0.35), inset 0 0 120px 30px rgba(0,200,255,0.15)",
-              border: "2px solid rgba(0,240,255,0.5)",
-              borderRadius: 0,
-              animation: "aura-wake-pulse 1.6s ease-in-out infinite",
+              animation: "aura-wake-pulse 1.5s ease-in-out infinite",
             }}
-          />
+          >
+            {/* Full-border glow frame */}
+            <div style={{
+              position: "absolute",
+              inset: 0,
+              border: "2.5px solid rgba(0,240,255,0.72)",
+              boxShadow:
+                "0 0 30px 8px rgba(0,240,255,0.28), " +
+                "inset 0 0 90px 22px rgba(0,220,255,0.09)",
+              pointerEvents: "none",
+            }} />
+            {/* Corner accent — top-left */}
+            <div style={{ position:"absolute", top:0, left:0, width:32, height:32,
+              borderTop:"3px solid rgba(0,240,255,0.95)", borderLeft:"3px solid rgba(0,240,255,0.95)",
+              boxShadow:"0 0 18px 4px rgba(0,240,255,0.55)", pointerEvents:"none" }} />
+            {/* Corner accent — top-right */}
+            <div style={{ position:"absolute", top:0, right:0, width:32, height:32,
+              borderTop:"3px solid rgba(0,240,255,0.95)", borderRight:"3px solid rgba(0,240,255,0.95)",
+              boxShadow:"0 0 18px 4px rgba(0,240,255,0.55)", pointerEvents:"none" }} />
+            {/* Corner accent — bottom-left */}
+            <div style={{ position:"absolute", bottom:0, left:0, width:32, height:32,
+              borderBottom:"3px solid rgba(0,240,255,0.95)", borderLeft:"3px solid rgba(0,240,255,0.95)",
+              boxShadow:"0 0 18px 4px rgba(0,240,255,0.55)", pointerEvents:"none" }} />
+            {/* Corner accent — bottom-right */}
+            <div style={{ position:"absolute", bottom:0, right:0, width:32, height:32,
+              borderBottom:"3px solid rgba(0,240,255,0.95)", borderRight:"3px solid rgba(0,240,255,0.95)",
+              boxShadow:"0 0 18px 4px rgba(0,240,255,0.55)", pointerEvents:"none" }} />
+          </motion.div>
         )}
       </AnimatePresence>
 

@@ -121,8 +121,6 @@ export default function Desktop() {
   const focusWindow = useOSStore((s) => s.focusWindow);
   const toggleMinimize = useOSStore((s) => s.toggleMinimize);
   const setKillCallback = useOSStore((s) => s.setKillCallback);
-  const auraWakeActive = useOSStore((s) => s.auraWakeActive);
-
   const computedCursor =
     cursorStyle === "crosshair" || cursorStyle === "target" ? "crosshair" : "default";
 
@@ -426,52 +424,6 @@ export default function Desktop() {
         onTouchEnd={handleTouchEnd}
         onTouchMove={handleTouchMove}
       >
-      {/* AURA Wake-Mode Global Glow Overlay */}
-      <AnimatePresence>
-        {auraWakeActive && (
-          <motion.div
-            key="aura-wake-glow"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0, transition: { duration: 0.25 } }}
-            transition={{ duration: 0.22 }}
-            style={{
-              position: "fixed",
-              inset: 0,
-              zIndex: 9999,
-              pointerEvents: "none",
-              animation: "aura-wake-pulse 1.5s ease-in-out infinite",
-            }}
-          >
-            {/* Full-border glow frame */}
-            <div style={{
-              position: "absolute",
-              inset: 0,
-              border: "2.5px solid rgba(0,240,255,0.72)",
-              boxShadow:
-                "0 0 30px 8px rgba(0,240,255,0.28), " +
-                "inset 0 0 90px 22px rgba(0,220,255,0.09)",
-              pointerEvents: "none",
-            }} />
-            {/* Corner accent — top-left */}
-            <div style={{ position:"absolute", top:0, left:0, width:32, height:32,
-              borderTop:"3px solid rgba(0,240,255,0.95)", borderLeft:"3px solid rgba(0,240,255,0.95)",
-              boxShadow:"0 0 18px 4px rgba(0,240,255,0.55)", pointerEvents:"none" }} />
-            {/* Corner accent — top-right */}
-            <div style={{ position:"absolute", top:0, right:0, width:32, height:32,
-              borderTop:"3px solid rgba(0,240,255,0.95)", borderRight:"3px solid rgba(0,240,255,0.95)",
-              boxShadow:"0 0 18px 4px rgba(0,240,255,0.55)", pointerEvents:"none" }} />
-            {/* Corner accent — bottom-left */}
-            <div style={{ position:"absolute", bottom:0, left:0, width:32, height:32,
-              borderBottom:"3px solid rgba(0,240,255,0.95)", borderLeft:"3px solid rgba(0,240,255,0.95)",
-              boxShadow:"0 0 18px 4px rgba(0,240,255,0.55)", pointerEvents:"none" }} />
-            {/* Corner accent — bottom-right */}
-            <div style={{ position:"absolute", bottom:0, right:0, width:32, height:32,
-              borderBottom:"3px solid rgba(0,240,255,0.95)", borderRight:"3px solid rgba(0,240,255,0.95)",
-              boxShadow:"0 0 18px 4px rgba(0,240,255,0.55)", pointerEvents:"none" }} />
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* Desktop icons — absolutely isolated layer (z-0), never affected by windows */}
       <div

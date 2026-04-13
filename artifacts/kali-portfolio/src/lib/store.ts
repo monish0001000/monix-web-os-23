@@ -1,11 +1,8 @@
 import { create } from "zustand";
 import { type VFSNode, scanStorage } from "./vfsUtils";
+import { createAuraService, type AuraServiceHandle, type AuraMessage } from "./AuraService";
 
-export interface AuraMessage {
-  id: string;
-  role: 'user' | 'assistant';
-  text: string;
-}
+export type { AuraMessage };
 
 export const WALLPAPERS: string[] = [
   "/wallpaper_1.webp",
@@ -38,6 +35,10 @@ export interface OSProcess {
 }
 
 let _killCallbackRef: ((id: string) => void) | null = null;
+
+// ─── AURA singleton (lives outside Zustand so it survives re-renders) ────────
+let _auraService: AuraServiceHandle | null = null;
+let _openWindowFn: ((id: string) => void) | null = null;
 
 interface OSState {
   isLocked: boolean;
@@ -87,12 +88,18 @@ interface OSState {
 
   // AURA global state
   auraMuted: boolean;
+  auraArmed: boolean;
   auraWakeActive: boolean;
   auraMessages: AuraMessage[];
   setAuraMuted: (muted: boolean) => void;
+  setAuraArmed: (armed: boolean) => void;
   setAuraWakeActive: (active: boolean) => void;
   addAuraMessage: (msg: AuraMessage) => void;
   clearAuraMessages: () => void;
+  setOpenWindowCallback: (fn: (id: string) => void) => void;
+  startAuraListening: () => void;
+  stopAuraListening: () => void;
+  toggleAuraMute: () => void;
 }
 
 export const useOSStore = create<OSState>((set, get) => ({
@@ -222,10 +229,48 @@ export const useOSStore = create<OSState>((set, get) => ({
 
   // AURA global state
   auraMuted: false,
+  auraArmed: false,
   auraWakeActive: false,
   auraMessages: [],
   setAuraMuted: (muted) => set({ auraMuted: muted }),
+  setAuraArmed:  (armed)  => set({ auraArmed: armed }),
   setAuraWakeActive: (active) => set({ auraWakeActive: active }),
   addAuraMessage: (msg) => set((state) => ({ auraMessages: [...state.auraMessages, msg] })),
   clearAuraMessages: () => set({ auraMessages: [] }),
+
+  setOpenWindowCallback: (fn) => { _openWindowFn = fn; },
+
+  startAuraListening: () => {
+    if (_auraService) return;
+    const store = get();
+    _auraService = createAuraService({
+      isArmed:      () => get().auraArmed,
+      isWakeActive: () => get().auraWakeActive,
+      isMuted:      () => get().auraMuted,
+      setArmed:     (v) => set({ auraArmed: v }),
+      setWakeActive:(v) => set({ auraWakeActive: v }),
+      addMessage:   (msg) => set((s) => ({ auraMessages: [...s.auraMessages, msg] })),
+      clearMessages:() => set({ auraMessages: [] }),
+      openWindow:   (id) => _openWindowFn?.(id),
+    });
+    _auraService.start();
+  },
+
+  stopAuraListening: () => {
+    _auraService?.stop();
+    _auraService = null;
+    set({ auraArmed: false, auraWakeActive: false });
+  },
+
+  toggleAuraMute: () => {
+    const muted = !get().auraMuted;
+    set({ auraMuted: muted });
+    if (muted) {
+      _auraService?.stop();
+      _auraService = null;
+      set({ auraArmed: false, auraWakeActive: false });
+    } else {
+      get().startAuraListening();
+    }
+  },
 }));

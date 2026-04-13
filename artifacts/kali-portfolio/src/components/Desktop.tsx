@@ -26,8 +26,7 @@ import RightClickMenu from "./RightClickMenu";
 import { playClickSound, playCloseSound } from "@/utils/SoundEngine";
 import MediaViewerApp, { type MediaType } from "./MediaViewerApp";
 import { useOSStore } from "@/lib/store";
-import { startAuraService, stopAuraService } from "@/lib/AuraService";
-import { toast } from "sonner";
+import AuraBall from "@/components/ui/AuraBall";
 
 // ── Process info registry ─────────────────────────────────────────────────────
 const PROCESS_INFO: Record<string, { name: string; icon: string }> = {
@@ -114,8 +113,8 @@ export default function Desktop() {
   const currentWallpaper = useOSStore((s) => s.currentWallpaper);
   const cursorStyle = useOSStore((s) => s.cursorStyle);
   const cursorColor = useOSStore((s) => s.cursorColor);
-  const preloadLocalFS = useOSStore((s) => s.preloadLocalFS);
-  const auraWakeActive = useOSStore((s) => s.auraWakeActive);
+  const preloadLocalFS       = useOSStore((s) => s.preloadLocalFS);
+  const setOpenWindowCallback = useOSStore((s) => s.setOpenWindowCallback);
   const registerProcess = useOSStore((s) => s.registerProcess);
   const unregisterProcess = useOSStore((s) => s.unregisterProcess);
   const updateProcessMinimized = useOSStore((s) => s.updateProcessMinimized);
@@ -167,29 +166,16 @@ export default function Desktop() {
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  // ── AURA Global Background Service ───────────────────────────────────────
+  // ── Register openWindow callback with the store (for AURA voice commands) ──
   useEffect(() => {
-    const openWindowStable = (id: string) => handleOpenWindowRef.current(id);
-    const delay = setTimeout(() => {
-      startAuraService(openWindowStable);
-      toast("AURA Intelligence System Active", {
-        description: "Say 'Hey Aura' to begin. The system is always listening.",
-        duration: 6000,
-        icon: "🎙",
-      });
-    }, 2000);
+    setOpenWindowCallback((id: string) => handleOpenWindowRef.current(id));
 
     const handleCloseAll = () => {
       setWindows([]);
       setActiveWindow("");
     };
     window.addEventListener("aura-close-all", handleCloseAll);
-
-    return () => {
-      clearTimeout(delay);
-      stopAuraService();
-      window.removeEventListener("aura-close-all", handleCloseAll);
-    };
+    return () => window.removeEventListener("aura-close-all", handleCloseAll);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

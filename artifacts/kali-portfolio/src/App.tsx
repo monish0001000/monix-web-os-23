@@ -20,6 +20,33 @@ function useDisplayFilter() {
   return hasFilter ? `brightness(${brightness / 100}) sepia(${warmth / 50})` : undefined;
 }
 
+// ── Global AURA Wake Glow — fixed overlay that covers EVERYTHING ──────────────
+function AuraWakeGlow() {
+  const auraWakeActive = useOSStore((s) => s.auraWakeActive);
+  return (
+    <AnimatePresence>
+      {auraWakeActive && (
+        <motion.div
+          key="aura-wake-glow-global"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.28 }}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 99999,
+            pointerEvents: 'none',
+            boxShadow: 'inset 0 0 70px 16px rgba(0,240,255,0.32), inset 0 0 140px 40px rgba(0,200,255,0.12)',
+            border: '2px solid rgba(0,240,255,0.55)',
+            animation: 'aura-wake-pulse 1.6s ease-in-out infinite',
+          }}
+        />
+      )}
+    </AnimatePresence>
+  );
+}
+
 function AppInner() {
   const [phase, setPhase] = useState<Phase>("boot");
   const isLocked = useOSStore((s) => s.isLocked);
@@ -40,6 +67,7 @@ function AppInner() {
     <div
       className="w-full h-[100dvh] flex flex-col overflow-hidden bg-black text-white font-sans"
     >
+      <AuraWakeGlow />
       <NetworkHandler />
       <AnimatePresence mode="wait">
         {phase === "boot" && (

@@ -1141,6 +1141,70 @@ export default function MonixChess() {
     setGameState((gs) => ({ ...gs, phase: "playing", winner: null, endReason: null }));
   }, [chess, syncBoard]);
 
+  // ── Online cooperative action senders ──────────────────────────────────────
+  const sendChat = useCallback(() => {
+    const text = chatInput.trim();
+    if (!text || !matchChannelRef.current) return;
+    matchChannelRef.current.send({ type: "broadcast", event: "chat", payload: { sender: onlineAlias, text } });
+    setChatMessages(prev => [...prev, { sender: onlineAlias, text, ts: Date.now() }]);
+    setChatInput("");
+  }, [chatInput, onlineAlias]);
+
+  const sendUndoRequest = useCallback(() => {
+    if (!matchChannelRef.current) return;
+    matchChannelRef.current.send({ type: "broadcast", event: "undo_request", payload: { alias: onlineAlias } });
+    toast("Undo request sent — waiting for opponent.");
+  }, [onlineAlias]);
+
+  const acceptUndo = useCallback(() => {
+    if (!matchChannelRef.current) return;
+    matchChannelRef.current.send({ type: "broadcast", event: "undo_accept", payload: {} });
+    chess.undo(); chess.undo();
+    const h = chess.history({ verbose: true });
+    const prevLm = h.length > 0 ? { from: h[h.length - 1].from as Square, to: h[h.length - 1].to as Square } : null;
+    syncBoard(prevLm);
+    setSelected(null); setLegalMoves([]); setHint(null);
+    setPendingUndoFrom(null);
+    toast.success("Undo accepted.");
+  }, [chess, syncBoard]);
+
+  const declineUndo = useCallback(() => {
+    if (!matchChannelRef.current) return;
+    matchChannelRef.current.send({ type: "broadcast", event: "undo_decline", payload: {} });
+    setPendingUndoFrom(null);
+  }, []);
+
+  const sendDrawOffer = useCallback(() => {
+    if (!matchChannelRef.current) return;
+    matchChannelRef.current.send({ type: "broadcast", event: "draw_request", payload: { alias: onlineAlias } });
+    toast("Draw offered — waiting for opponent.");
+  }, [onlineAlias]);
+
+  const acceptDraw = useCallback(() => {
+    if (!matchChannelRef.current) return;
+    matchChannelRef.current.send({ type: "broadcast", event: "draw_accept", payload: {} });
+    setPendingDrawFrom(null);
+    setGameState(gs => ({ ...gs, phase: "over", winner: null, endReason: "draw" }));
+  }, []);
+
+  const declineDraw = useCallback(() => {
+    if (!matchChannelRef.current) return;
+    matchChannelRef.current.send({ type: "broadcast", event: "draw_decline", payload: {} });
+    setPendingDrawFrom(null);
+  }, []);
+
+  const sendOnlineResign = useCallback(() => {
+    if (!matchChannelRef.current) return;
+    matchChannelRef.current.send({ type: "broadcast", event: "resign", payload: {} });
+    const myColor = isOnlineBlack ? "b" : "w";
+    setGameState(gs => ({ ...gs, phase: "over", winner: myColor === "w" ? "BLACK" : "WHITE", endReason: "resign" }));
+  }, [isOnlineBlack]);
+
+  // ── Chat auto-scroll ────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (chatEndRef.current) chatEndRef.current.scrollIntoView({ behavior: "smooth" });
+  }, [chatMessages]);
+
   // ── Board memoization ──────────────────────────────────────────────────────
   const boardData = useMemo(() => chess.board(), [boardKey]);
 
@@ -1575,6 +1639,46 @@ export default function MonixChess() {
 
         {/* Board column */}
         <div className="order-1 lg:order-2 w-full flex flex-col items-center" style={{ maxWidth: "min(100%, 560px)" }}>
+          {/* ── Online HUD (above board) ── */}
+          {gameState.mode === "online" && gameState.phase === "playing" && (
+            <div className="w-full mb-2 flex items-center justify-between px-3 py-2 rounded-sm"
+              style={{
+                background: "rgba(5,5,20,0.75)",
+                backdropFilter: "blur(12px)",
+                WebkitBackdropFilter: "blur(12px)",
+                border: "1px solid rgba(0,229,255,0.15)",
+                boxShadow: "0 2px 16px rgba(0,0,0,0.5)",
+              }}
+            >
+              <div className="flex items-center gap-2">
+                <span className="text-[9px] font-mono uppercase tracking-widest" style={{ color: "rgba(0,229,255,0.5)" }}>OPP</span>
+                <span className="text-[11px] font-mono font-bold" style={{ color: "#e0f0ff" }}>
+                  {opponentHudAlias || "Opponent"}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                {pingMs !== null && (
+                  <span className="text-[9px] font-mono" style={{ color: "rgba(255,255,255,0.35)" }}>{pingMs}ms</span>
+                )}
+                <div
+                  className="w-2 h-2 rounded-full"
+                  style={{
+                    backgroundColor:
+                      pingMs === null ? "#607080"
+                      : pingMs < 100 ? "#10b981"
+                      : pingMs < 300 ? "#f59e0b"
+                      : "#ef4444",
+                    boxShadow:
+                      pingMs === null ? "none"
+                      : pingMs < 100 ? "0 0 6px #10b981"
+                      : pingMs < 300 ? "0 0 6px #f59e0b"
+                      : "0 0 6px #ef4444",
+                  }}
+                />
+              </div>
+            </div>
+          )}
+
           {/* File labels top */}
           <div className="flex w-full mb-0.5" style={{ paddingLeft: "20px" }}>
             {files.map((f) => (
@@ -1705,6 +1809,91 @@ export default function MonixChess() {
             )}
           </div>
 
+          {/* ── Online Cooperative Actions ── */}
+          {gameState.mode === "online" && gameState.phase === "playing" && (
+            <div className="flex gap-2 mt-2 w-full flex-wrap justify-center">
+              <button
+                onClick={sendUndoRequest}
+                className="flex items-center gap-1.5 px-3 py-2 text-[10px] font-mono border transition-all"
+                style={{ border: "1px solid rgba(0,229,255,0.25)", color: "rgba(0,229,255,0.7)", background: "rgba(0,229,255,0.05)" }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(0,229,255,0.7)"; (e.currentTarget as HTMLElement).style.color = "#00e5ff"; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(0,229,255,0.25)"; (e.currentTarget as HTMLElement).style.color = "rgba(0,229,255,0.7)"; }}
+              >
+                ↶ UNDO
+              </button>
+              <button
+                onClick={sendDrawOffer}
+                className="flex items-center gap-1.5 px-3 py-2 text-[10px] font-mono border transition-all"
+                style={{ border: "1px solid rgba(16,185,129,0.25)", color: "rgba(16,185,129,0.7)", background: "rgba(16,185,129,0.05)" }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(16,185,129,0.7)"; (e.currentTarget as HTMLElement).style.color = "#10b981"; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(16,185,129,0.25)"; (e.currentTarget as HTMLElement).style.color = "rgba(16,185,129,0.7)"; }}
+              >
+                🤝 DRAW
+              </button>
+              <button
+                onClick={sendOnlineResign}
+                className="flex items-center gap-1.5 px-3 py-2 text-[10px] font-mono border transition-all"
+                style={{ border: "1px solid rgba(239,68,68,0.25)", color: "rgba(239,68,68,0.7)", background: "rgba(239,68,68,0.05)" }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(239,68,68,0.7)"; (e.currentTarget as HTMLElement).style.color = "#ef4444"; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(239,68,68,0.25)"; (e.currentTarget as HTMLElement).style.color = "rgba(239,68,68,0.7)"; }}
+              >
+                🏳️ RESIGN
+              </button>
+            </div>
+          )}
+
+          {/* ── Online Chat ── */}
+          {gameState.mode === "online" && gameState.phase === "playing" && (
+            <div className="w-full mt-3 rounded-sm flex flex-col"
+              style={{
+                background: "rgba(5,5,20,0.8)",
+                border: "1px solid rgba(0,229,255,0.12)",
+                maxHeight: "200px",
+              }}
+            >
+              <div className="px-3 py-1.5 border-b text-[9px] font-mono tracking-widest uppercase"
+                style={{ borderColor: "rgba(0,229,255,0.1)", color: "rgba(0,229,255,0.5)" }}>
+                // MATCH CHAT
+              </div>
+              <div className="flex-1 overflow-y-auto p-2 space-y-1" style={{ minHeight: "80px", maxHeight: "120px" }}>
+                {chatMessages.length === 0 ? (
+                  <div className="text-[10px] font-mono" style={{ color: "rgba(255,255,255,0.2)" }}>No messages yet. Say hello!</div>
+                ) : (
+                  chatMessages.map((msg, i) => (
+                    <div key={i} className="text-[10px] font-mono leading-relaxed">
+                      <span style={{ color: msg.sender === onlineAlias ? "#00e5ff" : "#ff0080", marginRight: 6 }}>
+                        {msg.sender}:
+                      </span>
+                      <span style={{ color: "rgba(224,240,255,0.85)" }}>{msg.text}</span>
+                    </div>
+                  ))
+                )}
+                <div ref={chatEndRef} />
+              </div>
+              <div className="flex border-t" style={{ borderColor: "rgba(0,229,255,0.1)" }}>
+                <input
+                  type="text"
+                  maxLength={120}
+                  placeholder="Type a message…"
+                  value={chatInput}
+                  onChange={e => setChatInput(e.target.value)}
+                  onKeyDown={e => { if (e.key === "Enter") sendChat(); }}
+                  className="flex-1 bg-transparent outline-none text-[10px] font-mono px-3 py-2"
+                  style={{ color: "#e0f0ff" }}
+                />
+                <button
+                  onClick={sendChat}
+                  className="px-3 py-2 text-[10px] font-mono transition-all"
+                  style={{ color: "rgba(0,229,255,0.6)", borderLeft: "1px solid rgba(0,229,255,0.1)" }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = "#00e5ff"; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = "rgba(0,229,255,0.6)"; }}
+                >
+                  SEND
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Mobile: captured + log (collapsible) */}
           <div className="lg:hidden w-full mt-3 space-y-2">
             <div className="grid grid-cols-2 gap-2">
@@ -1809,6 +1998,110 @@ export default function MonixChess() {
           </div>
         </div>
       )}
+
+      {/* ── Disconnect Modal ── */}
+      <AnimatePresence>
+        {isDisconnected && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            style={{ background: "rgba(0,0,0,0.82)", backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)" }}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}
+              className="w-full max-w-xs text-center rounded-sm p-8"
+              style={{ background: "rgba(8,8,20,0.9)", border: "1px solid rgba(239,68,68,0.35)", boxShadow: "0 0 40px rgba(239,68,68,0.2)" }}
+            >
+              <div className="text-3xl mb-4" style={{ filter: "drop-shadow(0 0 12px rgba(239,68,68,0.8))" }}>⚡</div>
+              <div className="text-sm font-mono font-bold tracking-widest mb-2" style={{ color: "#ef4444" }}>
+                OPPONENT DISCONNECTED
+              </div>
+              <div className="text-[10px] font-mono mb-6" style={{ color: "rgba(255,255,255,0.4)" }}>
+                Match Ended.
+              </div>
+              <button
+                onClick={handleQuit}
+                className="w-full py-2.5 text-[10px] font-mono tracking-wider transition-all"
+                style={{ border: "1px solid rgba(239,68,68,0.4)", color: "#ef4444", background: "rgba(239,68,68,0.08)" }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "rgba(239,68,68,0.18)"; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "rgba(239,68,68,0.08)"; }}
+              >
+                RETURN TO MENU
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Pending Undo Request Modal ── */}
+      <AnimatePresence>
+        {pendingUndoFrom && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }}
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-full max-w-xs rounded-sm p-4"
+            style={{ background: "rgba(5,5,20,0.95)", border: "1px solid rgba(0,229,255,0.3)", boxShadow: "0 4px 32px rgba(0,0,0,0.7)" }}
+          >
+            <div className="text-[10px] font-mono font-bold mb-3" style={{ color: "#00e5ff" }}>
+              ↶ <span style={{ color: "#e0f0ff" }}>{pendingUndoFrom}</span> requests to undo the last move.
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={acceptUndo}
+                className="flex-1 py-2 text-[10px] font-mono tracking-wider transition-all"
+                style={{ border: "1px solid rgba(16,185,129,0.5)", background: "rgba(16,185,129,0.1)", color: "#10b981" }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "rgba(16,185,129,0.2)"; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "rgba(16,185,129,0.1)"; }}
+              >
+                ✓ ACCEPT
+              </button>
+              <button
+                onClick={declineUndo}
+                className="flex-1 py-2 text-[10px] font-mono tracking-wider transition-all"
+                style={{ border: "1px solid rgba(239,68,68,0.4)", background: "rgba(239,68,68,0.08)", color: "#f87171" }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "rgba(239,68,68,0.18)"; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "rgba(239,68,68,0.08)"; }}
+              >
+                ✗ DECLINE
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Pending Draw Offer Modal ── */}
+      <AnimatePresence>
+        {pendingDrawFrom && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }}
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-full max-w-xs rounded-sm p-4"
+            style={{ background: "rgba(5,5,20,0.95)", border: "1px solid rgba(16,185,129,0.3)", boxShadow: "0 4px 32px rgba(0,0,0,0.7)" }}
+          >
+            <div className="text-[10px] font-mono font-bold mb-3" style={{ color: "#10b981" }}>
+              🤝 <span style={{ color: "#e0f0ff" }}>{pendingDrawFrom}</span> offers a draw.
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={acceptDraw}
+                className="flex-1 py-2 text-[10px] font-mono tracking-wider transition-all"
+                style={{ border: "1px solid rgba(16,185,129,0.5)", background: "rgba(16,185,129,0.1)", color: "#10b981" }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "rgba(16,185,129,0.2)"; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "rgba(16,185,129,0.1)"; }}
+              >
+                ✓ ACCEPT
+              </button>
+              <button
+                onClick={declineDraw}
+                className="flex-1 py-2 text-[10px] font-mono tracking-wider transition-all"
+                style={{ border: "1px solid rgba(239,68,68,0.4)", background: "rgba(239,68,68,0.08)", color: "#f87171" }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "rgba(239,68,68,0.18)"; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "rgba(239,68,68,0.08)"; }}
+              >
+                ✗ DECLINE
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ── Game Over Overlay ── */}
       <AnimatePresence>

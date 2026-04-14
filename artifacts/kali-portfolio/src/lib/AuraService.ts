@@ -60,7 +60,8 @@ export const VOICE_APP_MAP: Record<string, string> = {
   'secure comm': 'securecomm', securecomm: 'securecomm',
   aura: 'aura',
   threatmap: 'threatmap', 'threat map': 'threatmap',
-  codepad: 'codepad', notepad: 'codepad',
+  codepad: 'codepad',
+  notepad: 'notepad', 'note pad': 'notepad', 'text editor': 'notepad', notes: 'notepad',
 };
 
 // ─── Voice pickers ────────────────────────────────────────────────────────────
@@ -476,6 +477,43 @@ function executeCommand(
   setWakeActive(false);
 }
 
+// ─── Porcupine offline wake-word module ───────────────────────────────────────
+// Uses @picovoice/porcupine-web when VITE_PICOVOICE_ACCESS_KEY is set.
+// Falls back gracefully to the Web Speech API wake-word regex if not configured.
+async function tryInitPorcupine(onWake: () => void): Promise<{ stop: () => void } | null> {
+  const accessKey = (import.meta.env.VITE_PICOVOICE_ACCESS_KEY as string | undefined)?.trim();
+  if (!accessKey) return null;
+  try {
+    const { PorcupineWorker, BuiltInKeyword } = await import('@picovoice/porcupine-web');
+    const { WebVoiceProcessor } = await import('@picovoice/web-voice-processor');
+
+    // PorcupineDetection shape: { label: string; index: number }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const porcupine = await (PorcupineWorker as any).create(
+      accessKey,
+      // Use built-in "Porcupine" keyword — closest offline proxy for "Hey Buddy"
+      [{ builtin: BuiltInKeyword.Porcupine, sensitivity: 0.5 }],
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (_detection: any) => { onWake(); },
+    );
+
+    await WebVoiceProcessor.subscribe(porcupine);
+    console.log('[AURA] Porcupine offline wake-word engine active');
+
+    return {
+      stop: async () => {
+        try {
+          await WebVoiceProcessor.unsubscribe(porcupine);
+          porcupine.terminate();
+        } catch (_) {}
+      },
+    };
+  } catch (err) {
+    console.warn('[AURA] Porcupine init failed — using Web Speech API wake-word:', err);
+    return null;
+  }
+}
+
 // ─── Service Factory ──────────────────────────────────────────────────────────
 export function createAuraService(cb: AuraServiceCallbacks): AuraServiceHandle {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -485,6 +523,11 @@ export function createAuraService(cb: AuraServiceCallbacks): AuraServiceHandle {
   let aiDebounce:   ReturnType<typeof setTimeout> | null = null;
   let commandBuffer = '';
   let pauseTimer:   ReturnType<typeof setTimeout> | null = null;
+
+  // Porcupine engine handle — populated asynchronously at start()
+  let porcupineHandle: { stop: () => void } | null = null;
+  // When Porcupine is active, Web Speech runs only in command-capture mode (not wake-word scan)
+  let porcupineActive = false;
 
   let wakeFiredAt        = 0;
   const WAKE_COOLDOWN_MS = 3000;
@@ -603,7 +646,8 @@ export function createAuraService(cb: AuraServiceCallbacks): AuraServiceHandle {
         const isFinal    = result.isFinal;
 
         // ── Sleep mode: check INTERIM results for wake word ──────────────────
-        if (!cb.isWakeActive()) {
+        // Skip wake-word scan if Porcupine is handling it (resource-saving mode)
+        if (!cb.isWakeActive() && !porcupineActive) {
           const afterText = slidingWindowCheck(lower);
           if (afterText !== null) {
             triggerWake(afterText);
@@ -686,10 +730,31 @@ export function createAuraService(cb: AuraServiceCallbacks): AuraServiceHandle {
     start() {
       if (running) return;
       running = true;
-      startRecognition();
+      // Try to load Porcupine offline wake-word engine first (async, non-blocking)
+      tryInitPorcupine(() => {
+        // Porcupine detected wake word — trigger AURA wake
+        if (running && !cb.isMuted()) triggerWake('');
+      }).then((handle) => {
+        if (!running) { handle?.stop(); return; } // stopped before init finished
+        if (handle) {
+          porcupineHandle = handle;
+          porcupineActive = true;
+          // With Porcupine active, start Web Speech in command-only mode
+          // (continuous recognition is still needed for command capture after wake)
+          startRecognition();
+        } else {
+          // No Porcupine — use full Web Speech API with wake-word regex
+          porcupineActive = false;
+          startRecognition();
+        }
+      });
     },
     stop() {
       running = false;
+      // Tear down Porcupine if active
+      porcupineHandle?.stop();
+      porcupineHandle = null;
+      porcupineActive = false;
       try { recognition?.abort(); } catch (_) {}
       recognition = null;
       commandBuffer = '';

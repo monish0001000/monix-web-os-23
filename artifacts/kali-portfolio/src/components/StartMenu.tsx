@@ -104,6 +104,13 @@ const APPS = [
     bg: "rgba(0,196,255,0.1)",
   },
   {
+    id: "notepad",
+    label: "Notepad",
+    icon: <PenTool size={22} strokeWidth={1.6} />,
+    color: "#7ecfff",
+    bg: "rgba(126,207,255,0.08)",
+  },
+  {
     id: "securecomm",
     label: "MONIX-COMM",
     icon: <Phone size={22} strokeWidth={1.6} />,

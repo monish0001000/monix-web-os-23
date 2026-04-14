@@ -20,6 +20,7 @@ import TaskManagerApp from "./TaskManagerApp";
 import SettingsApp from "./SettingsApp";
 import ThreatMapApp from "./ThreatMapApp";
 import CodePadApp from "./CodePadApp";
+import NotepadApp from "./apps/NotepadApp";
 import SecureCommApp from "./SecureCommApp";
 import DossierApp from "./DossierApp";
 import RightClickMenu from "./RightClickMenu";
@@ -48,6 +49,7 @@ const PROCESS_INFO: Record<string, { name: string; icon: string }> = {
   settings:        { name: "Settings",         icon: "⚙️" },
   threatmap:       { name: "Threat Map",       icon: "🗺️" },
   codepad:         { name: "CodePad",          icon: "📝" },
+  notepad:         { name: "Notepad",          icon: "🗒️" },
   securecomm:      { name: "MONIX-COMM",       icon: "📞" },
   dossier:         { name: "Classified Dossier", icon: "🗃️" },
 };
@@ -82,6 +84,7 @@ const WINDOW_LABELS: Record<string, string> = {
   settings:        "Settings",
   threatmap:       "Live Cyber Threat Map",
   codepad:         "CodePad",
+  notepad:         "MONIX Notepad",
   securecomm:      "MONIX-COMM — Secure Channel",
   dossier:         "Classified Dossier — MONIX Intel Bureau",
 };
@@ -360,6 +363,7 @@ export default function Desktop() {
       mediaviewer:     { x: window.innerWidth / 2 - 410, y: window.innerHeight / 2 - 280 },
       threatmap:       { x: window.innerWidth / 2 - 450, y: window.innerHeight / 2 - 280 },
       codepad:         { x: window.innerWidth / 2 - 410, y: window.innerHeight / 2 - 270 },
+      notepad:         { x: window.innerWidth / 2 - 450, y: window.innerHeight / 2 - 290 },
       securecomm:      { x: window.innerWidth / 2 - 500, y: window.innerHeight / 2 - 310 },
       dossier:         { x: window.innerWidth / 2 - 380, y: window.innerHeight / 2 - 280 },
     };
@@ -733,6 +737,19 @@ export default function Desktop() {
             initialX={getInitialPosition("dossier").x}
             initialY={getInitialPosition("dossier").y}
             zIndex={getWin("dossier")!.zIndex}
+          />
+        )}
+
+        {getWin("notepad") && !getWin("notepad")!.minimized && (
+          <NotepadApp
+            key="notepad"
+            onClose={() => handleCloseWindow("notepad")}
+            onMinimize={() => handleMinimizeWindow("notepad")}
+            isActive={activeWindow === "notepad"}
+            onFocus={() => bringToFront("notepad")}
+            initialX={getInitialPosition("notepad").x}
+            initialY={getInitialPosition("notepad").y}
+            zIndex={getWin("notepad")!.zIndex}
           />
         )}
 

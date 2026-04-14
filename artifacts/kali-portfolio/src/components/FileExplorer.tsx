@@ -98,7 +98,17 @@ export default function FileExplorer({
   onClose, onMinimize, isActive, onFocus, initialX, initialY, zIndex,
   onOpenMediaViewer,
 }: FileExplorerProps) {
-  const [tab, setTab] = useState<"local" | "cloud">("local");
+  const [tab, setTab] = useState<"local" | "cloud" | "notepad">("local");
+  // Notepad Files tab state
+  const [notepadFiles, setNotepadFiles] = useState<Record<string, { id: string; name: string; content: string; modified: number }>>({});
+  const [notepadSelected, setNotepadSelected] = useState<string | null>(null);
+  const refreshNotepadFiles = () => {
+    try {
+      const raw = localStorage.getItem("webos_notepad_files");
+      setNotepadFiles(raw ? JSON.parse(raw) : {});
+    } catch { setNotepadFiles({}); }
+  };
+  useEffect(() => { if (tab === "notepad") refreshNotepadFiles(); }, [tab]);
 
   // ── VFS state (reads from store — populated by Desktop on mount) ──
   const localFileSystem = useOSStore((s) => s.localFileSystem);
@@ -355,8 +365,9 @@ export default function FileExplorer({
         {/* ── Tab Bar ── */}
         <div className="flex items-center border-b border-white/[0.06] bg-[#080808] px-3 pt-2 gap-1 shrink-0">
           {[
-            { id: "local" as const, label: "LOCAL SYSTEM", icon: <HardDrive size={12} /> },
-            { id: "cloud" as const, label: "CLOUD DRIVE",  icon: <Cloud size={12} /> },
+            { id: "local" as const,   label: "LOCAL SYSTEM",   icon: <HardDrive size={12} /> },
+            { id: "cloud" as const,   label: "CLOUD DRIVE",    icon: <Cloud size={12} /> },
+            { id: "notepad" as const, label: "NOTEPAD FILES",  icon: <FileText size={12} /> },
           ].map((t) => (
             <button
               key={t.id}
@@ -384,6 +395,12 @@ export default function FileExplorer({
               <span className="flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-green-400 inline-block" style={{ boxShadow:"0 0 6px #4ade80" }} />
                 SUPABASE CONNECTED
+              </span>
+            )}
+            {tab === "notepad" && (
+              <span className="flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-300 inline-block" style={{ boxShadow:"0 0 6px #93c5fd" }} />
+                {Object.keys(notepadFiles).length} FILES IN STORAGE
               </span>
             )}
           </div>
@@ -756,6 +773,99 @@ export default function FileExplorer({
                 </>)}
                 </motion.div>
             )}
+            {/* ══ TAB 3: NOTEPAD FILES ══ */}
+            {tab === "notepad" && (
+              <motion.div
+                key="notepad"
+                initial={{ opacity: 0, x: 12 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 12 }}
+                transition={{ duration: 0.18 }}
+                className="flex flex-col h-full"
+              >
+                <div className="flex-1 overflow-y-auto p-3">
+                  {Object.keys(notepadFiles).length === 0 ? (
+                    <div className="flex flex-col items-center justify-center h-full gap-3 opacity-40">
+                      <FileText size={36} style={{ color: "#7ecfff" }} />
+                      <span className="text-[11px] text-white/50 tracking-wider">No notepad files yet</span>
+                      <span className="text-[10px] text-white/30">Open Notepad to create files</span>
+                    </div>
+                  ) : (
+                    <div className="grid gap-2">
+                      {Object.values(notepadFiles)
+                        .sort((a, b) => b.modified - a.modified)
+                        .map((f) => (
+                          <div
+                            key={f.id}
+                            onClick={() => setNotepadSelected(notepadSelected === f.id ? null : f.id)}
+                            className="flex items-start gap-3 p-2.5 rounded-lg cursor-pointer transition-all"
+                            style={{
+                              background: notepadSelected === f.id ? "rgba(126,207,255,0.08)" : "rgba(255,255,255,0.02)",
+                              border: `1px solid ${notepadSelected === f.id ? "rgba(126,207,255,0.25)" : "rgba(255,255,255,0.05)"}`,
+                            }}
+                          >
+                            <span className="text-lg shrink-0 mt-0.5">
+                              {f.name.endsWith(".md") ? "📝" : "📄"}
+                            </span>
+                            <div className="flex-1 min-w-0">
+                              <div className="text-[11px] font-semibold truncate" style={{ color: notepadSelected === f.id ? "#7ecfff" : "rgba(255,255,255,0.75)" }}>
+                                {f.name}
+                              </div>
+                              <div className="text-[9px] text-white/30 mt-0.5 truncate">
+                                {f.content.slice(0, 60)}{f.content.length > 60 ? "…" : ""}
+                              </div>
+                              <div className="text-[9px] text-white/20 mt-1">
+                                {new Date(f.modified).toLocaleString()}
+                                {" · "}
+                                {f.content.length} chars
+                              </div>
+                            </div>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                // Download as blob
+                                const blob = new Blob([f.content], { type: "text/plain" });
+                                const url  = URL.createObjectURL(blob);
+                                const a    = document.createElement("a");
+                                a.href     = url;
+                                a.download = f.name;
+                                a.click();
+                                URL.revokeObjectURL(url);
+                              }}
+                              title="Download"
+                              className="shrink-0 p-1.5 rounded transition-all hover:bg-white/10"
+                              style={{ color: "rgba(255,255,255,0.3)" }}
+                            >
+                              <Download size={12} />
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const updated = { ...notepadFiles };
+                                delete updated[f.id];
+                                localStorage.setItem("webos_notepad_files", JSON.stringify(updated));
+                                refreshNotepadFiles();
+                              }}
+                              title="Delete"
+                              className="shrink-0 p-1.5 rounded transition-all hover:bg-red-500/10"
+                              style={{ color: "rgba(248,113,113,0.5)" }}
+                            >
+                              <Trash2 size={12} />
+                            </button>
+                          </div>
+                        ))}
+                    </div>
+                  )}
+                </div>
+                <div className="shrink-0 px-4 py-1.5 border-t border-white/[0.04] flex items-center gap-3" style={{ background: "rgba(0,0,0,0.3)" }}>
+                  <FileText size={9} className="text-white/15" />
+                  <span className="text-[9px] text-white/15 tracking-wider">
+                    CLICK to select · DOWNLOAD to save locally · DELETE to remove from OS
+                  </span>
+                </div>
+              </motion.div>
+            )}
+
           </AnimatePresence>
         </div>
 

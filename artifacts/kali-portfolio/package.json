@@ -76,8 +76,11 @@
   },
   "dependencies": {
     "@google/genai": "^1.48.0",
+    "@picovoice/porcupine-web": "^4.0.0",
+    "@picovoice/web-voice-processor": "^4.0.9",
     "@supabase/supabase-js": "^2.101.1",
     "chess.js": "^1.4.0",
+    "marked": "^18.0.0",
     "react-markdown": "^10.1.0",
     "react-rnd": "^10.5.3",
     "zustand": "^5.0.12"

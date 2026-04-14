@@ -536,12 +536,12 @@ export default function TopPanel({ openWindows: _openWindows = [], onOpenWindow,
             )}
           </div>
 
-          {/* AURA Mute Toggle — single click mutes, double click manual wake */}
+          {/* AURA Wake Button — single click manually wakes AURA */}
           <div
             className={btnClass}
-            title={auraMuted ? "AURA Muted — click to unmute  |  double-click to force wake" : 'AURA Armed — click to mute  |  double-click to wake "Hey Buddy"'}
-            onClick={() => toggleAuraMute()}
-            onDoubleClick={(e) => { e.stopPropagation(); manualWakeAura(); }}
+            title={auraMuted ? 'AURA Muted — right-click to unmute' : 'Click to wake AURA  |  Right-click to mute'}
+            onClick={() => manualWakeAura()}
+            onContextMenu={(e) => { e.preventDefault(); toggleAuraMute(); }}
             style={{ position: "relative", userSelect: "none" }}
           >
             {auraMuted

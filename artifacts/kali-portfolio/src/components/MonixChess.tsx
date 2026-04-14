@@ -7,6 +7,7 @@ import {
   memo,
 } from "react";
 import React from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Chess, Square, PieceSymbol, Color } from "chess.js";
 import {
   RotateCcw,
@@ -504,6 +505,42 @@ interface ReviewSnap {
   moveTo: Square;
   capturedBy: "w" | "b" | null;
   captured: PieceSymbol | null;
+}
+
+// ─── Chess Game-Over Button ───────────────────────────────────────────────────
+function ChessBtn({
+  onClick, label, accent, dim,
+}: { onClick: () => void; label: string; accent?: boolean; dim?: boolean }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        flex: 1,
+        padding: "10px 0",
+        fontSize: 11,
+        fontFamily: "monospace",
+        letterSpacing: "0.1em",
+        borderRadius: 7,
+        cursor: "pointer",
+        transition: "opacity 0.15s, background 0.15s",
+        background: accent ? "rgba(0,212,255,0.12)" : "transparent",
+        border: accent
+          ? "1px solid rgba(0,212,255,0.4)"
+          : dim
+          ? "1px solid rgba(255,255,255,0.1)"
+          : "1px solid rgba(0,212,255,0.2)",
+        color: accent
+          ? "#00d4ff"
+          : dim
+          ? "rgba(255,255,255,0.45)"
+          : "rgba(0,212,255,0.7)",
+      }}
+      onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.opacity = "0.75"; }}
+      onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.opacity = "1"; }}
+    >
+      {label}
+    </button>
+  );
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
@@ -1376,45 +1413,95 @@ export default function MonixChess() {
       )}
 
       {/* ── Game Over Overlay ── */}
-      {gameState.phase === "over" && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-          <div className="w-full max-w-sm rounded-sm p-6 sm:p-8 text-center"
-            style={{ background: th.surface, border: `1px solid ${th.surfaceBorder}`, boxShadow: `0 0 60px ${th.accentBg}` }}>
-            <Trophy className="w-10 h-10 mx-auto mb-4" style={{ color: th.accent }} />
-            <div className="text-2xl sm:text-3xl font-black tracking-[0.15em] mb-2" style={{ color: th.textPrimary }}>
-              {gameState.endReason === "checkmate" ? "CHECKMATE"
-                : gameState.endReason === "stalemate" ? "STALEMATE"
-                : gameState.endReason === "resign" ? "RESIGNED"
-                : "DRAW"}
-            </div>
-            {gameState.winner && (
-              <div className="text-sm font-mono tracking-widest mb-1" style={{ color: th.accentText }}>
-                {gameState.winner} WINS
+      <AnimatePresence>
+        {gameState.phase === "over" && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            style={{ background: "rgba(0,0,0,0.78)", backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)" }}
+          >
+            <motion.div
+              initial={{ opacity: 0, y: -30, scale: 0.93 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 24, scale: 0.91 }}
+              transition={{ duration: 0.32, ease: "easeOut" }}
+              className="w-full max-w-sm text-center"
+              style={{
+                background: "rgba(0,0,0,0.62)",
+                backdropFilter: "blur(28px)",
+                WebkitBackdropFilter: "blur(28px)",
+                border: "1px solid rgba(0,212,255,0.22)",
+                borderRadius: 14,
+                boxShadow: "0 0 0 1px rgba(0,212,255,0.07), 0 0 48px rgba(0,212,255,0.14), inset 0 1px 0 rgba(255,255,255,0.05)",
+                padding: "36px 28px 28px",
+              }}
+            >
+              {/* Neon knight icon */}
+              <div style={{
+                fontSize: 52,
+                lineHeight: 1,
+                marginBottom: 14,
+                filter: "drop-shadow(0 0 18px rgba(0,212,255,0.7)) drop-shadow(0 0 6px rgba(0,212,255,0.4))",
+                color: "#00d4ff",
+              }}>
+                ♞
               </div>
-            )}
-            {!gameState.winner && (
-              <div className="text-xs font-mono tracking-widest mb-1" style={{ color: th.textMuted }}>GAME DRAWN</div>
-            )}
-            <div className="text-[10px] font-mono mb-6" style={{ color: th.textMuted }}>{moveHistory.length} moves played</div>
-            <div className="flex gap-2.5">
-              <button onClick={handleReset} className="flex-1 py-3 text-xs font-mono tracking-widest border transition-all hover:opacity-80"
-                style={{ border: `1px solid ${th.accentBorder}`, color: th.accentText, background: th.accentBg }}>
-                REMATCH
-              </button>
-              {reviewSnaps.length > 0 && (
-                <button onClick={enterReview} className="flex-1 py-3 text-xs font-mono tracking-widest border transition-all hover:opacity-80"
-                  style={{ border: `1px solid ${th.accentBorder}`, color: th.accentText }}>
-                  ANALYZE
-                </button>
+
+              <div style={{
+                fontSize: 24,
+                fontWeight: 900,
+                letterSpacing: "0.16em",
+                marginBottom: 8,
+                color: "rgba(255,255,255,0.95)",
+                fontFamily: "monospace",
+                textShadow: "0 0 20px rgba(0,212,255,0.3)",
+              }}>
+                {gameState.endReason === "checkmate" ? "CHECKMATE"
+                  : gameState.endReason === "stalemate" ? "STALEMATE"
+                  : gameState.endReason === "resign" ? "RESIGNED"
+                  : "DRAW"}
+              </div>
+
+              {gameState.winner && (
+                <div style={{
+                  fontSize: 12,
+                  fontFamily: "monospace",
+                  letterSpacing: "0.16em",
+                  marginBottom: 6,
+                  color: "#00d4ff",
+                  textShadow: "0 0 10px rgba(0,212,255,0.5)",
+                }}>
+                  {gameState.winner} WINS
+                </div>
               )}
-              <button onClick={handleQuit} className="flex-1 py-3 text-xs font-mono tracking-widest border transition-all hover:opacity-80"
-                style={{ border: `1px solid ${th.ctrlBorder}`, color: th.ctrlText }}>
-                MENU
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+              {!gameState.winner && (
+                <div style={{ fontSize: 11, fontFamily: "monospace", letterSpacing: "0.12em", marginBottom: 6, color: "rgba(255,255,255,0.35)" }}>
+                  GAME DRAWN
+                </div>
+              )}
+
+              <div style={{ fontSize: 10, fontFamily: "monospace", marginBottom: 28, color: "rgba(255,255,255,0.28)", letterSpacing: "0.06em" }}>
+                {moveHistory.length} moves played
+              </div>
+
+              <div className="flex gap-2">
+                <ChessBtn
+                  onClick={handleReset}
+                  label="REMATCH"
+                  accent
+                />
+                {reviewSnaps.length > 0 && (
+                  <ChessBtn onClick={enterReview} label="ANALYZE" />
+                )}
+                <ChessBtn onClick={handleQuit} label="MENU" dim />
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

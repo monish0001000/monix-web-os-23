@@ -308,7 +308,7 @@ async function queryGeminiBrain(text: string, history: AuraMessage[]): Promise<G
 async function pollinationsFallback(text: string): Promise<GeminiCommand> {
   try {
     const systemPrompt =
-      'You are AURA, an elite AI of MONIX-OS. Address the user as "Sir". You MUST respond in the exact same language the user speaks (English, Tamil, or Tanglish). Keep responses extremely brief, highly conversational, and realistic—like a human on a phone call. Do not use markdown, emojis, or lists.';
+      'You are AURA, an elite AI of MONIX-OS. Address the user as "Sir". For general queries, respond in natural, colloquial Tamil or Tanglish (Tamil written in English script mixed with English words)—sound like a real human assistant chatting on the phone, not a robot. If the user speaks pure English, reply in English. Keep every response to 1-2 short sentences. No markdown, no emojis, no lists, no formality.';
     const prompt = systemPrompt + ' User says: ' + text;
     const res = await fetch('https://text.pollinations.ai/' + encodeURIComponent(prompt));
     if (!res.ok) throw new Error('Pollinations fail');
@@ -588,8 +588,37 @@ export function createAuraService(cb: AuraServiceCallbacks): AuraServiceHandle {
     }, 350);
   }
 
+  // ── Tamil wake greeting — spoken instantly on wake ────────────────────────
+  function sayTamilGreeting() {
+    if (!window.speechSynthesis) return;
+    window.speechSynthesis.cancel();
+    function doSpeak() {
+      const u = new SpeechSynthesisUtterance('Vanakkam, naanthaan Aura, sollunga!');
+      const voices = window.speechSynthesis.getVoices();
+      // Prefer Indian English voice for natural Tanglish pronunciation
+      const voice =
+        voices.find(v => v.lang === 'en-IN') ||
+        voices.find(v => v.lang.endsWith('-IN')) ||
+        voices.find(v => v.lang.startsWith('en')) ||
+        null;
+      if (voice) u.voice = voice;
+      u.lang   = 'en-IN';
+      u.rate   = 1.0;
+      u.pitch  = 1.1;
+      u.volume = 1.0;
+      window.speechSynthesis.speak(u);
+    }
+    if (window.speechSynthesis.getVoices().length > 0) {
+      doSpeak();
+    } else {
+      window.speechSynthesis.onvoiceschanged = () => {
+        window.speechSynthesis.onvoiceschanged = null;
+        doSpeak();
+      };
+    }
+  }
+
   // ── Wake trigger ───────────────────────────────────────────────────────────
-  // Fix #3: instant "Yes, Sir." — zero-latency via sayInstant(), no async wait.
   function triggerWake(afterText: string) {
     const now = Date.now();
     if (now - wakeFiredAt < WAKE_COOLDOWN_MS) return;
@@ -598,12 +627,12 @@ export function createAuraService(cb: AuraServiceCallbacks): AuraServiceHandle {
     playWakeSound();
     setWakeActiveLocal(true);
 
-    // Immediate spoken acknowledgement — fires before any voice-load delay
-    sayInstant('Yes, Sir.');
+    // Tamil greeting — fires immediately on wake
+    sayTamilGreeting();
 
     if (afterText.length > 2) {
       // Command was already spoken after the wake word — process it fast
-      setTimeout(() => processUtterance(afterText), 800);
+      setTimeout(() => processUtterance(afterText), 900);
     }
     // Otherwise just wait for user's next utterance (already armed)
   }

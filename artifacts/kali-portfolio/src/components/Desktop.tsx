@@ -28,6 +28,8 @@ import { playClickSound, playCloseSound } from "@/utils/SoundEngine";
 import MediaViewerApp, { type MediaType } from "./MediaViewerApp";
 import { useOSStore } from "@/lib/store";
 import AuraBall from "@/components/ui/AuraBall";
+import AuraListenGlow from "@/components/ui/AuraListenGlow";
+import { preCacheWakeAudio } from "@/lib/AuraService";
 
 // ── Process info registry ─────────────────────────────────────────────────────
 const PROCESS_INFO: Record<string, { name: string; icon: string }> = {
@@ -135,6 +137,12 @@ export default function Desktop() {
   useEffect(() => {
     preloadLocalFS();
   }, [preloadLocalFS]);
+
+  // Pre-warm TTS engine so AURA's first spoken response is instant
+  useEffect(() => {
+    const t = setTimeout(() => preCacheWakeAudio(), 1500);
+    return () => clearTimeout(t);
+  }, []);
 
   // Register the kill callback once so TaskManager can force-close windows
   useEffect(() => {
@@ -832,7 +840,13 @@ export default function Desktop() {
         )}
       </AnimatePresence>
 
+      {/* AURA Ball — always visible floating orb */}
+      <AuraBall />
+
       </main>
+
+      {/* AURA Listening Glow — full-screen animated border overlay */}
+      <AuraListenGlow />
 
       <footer className="h-12 shrink-0 z-[9999]">
         <TopPanel

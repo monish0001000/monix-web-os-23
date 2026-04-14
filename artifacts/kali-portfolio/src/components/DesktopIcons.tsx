@@ -484,6 +484,9 @@ const ICONS_COL2 = [
   { id: "cykrypt",      label: "CYKRYPT",        icon: <CykryptIcon />,        window: "cykrypt"      },
   { id: "settings",     label: "Settings",      icon: <SettingsIcon />,       window: "settings"     },
   { id: "securecomm",   label: "MONIX-COMM",    icon: <SecureCommIcon />,     window: "securecomm"   },
+];
+
+const ICONS_COL3 = [
   { id: "dossier",      label: "Dossier",       icon: <DossierIcon />,        window: "dossier"      },
 ];
 
@@ -613,6 +616,19 @@ export default function DesktopIcons({
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
         {ICONS_COL2.map((item) => (
+          <IconItem
+            key={item.id}
+            item={item}
+            selectedIcon={selectedIcon}
+            onSelectIcon={onSelectIcon}
+            onOpenWindow={onOpenWindow}
+            onLongPress={onLongPress}
+            dragConstraintsRef={dragConstraintsRef}
+          />
+        ))}
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+        {ICONS_COL3.map((item) => (
           <IconItem
             key={item.id}
             item={item}

@@ -782,6 +782,16 @@ export default function MonixChess() {
     if (historyRef.current) historyRef.current.scrollTop = historyRef.current.scrollHeight;
   }, [moveHistory]);
 
+  // ── Online P2P broadcast helper (must be declared before handleSquareClick/handleDrop) ──
+  const broadcastOnlineMove = useCallback((from: Square, to: Square, promotion?: string) => {
+    if (gameState.mode !== "online" || !matchChannelRef.current) return;
+    matchChannelRef.current.send({
+      type: "broadcast",
+      event: "move",
+      payload: { from, to, promotion: promotion || "q" },
+    });
+  }, [gameState.mode]);
+
   // ── Move handling ──────────────────────────────────────────────────────────
   const handleSquareClick = useCallback((sq: Square) => {
     if (!isPlayerTurn() || isAiThinking || gameState.phase !== "playing") return;
@@ -933,15 +943,6 @@ export default function MonixChess() {
   }, [reviewIdx, gameState.phase]);
 
   // ── Online P2P helpers ─────────────────────────────────────────────────────
-  const broadcastOnlineMove = useCallback((from: Square, to: Square, promotion?: string) => {
-    if (gameState.mode !== "online" || !matchChannelRef.current) return;
-    matchChannelRef.current.send({
-      type: "broadcast",
-      event: "move",
-      payload: { from, to, promotion: promotion || "q" },
-    });
-  }, [gameState.mode]);
-
   const startOnlineMatch = useCallback((matchId: string, playAsBlack: boolean) => {
     matchChannelRef.current?.unsubscribe();
     matchChannelRef.current = null;

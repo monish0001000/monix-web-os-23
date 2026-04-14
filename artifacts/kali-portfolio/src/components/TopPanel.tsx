@@ -9,6 +9,7 @@ import {
 import { SiFirefox } from "react-icons/si";
 import { useOSStore } from "@/lib/store";
 import StartMenu from "./StartMenu";
+import { toast } from "sonner";
 
 interface OpenWindowInfo {
   id: string;
@@ -122,9 +123,38 @@ export default function TopPanel({ openWindows: _openWindows = [], onOpenWindow,
   const osVolume = useOSStore((s) => s.osVolume);
   const setOsVolume = useOSStore((s) => s.setOsVolume);
   const activeProcesses = useOSStore((s) => s.activeProcesses);
-  const auraMuted      = useOSStore((s) => s.auraMuted);
-  const toggleAuraMute = useOSStore((s) => s.toggleAuraMute);
-  const manualWakeAura = useOSStore((s) => s.manualWakeAura);
+  const auraMuted        = useOSStore((s) => s.auraMuted);
+  const toggleAuraMute   = useOSStore((s) => s.toggleAuraMute);
+  const manualWakeAura   = useOSStore((s) => s.manualWakeAura);
+  const isMicGranted     = useOSStore((s) => s.isMicGranted);
+  const micGlowActive    = useOSStore((s) => s.micGlowActive);
+  const setIsMicGranted  = useOSStore((s) => s.setIsMicGranted);
+  const setMicGlowActive = useOSStore((s) => s.setMicGlowActive);
+  const startAuraListening = useOSStore((s) => s.startAuraListening);
+
+  // Auto-dismiss glow after 10 s if mic still not granted
+  useEffect(() => {
+    const t = setTimeout(() => setMicGlowActive(false), 10000);
+    return () => clearTimeout(t);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleMicClick = async () => {
+    if (isMicGranted) {
+      manualWakeAura();
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream.getTracks().forEach((t) => t.stop());
+      setIsMicGranted(true);
+      setMicGlowActive(false);
+      startAuraListening();
+      toast.success("AURA mic access granted — say \"Hey Buddy\" to wake her.");
+    } catch {
+      toast.error("Mic permission denied. AURA voice control unavailable.");
+    }
+  };
 
   // Clock + network + screen size
   useEffect(() => {
@@ -395,6 +425,10 @@ export default function TopPanel({ openWindows: _openWindows = [], onOpenWindow,
               0%, 100% { opacity: 1; transform: scale(1); }
               50% { opacity: 0.4; transform: scale(0.75); }
             }
+            @keyframes micGlowPulse {
+              0%, 100% { box-shadow: 0 0 6px 2px rgba(0,240,255,0.55), 0 0 14px 4px rgba(0,240,255,0.25); }
+              50%       { box-shadow: 0 0 14px 5px rgba(0,240,255,0.9), 0 0 28px 8px rgba(0,240,255,0.45); }
+            }
           `}</style>
 
           {/* FPS counter — hidden on mobile */}
@@ -536,17 +570,31 @@ export default function TopPanel({ openWindows: _openWindows = [], onOpenWindow,
             )}
           </div>
 
-          {/* AURA Wake Button — single click manually wakes AURA */}
+          {/* AURA Wake Button — with mic-permission gating + glow on boot */}
           <div
             className={btnClass}
-            title={auraMuted ? 'AURA Muted — right-click to unmute' : 'Click to wake AURA  |  Right-click to mute'}
-            onClick={() => manualWakeAura()}
-            onContextMenu={(e) => { e.preventDefault(); toggleAuraMute(); }}
-            style={{ position: "relative", userSelect: "none" }}
+            title={
+              auraMuted
+                ? "AURA Muted — right-click to unmute"
+                : !isMicGranted
+                ? "Click to grant mic access & activate AURA"
+                : "Click to wake AURA  |  Right-click to mute"
+            }
+            onClick={handleMicClick}
+            onContextMenu={(e) => { e.preventDefault(); if (isMicGranted) toggleAuraMute(); }}
+            style={{
+              position: "relative",
+              userSelect: "none",
+              borderRadius: 6,
+              transition: "box-shadow 0.3s",
+              animation: micGlowActive && !isMicGranted ? "micGlowPulse 1.2s ease-in-out infinite" : undefined,
+            }}
           >
             {auraMuted
               ? <MicOff size={14} color="rgba(255,100,100,0.8)" />
-              : <Mic    size={14} color="rgba(0,240,255,0.85)"  style={{ filter: "drop-shadow(0 0 4px rgba(0,240,255,0.6))" }} />
+              : !isMicGranted
+              ? <Mic size={14} color="rgba(0,240,255,0.65)" style={{ filter: micGlowActive ? "drop-shadow(0 0 6px rgba(0,240,255,0.9))" : undefined }} />
+              : <Mic size={14} color="rgba(0,240,255,0.85)" style={{ filter: "drop-shadow(0 0 4px rgba(0,240,255,0.6))" }} />
             }
           </div>
 

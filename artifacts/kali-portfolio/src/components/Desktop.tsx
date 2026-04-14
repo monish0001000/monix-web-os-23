@@ -126,6 +126,8 @@ export default function Desktop() {
   const toggleMinimize = useOSStore((s) => s.toggleMinimize);
   const setKillCallback = useOSStore((s) => s.setKillCallback);
   const startAuraListening = useOSStore((s) => s.startAuraListening);
+  const isMicGranted     = useOSStore((s) => s.isMicGranted);
+  const setMicGlowActive = useOSStore((s) => s.setMicGlowActive);
   const computedCursor =
     cursorStyle === "crosshair" || cursorStyle === "target" ? "crosshair" : "default";
 
@@ -303,7 +305,11 @@ export default function Desktop() {
   const handleRefresh = useCallback(() => {
     setIsRefreshing(true);
     setTimeout(() => setIsRefreshing(false), 350);
-  }, []);
+    if (!isMicGranted) {
+      setMicGlowActive(true);
+      setTimeout(() => setMicGlowActive(false), 10000);
+    }
+  }, [isMicGranted, setMicGlowActive]);
 
   const handleOpenMediaViewer = useCallback((fileName: string, fileUrl: string, fileType: string) => {
     const id = `mediaviewer-${Date.now()}`;

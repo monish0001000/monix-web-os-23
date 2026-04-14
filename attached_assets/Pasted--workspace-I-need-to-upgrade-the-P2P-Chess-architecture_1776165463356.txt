@@ -1,0 +1,45 @@
+@workspace I need to upgrade the P2P Chess architecture with advanced multiplayer synchronization and overhaul the AURA Voice Assistant onboarding UX. Execute these exact steps flawlessly without breaking existing core mechanics:
+
+1. AURA Mic Permission Flow (UX Overhaul):
+
+Delay Initialization: In AuraService.ts (or your voice store), stop initializing Porcupine or requesting getUserMedia on mount.
+
+Taskbar Mic State: Add a state for isMicGranted and micGlowActive. On OS boot, set micGlowActive to true for 10 seconds, making the Taskbar Mic icon pulse/glow attractively (e.g., CSS animated neon cyan drop-shadow).
+
+Manual Trigger: When the user clicks the glowing mic button:
+
+Trigger navigator.mediaDevices.getUserMedia({ audio: true }).
+
+Upon success, set isMicGranted = true, remove the glow, and initialize the Picovoice Porcupine engine.
+
+Dispatch a premium system notification (toast): "Microphone Linked. Say 'HEY BUDDY' to wake AURA AI ASSISTANT."
+
+Refresh Trigger: Ensure the OS "Right-Click -> Refresh" desktop action temporarily resets micGlowActive to true for 10 seconds to remind the user.
+
+2. P2P Chess - Network & Opponent HUD:
+
+Top Status Bar: Add a sleek rectangular glassmorphism tab above the chessboard displaying [Opponent Alias] and a Network Stability indicator.
+
+Ping/Pong Logic: Broadcast a ping event every 5 seconds. When the opponent receives it, they broadcast pong. Calculate latency (ms) and show a dot: Green (<100ms), Yellow (<300ms), Red (>300ms).
+
+Disconnect Handling: Use Supabase presence or detect a missed heartbeat (no pong for 15s) to trigger a modal: "Opponent disconnected. Match ended."
+
+3. P2P Chess - Real-Time Chat:
+
+Add a chat section directly below the chessboard.
+
+Store messages in a local state array. Broadcast messages using channel.send({ type: 'broadcast', event: 'chat', payload: { sender, text } }). Render them in real-time.
+
+4. P2P Chess - Cooperative Actions (Undo, Draw, Resign):
+
+Buttons: Add [↶ Undo], [🤝 Offer Draw], [🏳️ Resign] below or next to the board.
+
+Undo & Draw: >   * Clicking sends an undo_request or draw_request broadcast.
+
+The opponent sees a toast/modal: "[Alias] requests an Undo. [Accept] [Decline]".
+
+If accepted, send undo_accept. Upon receiving undo_accept, BOTH clients execute chess.undo() (twice if needed to revert to the requester's turn) and update the board. Same logic for draw_accept (ends game as draw).
+
+Resign: Clicking immediately sends a resign broadcast and ends the local game as a loss. The opponent receives it, ends their game, and shows a triumphant modal: "Opponent Resigned. YOU WIN!".
+
+Ensure all Supabase broadcasts are cleanly integrated into the existing channel subscription to avoid multiple listeners. Maintain the strict Cyber-OS aesthetic.

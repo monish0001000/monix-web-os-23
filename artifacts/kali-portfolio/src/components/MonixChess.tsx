@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import AIWorker from "./chess.worker?worker";
 import { supabase, supabaseReady } from "@/lib/supabaseClient";
+import { toast } from "sonner";
 
 // ─── Theme System ────────────────────────────────────────────────────────────────
 type Theme = "dark" | "light";
@@ -613,6 +614,23 @@ export default function MonixChess() {
   const matchChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const onlineMatchIdRef = useRef<string | null>(null);
 
+  // ── Online HUD + ping ──────────────────────────────────────────────────────
+  const [opponentHudAlias, setOpponentHudAlias] = useState("");
+  const [pingMs, setPingMs] = useState<number | null>(null);
+  const [isDisconnected, setIsDisconnected] = useState(false);
+  const pingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pongTimeoutRef  = useRef<ReturnType<typeof setTimeout>  | null>(null);
+  const pingStartRef    = useRef<number>(0);
+
+  // ── In-match chat ──────────────────────────────────────────────────────────
+  const [chatMessages, setChatMessages] = useState<Array<{ sender: string; text: string; ts: number }>>([]);
+  const [chatInput, setChatInput] = useState("");
+  const chatEndRef = useRef<HTMLDivElement>(null);
+
+  // ── Cooperative action requests ────────────────────────────────────────────
+  const [pendingUndoFrom, setPendingUndoFrom] = useState<string | null>(null);
+  const [pendingDrawFrom, setPendingDrawFrom] = useState<string | null>(null);
+
   // ── Derived ────────────────────────────────────────────────────────────────
   const diff = DIFFICULTIES[gameState.diffIdx];
   const isFlipped =
@@ -943,15 +961,31 @@ export default function MonixChess() {
   }, [reviewIdx, gameState.phase]);
 
   // ── Online P2P helpers ─────────────────────────────────────────────────────
-  const startOnlineMatch = useCallback((matchId: string, playAsBlack: boolean) => {
+  const startOnlineMatch = useCallback((matchId: string, playAsBlack: boolean, oppAlias: string = "") => {
+    // Clear previous match channel + ping loop
+    if (pingIntervalRef.current) { clearInterval(pingIntervalRef.current); pingIntervalRef.current = null; }
+    if (pongTimeoutRef.current)  { clearTimeout(pongTimeoutRef.current);   pongTimeoutRef.current  = null; }
     matchChannelRef.current?.unsubscribe();
     matchChannelRef.current = null;
     onlineMatchIdRef.current = matchId;
+
+    // Reset new-feature state
+    setOpponentHudAlias(oppAlias);
+    setPingMs(null);
+    setIsDisconnected(false);
+    setChatMessages([]);
+    setChatInput("");
+    setPendingUndoFrom(null);
+    setPendingDrawFrom(null);
+
     setIsOnlineBlack(playAsBlack);
     chess.reset(); syncBoard(null);
     setSelected(null); setLegalMoves([]); setHint(null); setLastMove(null);
     setTimers({ w: 600, b: 600 });
+
     const ch = supabase.channel(`chess_match_${matchId}`);
+
+    // ── Existing: move broadcast ──────────────────────────────────────────
     ch.on("broadcast", { event: "move" }, ({ payload }: any) => {
       try {
         const move = chess.move({ from: payload.from, to: payload.to, promotion: payload.promotion || "q" });
@@ -961,7 +995,70 @@ export default function MonixChess() {
         }
       } catch (_) {}
     });
-    ch.subscribe();
+
+    // ── Ping / pong (latency) ─────────────────────────────────────────────
+    ch.on("broadcast", { event: "ping" }, () => {
+      ch.send({ type: "broadcast", event: "pong", payload: {} });
+    });
+    ch.on("broadcast", { event: "pong" }, () => {
+      const latency = Date.now() - pingStartRef.current;
+      setPingMs(latency);
+      if (pongTimeoutRef.current) { clearTimeout(pongTimeoutRef.current); pongTimeoutRef.current = null; }
+    });
+
+    // ── Chat ──────────────────────────────────────────────────────────────
+    ch.on("broadcast", { event: "chat" }, ({ payload }: any) => {
+      setChatMessages(prev => [...prev, { sender: payload.sender as string, text: payload.text as string, ts: Date.now() }]);
+    });
+
+    // ── Cooperative: undo request ─────────────────────────────────────────
+    ch.on("broadcast", { event: "undo_request" }, ({ payload }: any) => {
+      setPendingUndoFrom(payload.alias as string);
+    });
+    ch.on("broadcast", { event: "undo_accept" }, () => {
+      chess.undo(); chess.undo();
+      const h = chess.history({ verbose: true });
+      const prevLm = h.length > 0
+        ? { from: h[h.length - 1].from as Square, to: h[h.length - 1].to as Square }
+        : null;
+      syncBoard(prevLm);
+      setSelected(null); setLegalMoves([]); setHint(null);
+      toast.success("Undo accepted — move reverted.");
+    });
+    ch.on("broadcast", { event: "undo_decline" }, () => {
+      toast.error("Undo request declined.");
+    });
+
+    // ── Cooperative: draw offer ───────────────────────────────────────────
+    ch.on("broadcast", { event: "draw_request" }, ({ payload }: any) => {
+      setPendingDrawFrom(payload.alias as string);
+    });
+    ch.on("broadcast", { event: "draw_accept" }, () => {
+      setGameState(gs => ({ ...gs, phase: "over", winner: null, endReason: "draw" }));
+    });
+    ch.on("broadcast", { event: "draw_decline" }, () => {
+      toast.error("Draw offer declined.");
+    });
+
+    // ── Cooperative: resign broadcast ─────────────────────────────────────
+    ch.on("broadcast", { event: "resign" }, () => {
+      const myColor = playAsBlack ? "b" : "w";
+      setGameState(gs => ({ ...gs, phase: "over", winner: myColor === "w" ? "WHITE" : "BLACK", endReason: "resign" }));
+      toast.success("Opponent resigned. YOU WIN!");
+    });
+
+    // ── Subscribe + start ping loop ───────────────────────────────────────
+    ch.subscribe(() => {
+      pingIntervalRef.current = setInterval(() => {
+        pingStartRef.current = Date.now();
+        ch.send({ type: "broadcast", event: "ping", payload: {} });
+        if (pongTimeoutRef.current) clearTimeout(pongTimeoutRef.current);
+        pongTimeoutRef.current = setTimeout(() => {
+          setIsDisconnected(true);
+        }, 15000);
+      }, 5000);
+    });
+
     matchChannelRef.current = ch;
     setIncomingChallenge(null);
     setWaitingFor(null);
@@ -985,7 +1082,7 @@ export default function MonixChess() {
     ch.on("broadcast", { event: "play_accept" }, ({ payload }: any) => {
       if (payload.target_uid === myUid && payload.matchId) {
         setWaitingFor(null);
-        startOnlineMatch(payload.matchId, false);
+        startOnlineMatch(payload.matchId, false, payload.alias ?? "");
       }
     });
     ch.on("broadcast", { event: "play_decline" }, ({ payload }: any) => {
@@ -1010,13 +1107,13 @@ export default function MonixChess() {
 
   const acceptChallenge = useCallback(() => {
     if (!incomingChallenge) return;
-    const { uid, matchId } = incomingChallenge;
+    const { uid, matchId, alias: oppAlias } = incomingChallenge;
     lobbyChannelRef.current?.send({
       type: "broadcast",
       event: "play_accept",
       payload: { alias: onlineAlias, uid: myUid, target_uid: uid, matchId },
     });
-    startOnlineMatch(matchId, true);
+    startOnlineMatch(matchId, true, oppAlias);
   }, [incomingChallenge, onlineAlias, myUid, startOnlineMatch]);
 
   const declineChallenge = useCallback(() => {

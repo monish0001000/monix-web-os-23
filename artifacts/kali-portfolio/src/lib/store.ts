@@ -93,6 +93,8 @@ interface OSState {
   auraHearingSound: boolean;
   auraVoicePreference: 'female' | 'male';
   auraMessages: AuraMessage[];
+  isMicGranted: boolean;
+  micGlowActive: boolean;
   setAuraMuted: (muted: boolean) => void;
   setAuraArmed: (armed: boolean) => void;
   setAuraWakeActive: (active: boolean) => void;
@@ -100,6 +102,8 @@ interface OSState {
   setAuraVoicePreference: (v: 'female' | 'male') => void;
   addAuraMessage: (msg: AuraMessage) => void;
   clearAuraMessages: () => void;
+  setIsMicGranted: (v: boolean) => void;
+  setMicGlowActive: (v: boolean) => void;
   setOpenWindowCallback: (fn: (id: string) => void) => void;
   startAuraListening: () => void;
   stopAuraListening: () => void;
@@ -237,6 +241,8 @@ export const useOSStore = create<OSState>((set, get) => ({
   auraHearingSound:    false,
   auraVoicePreference: 'male' as 'female' | 'male',
   auraMessages:        [],
+  isMicGranted:        false,
+  micGlowActive:       true,
 
   setAuraMuted:           (muted)  => set({ auraMuted: muted }),
   setAuraArmed:           (armed)  => set({ auraArmed: armed }),
@@ -245,6 +251,8 @@ export const useOSStore = create<OSState>((set, get) => ({
   setAuraVoicePreference: (v)      => set({ auraVoicePreference: v }),
   addAuraMessage:         (msg)    => set((s) => ({ auraMessages: [...s.auraMessages, msg] })),
   clearAuraMessages:      ()       => set({ auraMessages: [] }),
+  setIsMicGranted:        (v)      => set({ isMicGranted: v }),
+  setMicGlowActive:       (v)      => set({ micGlowActive: v }),
 
   setOpenWindowCallback: (fn) => { _openWindowFn = fn; },
 

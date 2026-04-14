@@ -27,7 +27,6 @@ import RightClickMenu from "./RightClickMenu";
 import { playClickSound, playCloseSound } from "@/utils/SoundEngine";
 import MediaViewerApp, { type MediaType } from "./MediaViewerApp";
 import { useOSStore } from "@/lib/store";
-import AuraBall from "@/components/ui/AuraBall";
 import AuraListenGlow from "@/components/ui/AuraListenGlow";
 import { preCacheWakeAudio } from "@/lib/AuraService";
 
@@ -126,6 +125,7 @@ export default function Desktop() {
   const focusWindow = useOSStore((s) => s.focusWindow);
   const toggleMinimize = useOSStore((s) => s.toggleMinimize);
   const setKillCallback = useOSStore((s) => s.setKillCallback);
+  const startAuraListening = useOSStore((s) => s.startAuraListening);
   const computedCursor =
     cursorStyle === "crosshair" || cursorStyle === "target" ? "crosshair" : "default";
 
@@ -143,6 +143,12 @@ export default function Desktop() {
     const t = setTimeout(() => preCacheWakeAudio(), 1500);
     return () => clearTimeout(t);
   }, []);
+
+  // Auto-start AURA wake-word listening silently in background
+  useEffect(() => {
+    const t = setTimeout(() => startAuraListening(), 800);
+    return () => clearTimeout(t);
+  }, [startAuraListening]);
 
   // Register the kill callback once so TaskManager can force-close windows
   useEffect(() => {
@@ -796,52 +802,41 @@ export default function Desktop() {
       <AnimatePresence>
         {showGamesTip && (
           <motion.div
-            initial={{ opacity: 0, y: 16, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 12, scale: 0.95 }}
-            transition={{ duration: 0.25, ease: "easeOut" }}
+            initial={{ opacity: 0, x: 60 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 60 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
             onClick={() => { handleOpenWindow("chess"); setShowGamesTip(false); }}
+            className="bg-black/80 backdrop-blur-md border border-[#10b981] rounded-lg p-4 text-white flex items-center gap-3"
             style={{
               position: "fixed",
               bottom: 62,
               right: 16,
               zIndex: 400,
               cursor: "pointer",
-              background: "rgba(10, 8, 0, 0.88)",
-              backdropFilter: "blur(16px)",
-              WebkitBackdropFilter: "blur(16px)",
-              border: "1px solid rgba(255,215,0,0.25)",
-              borderRadius: 10,
-              padding: "10px 14px",
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-              boxShadow: "0 8px 32px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,215,0,0.08)",
+              boxShadow: "0 0 15px rgba(16,185,129,0.3), 0 8px 32px rgba(0,0,0,0.7)",
               minWidth: 240,
-              maxWidth: 280,
+              maxWidth: 290,
             }}
           >
-            <span style={{ fontSize: 22, lineHeight: 1, flexShrink: 0 }}>🎮</span>
+            <span style={{ fontSize: 22, lineHeight: 1, flexShrink: 0 }}>♟</span>
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 12, fontWeight: 600, color: "#ffe566", fontFamily: "monospace", letterSpacing: "0.04em" }}>
-                Try Games in MONIX OS!
+              <div style={{ fontSize: 12, fontWeight: 700, color: "#10b981", fontFamily: "monospace", letterSpacing: "0.05em" }}>
+                MONIX CHESS
               </div>
-              <div style={{ fontSize: 10, color: "rgba(255,255,255,0.45)", marginTop: 2, fontFamily: "monospace" }}>
-                Play Grandmaster Chess — click to open
+              <div style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", marginTop: 2, fontFamily: "monospace" }}>
+                Play online · vs AI · local 2P
               </div>
             </div>
             <button
               onClick={(e) => { e.stopPropagation(); setShowGamesTip(false); }}
-              style={{ background: "none", border: "none", color: "rgba(255,255,255,0.3)", cursor: "pointer", fontSize: 14, lineHeight: 1, padding: 2, flexShrink: 0 }}
+              style={{ background: "none", border: "none", color: "rgba(255,255,255,0.35)", cursor: "pointer", fontSize: 16, lineHeight: 1, padding: 2, flexShrink: 0 }}
             >
               ×
             </button>
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* AURA Ball — always visible floating orb */}
-      <AuraBall />
 
       </main>
 

@@ -588,23 +588,23 @@ export function createAuraService(cb: AuraServiceCallbacks): AuraServiceHandle {
     }, 350);
   }
 
-  // ── Tamil wake greeting — spoken instantly on wake ────────────────────────
-  function sayTamilGreeting() {
+  // ── Premium wake greeting ─────────────────────────────────────────────────
+  function sayWakeGreeting() {
     if (!window.speechSynthesis) return;
     window.speechSynthesis.cancel();
     function doSpeak() {
-      const u = new SpeechSynthesisUtterance('Vanakkam, naanthaan Aura, sollunga!');
+      const u = new SpeechSynthesisUtterance('System online. Awaiting your command, Sir.');
       const voices = window.speechSynthesis.getVoices();
-      // Prefer Indian English voice for natural Tanglish pronunciation
       const voice =
+        voices.find(v => v.name === 'Google UK English Male') ||
+        voices.find(v => v.name === 'Google US English') ||
         voices.find(v => v.lang === 'en-IN') ||
-        voices.find(v => v.lang.endsWith('-IN')) ||
         voices.find(v => v.lang.startsWith('en')) ||
         null;
       if (voice) u.voice = voice;
-      u.lang   = 'en-IN';
+      u.lang   = 'en-US';
       u.rate   = 1.0;
-      u.pitch  = 1.1;
+      u.pitch  = 0.88;
       u.volume = 1.0;
       window.speechSynthesis.speak(u);
     }
@@ -627,8 +627,8 @@ export function createAuraService(cb: AuraServiceCallbacks): AuraServiceHandle {
     playWakeSound();
     setWakeActiveLocal(true);
 
-    // Tamil greeting — fires immediately on wake
-    sayTamilGreeting();
+    // Premium greeting — fires immediately on wake
+    sayWakeGreeting();
 
     if (afterText.length > 2) {
       // Command was already spoken after the wake word — process it fast

@@ -27,6 +27,7 @@ import {
   X,
 } from "lucide-react";
 import AIWorker from "./chess.worker?worker";
+import { supabase, supabaseReady } from "@/lib/supabaseClient";
 
 // ─── Theme System ────────────────────────────────────────────────────────────────
 type Theme = "dark" | "light";
@@ -346,9 +347,9 @@ const DIFFICULTIES = [
 ];
 
 
-type GameMode = "pve" | "pvp";
+type GameMode = "pve" | "pvp" | "online";
 type PlayerColor = "w" | "b";
-type GamePhase = "setup" | "playing" | "over" | "review";
+type GamePhase = "setup" | "online_name" | "online_lobby" | "playing" | "over" | "review";
 
 interface GameState {
   phase: GamePhase;
@@ -582,6 +583,8 @@ export default function MonixChess() {
   useEffect(() => {
     return () => {
       if (aiWorker.current) aiWorker.current.terminate();
+      lobbyChannelRef.current?.unsubscribe();
+      matchChannelRef.current?.unsubscribe();
     };
   }, []);
 
@@ -598,9 +601,23 @@ export default function MonixChess() {
     endReason: null,
   });
 
+  // ── Online P2P state ───────────────────────────────────────────────────────
+  const [aliasInput, setAliasInput] = useState("");
+  const [onlineAlias, setOnlineAlias] = useState("");
+  const [myUid] = useState(() => crypto.randomUUID());
+  const [onlinePlayers, setOnlinePlayers] = useState<Array<{ alias: string; uid: string }>>([]);
+  const [incomingChallenge, setIncomingChallenge] = useState<{ alias: string; uid: string; matchId: string } | null>(null);
+  const [waitingFor, setWaitingFor] = useState<{ alias: string; uid: string } | null>(null);
+  const [isOnlineBlack, setIsOnlineBlack] = useState(false);
+  const lobbyChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const matchChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const onlineMatchIdRef = useRef<string | null>(null);
+
   // ── Derived ────────────────────────────────────────────────────────────────
   const diff = DIFFICULTIES[gameState.diffIdx];
-  const isFlipped = gameState.mode === "pve" && gameState.playerColor === "b";
+  const isFlipped =
+    gameState.mode === "online" ? isOnlineBlack :
+    gameState.mode === "pve" && gameState.playerColor === "b";
   const files = isFlipped ? ["h","g","f","e","d","c","b","a"] : ["a","b","c","d","e","f","g","h"];
   const ranks = isFlipped ? [1,2,3,4,5,6,7,8] : [8,7,6,5,4,3,2,1];
   const currentTurn = chess.turn();
@@ -696,8 +713,12 @@ export default function MonixChess() {
   // ── AI turn detection ──────────────────────────────────────────────────────
   const isPlayerTurn = useCallback(() => {
     if (gameState.mode === "pvp") return true;
+    if (gameState.mode === "online") {
+      const myColor = isOnlineBlack ? "b" : "w";
+      return chess.turn() === myColor;
+    }
     return chess.turn() === gameState.playerColor;
-  }, [chess, gameState]);
+  }, [chess, gameState, isOnlineBlack]);
 
   const doAiMove = useCallback(() => {
     if (chess.isGameOver() || isAiThinking) return;
@@ -770,6 +791,7 @@ export default function MonixChess() {
         const isPromo = piece?.type === "p" && ((piece.color === "w" && sq[1] === "8") || (piece.color === "b" && sq[1] === "1"));
         if (isPromo) { setPromotionPending({ from: selected, to: sq }); setSelected(null); setLegalMoves([]); return; }
         chess.move({ from: selected, to: sq });
+        broadcastOnlineMove(selected, sq);
         syncBoard({ from: selected, to: sq }); checkGameOver();
         setSelected(null); setLegalMoves([]); setHint(null);
         return;
@@ -788,7 +810,7 @@ export default function MonixChess() {
       setSelected(sq);
       setLegalMoves(chess.moves({ square: sq, verbose: true }).map((m) => m.to as Square));
     }
-  }, [chess, selected, legalMoves, isPlayerTurn, isAiThinking, gameState.phase, syncBoard, checkGameOver]);
+  }, [chess, selected, legalMoves, isPlayerTurn, isAiThinking, gameState.phase, syncBoard, checkGameOver, broadcastOnlineMove]);
 
   const handleDragStart = useCallback((sq: Square) => {
     if (!isPlayerTurn() || isAiThinking || gameState.phase !== "playing") return;
@@ -804,14 +826,19 @@ export default function MonixChess() {
       const piece = chess.get(dragFrom);
       const isPromo = piece?.type === "p" && ((piece.color === "w" && sq[1] === "8") || (piece.color === "b" && sq[1] === "1"));
       if (isPromo) { setPromotionPending({ from: dragFrom, to: sq }); }
-      else { chess.move({ from: dragFrom, to: sq }); syncBoard({ from: dragFrom, to: sq }); checkGameOver(); setHint(null); }
+      else {
+        chess.move({ from: dragFrom, to: sq });
+        broadcastOnlineMove(dragFrom, sq);
+        syncBoard({ from: dragFrom, to: sq }); checkGameOver(); setHint(null);
+      }
     }
     setDragFrom(null); setDragOver(null); setSelected(null); setLegalMoves([]);
-  }, [chess, dragFrom, legalMoves, syncBoard, checkGameOver]);
+  }, [chess, dragFrom, legalMoves, syncBoard, checkGameOver, broadcastOnlineMove]);
 
   const handlePromotion = (piece: PieceSymbol) => {
     if (!promotionPending) return;
     chess.move({ from: promotionPending.from, to: promotionPending.to, promotion: piece });
+    broadcastOnlineMove(promotionPending.from, promotionPending.to, piece);
     syncBoard({ from: promotionPending.from, to: promotionPending.to }); checkGameOver(); setPromotionPending(null);
   };
 
@@ -875,6 +902,9 @@ export default function MonixChess() {
   }, [chess, syncBoard]);
 
   const handleQuit = useCallback(() => {
+    lobbyChannelRef.current?.unsubscribe(); lobbyChannelRef.current = null;
+    matchChannelRef.current?.unsubscribe(); matchChannelRef.current = null;
+    setOnlinePlayers([]); setIncomingChallenge(null); setWaitingFor(null);
     chess.reset(); syncBoard(null);
     setSelected(null); setLegalMoves([]); setHint(null); setLastMove(null);
     setReviewSnaps([]); setReviewIdx(-1); setTimers({ w: 600, b: 600 });
@@ -902,6 +932,111 @@ export default function MonixChess() {
     }
   }, [reviewIdx, gameState.phase]);
 
+  // ── Online P2P helpers ─────────────────────────────────────────────────────
+  const broadcastOnlineMove = useCallback((from: Square, to: Square, promotion?: string) => {
+    if (gameState.mode !== "online" || !matchChannelRef.current) return;
+    matchChannelRef.current.send({
+      type: "broadcast",
+      event: "move",
+      payload: { from, to, promotion: promotion || "q" },
+    });
+  }, [gameState.mode]);
+
+  const startOnlineMatch = useCallback((matchId: string, playAsBlack: boolean) => {
+    matchChannelRef.current?.unsubscribe();
+    matchChannelRef.current = null;
+    onlineMatchIdRef.current = matchId;
+    setIsOnlineBlack(playAsBlack);
+    chess.reset(); syncBoard(null);
+    setSelected(null); setLegalMoves([]); setHint(null); setLastMove(null);
+    setTimers({ w: 600, b: 600 });
+    const ch = supabase.channel(`chess_match_${matchId}`);
+    ch.on("broadcast", { event: "move" }, ({ payload }: any) => {
+      try {
+        const move = chess.move({ from: payload.from, to: payload.to, promotion: payload.promotion || "q" });
+        if (move) {
+          syncBoard({ from: payload.from as Square, to: payload.to as Square });
+          checkGameOver();
+        }
+      } catch (_) {}
+    });
+    ch.subscribe();
+    matchChannelRef.current = ch;
+    setIncomingChallenge(null);
+    setWaitingFor(null);
+    setGameState(gs => ({ ...gs, phase: "playing", mode: "online", winner: null, endReason: null }));
+  }, [chess, syncBoard, checkGameOver]);
+
+  const joinLobby = useCallback((alias: string) => {
+    lobbyChannelRef.current?.unsubscribe();
+    lobbyChannelRef.current = null;
+    const ch = supabase.channel("chess_global_lobby", { config: { presence: { key: myUid } } });
+    ch.on("presence", { event: "sync" }, () => {
+      const state = ch.presenceState<{ alias: string; uid: string }>();
+      const players = Object.values(state).flat().filter((p: any) => p.uid !== myUid).map((p: any) => ({ alias: p.alias, uid: p.uid }));
+      setOnlinePlayers(players);
+    });
+    ch.on("broadcast", { event: "play_request" }, ({ payload }: any) => {
+      if (payload.target_uid === myUid) {
+        setIncomingChallenge({ alias: payload.alias, uid: payload.uid, matchId: payload.matchId });
+      }
+    });
+    ch.on("broadcast", { event: "play_accept" }, ({ payload }: any) => {
+      if (payload.target_uid === myUid && payload.matchId) {
+        setWaitingFor(null);
+        startOnlineMatch(payload.matchId, false);
+      }
+    });
+    ch.on("broadcast", { event: "play_decline" }, ({ payload }: any) => {
+      if (payload.target_uid === myUid) setWaitingFor(null);
+    });
+    ch.subscribe(async (status: string) => {
+      if (status === "SUBSCRIBED") await ch.track({ alias, uid: myUid });
+    });
+    lobbyChannelRef.current = ch;
+    setGameState(gs => ({ ...gs, phase: "online_lobby" as GamePhase, mode: "online" }));
+  }, [myUid, startOnlineMatch]);
+
+  const sendChallenge = useCallback((opponent: { alias: string; uid: string }) => {
+    const matchId = `${myUid.slice(0, 8)}_${Date.now()}`;
+    setWaitingFor(opponent);
+    lobbyChannelRef.current?.send({
+      type: "broadcast",
+      event: "play_request",
+      payload: { alias: onlineAlias, uid: myUid, target_uid: opponent.uid, matchId },
+    });
+  }, [myUid, onlineAlias]);
+
+  const acceptChallenge = useCallback(() => {
+    if (!incomingChallenge) return;
+    const { uid, matchId } = incomingChallenge;
+    lobbyChannelRef.current?.send({
+      type: "broadcast",
+      event: "play_accept",
+      payload: { alias: onlineAlias, uid: myUid, target_uid: uid, matchId },
+    });
+    startOnlineMatch(matchId, true);
+  }, [incomingChallenge, onlineAlias, myUid, startOnlineMatch]);
+
+  const declineChallenge = useCallback(() => {
+    if (!incomingChallenge) return;
+    lobbyChannelRef.current?.send({
+      type: "broadcast",
+      event: "play_decline",
+      payload: { uid: myUid, target_uid: incomingChallenge.uid },
+    });
+    setIncomingChallenge(null);
+  }, [incomingChallenge, myUid]);
+
+  const leaveLobby = useCallback(() => {
+    lobbyChannelRef.current?.unsubscribe();
+    lobbyChannelRef.current = null;
+    setOnlinePlayers([]);
+    setIncomingChallenge(null);
+    setWaitingFor(null);
+    setGameState({ phase: "setup", mode: "pve", playerColor: "w", diffIdx: 0, winner: null, endReason: null });
+  }, []);
+
   const startGame = useCallback(() => {
     chess.reset(); syncBoard();
     setSelected(null); setLegalMoves([]); setHint(null); setTimers({ w: 600, b: 600 });
@@ -910,6 +1045,150 @@ export default function MonixChess() {
 
   // ── Board memoization ──────────────────────────────────────────────────────
   const boardData = useMemo(() => chess.board(), [boardKey]);
+
+  // ─── ONLINE NAME ENTRY SCREEN ─────────────────────────────────────────────
+  if (gameState.phase === "online_name") {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-4" style={{ background: th.bg }}>
+        <div className="w-full max-w-sm">
+          <div className="text-center mb-8">
+            <div className="text-4xl font-black tracking-[0.2em] mb-1" style={{ color: th.accent }}>MONIX</div>
+            <div className="text-[10px] font-mono tracking-[0.5em] uppercase" style={{ color: th.textMuted }}>Online P2P Lobby</div>
+          </div>
+          {!supabaseReady && (
+            <div className="mb-4 p-3 rounded-sm text-center text-[11px] font-mono" style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", color: "#f87171" }}>
+              ⚠ Supabase not configured — online mode requires VITE_SUPABASE_URL &amp; VITE_SUPABASE_ANON_KEY
+            </div>
+          )}
+          <div className="rounded-sm p-6 space-y-4" style={{ background: th.surface, border: `1px solid ${th.surfaceBorder}` }}>
+            <div className="text-[10px] font-mono tracking-widest uppercase mb-3" style={{ color: th.textAccent }}>// Enter Your Alias</div>
+            <input
+              type="text"
+              maxLength={20}
+              placeholder="e.g. Shadow_X"
+              value={aliasInput}
+              onChange={e => setAliasInput(e.target.value)}
+              onKeyDown={e => { if (e.key === "Enter" && aliasInput.trim() && supabaseReady) { setOnlineAlias(aliasInput.trim()); joinLobby(aliasInput.trim()); } }}
+              autoFocus
+              className="w-full bg-transparent outline-none font-mono text-sm"
+              style={{ border: `1px solid ${th.accentBorder}`, color: th.textPrimary, padding: "10px 12px", borderRadius: 2 }}
+            />
+            <button
+              onClick={() => { if (aliasInput.trim() && supabaseReady) { setOnlineAlias(aliasInput.trim()); joinLobby(aliasInput.trim()); } }}
+              disabled={!aliasInput.trim() || !supabaseReady}
+              className="w-full py-3 text-xs font-mono tracking-[0.3em] uppercase transition-all"
+              style={{ border: `1px solid ${th.accentBorder}`, background: th.accentBg, color: th.accentText, opacity: (!aliasInput.trim() || !supabaseReady) ? 0.4 : 1 }}
+            >
+              ENTER LOBBY <ChevronRight className="inline w-3.5 h-3.5" />
+            </button>
+            <button onClick={handleQuit} className="w-full py-2 text-[10px] font-mono tracking-wider" style={{ color: th.textMuted }}>
+              ← Back
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ─── ONLINE LOBBY SCREEN ──────────────────────────────────────────────────
+  if (gameState.phase === "online_lobby") {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-4" style={{ background: th.bg }}>
+        <div className="w-full max-w-sm">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <div className="text-lg font-black tracking-widest font-mono" style={{ color: th.accent }}>ONLINE LOBBY</div>
+              <div className="text-[10px] font-mono mt-0.5" style={{ color: th.textMuted }}>
+                You: <span style={{ color: th.textPrimary }}>{onlineAlias}</span>
+                <span className="ml-2" style={{ color: "#10b981" }}>● LIVE</span>
+              </div>
+            </div>
+            <button onClick={leaveLobby} className="text-[10px] font-mono px-3 py-1.5 transition-colors"
+              style={{ border: `1px solid ${th.ctrlBorder}`, color: th.ctrlText }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "#ff444488"; (e.currentTarget as HTMLElement).style.color = "#ff4444"; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = th.ctrlBorder; (e.currentTarget as HTMLElement).style.color = th.ctrlText; }}
+            >
+              ← Leave
+            </button>
+          </div>
+
+          {/* Incoming challenge toast */}
+          <AnimatePresence>
+            {incomingChallenge && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+                className="mb-4 p-4 rounded-sm"
+                style={{ background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.4)", boxShadow: "0 0 16px rgba(16,185,129,0.15)" }}
+              >
+                <div className="text-xs font-mono font-bold mb-3" style={{ color: "#10b981" }}>
+                  ⚔ <span style={{ color: th.textPrimary }}>{incomingChallenge.alias}</span> challenged you!
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={acceptChallenge} className="flex-1 py-2 text-[10px] font-mono tracking-wider transition-all"
+                    style={{ border: "1px solid rgba(16,185,129,0.6)", background: "rgba(16,185,129,0.12)", color: "#10b981" }}>
+                    ✓ ACCEPT
+                  </button>
+                  <button onClick={declineChallenge} className="flex-1 py-2 text-[10px] font-mono tracking-wider transition-all"
+                    style={{ border: "1px solid rgba(239,68,68,0.4)", background: "rgba(239,68,68,0.08)", color: "#f87171" }}>
+                    ✗ DECLINE
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Waiting indicator */}
+          <AnimatePresence>
+            {waitingFor && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                className="mb-4 p-3 text-center rounded-sm text-[10px] font-mono"
+                style={{ border: `1px solid ${th.accentBorder}`, color: th.textAccent, background: th.accentBg }}>
+                <span className="animate-pulse">⏳ Waiting for {waitingFor.alias} to respond...</span>
+                <button onClick={() => setWaitingFor(null)} className="ml-3 opacity-50 hover:opacity-100">✗</button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Players list */}
+          <div className="rounded-sm" style={{ background: th.surface, border: `1px solid ${th.surfaceBorder}` }}>
+            <div className="px-4 py-2.5 border-b text-[10px] font-mono tracking-widest uppercase flex items-center gap-2"
+              style={{ borderColor: th.surfaceBorder, color: th.textAccent }}>
+              // Online Players
+              <span style={{ color: th.textMuted }}>({onlinePlayers.length})</span>
+            </div>
+            {onlinePlayers.length === 0 ? (
+              <div className="px-4 py-8 text-center text-[11px] font-mono" style={{ color: th.textMuted }}>
+                No players online yet. Share the URL to invite someone.
+              </div>
+            ) : (
+              <div className="divide-y" style={{ borderColor: th.surfaceBorder }}>
+                {onlinePlayers.map((p) => (
+                  <div key={p.uid} className="flex items-center justify-between px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <span style={{ color: "#10b981", fontSize: 8 }}>●</span>
+                      <span className="text-sm font-mono" style={{ color: th.textPrimary }}>{p.alias}</span>
+                    </div>
+                    <button
+                      onClick={() => sendChallenge(p)}
+                      disabled={!!waitingFor}
+                      className="text-[10px] font-mono px-3 py-1.5 tracking-wider transition-all"
+                      style={{ border: `1px solid ${th.accentBorder}`, color: th.accentText, background: th.accentBg, opacity: waitingFor ? 0.4 : 1 }}
+                    >
+                      CHALLENGE
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          <div className="mt-3 text-center text-[9px] font-mono" style={{ color: th.textMuted }}>
+            Refreshes automatically · Challenges expire when you leave
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // ─── SETUP SCREEN ──────────────────────────────────────────────────────────
   if (gameState.phase === "setup") {
@@ -962,6 +1241,20 @@ export default function MonixChess() {
                   </button>
                 ))}
               </div>
+            </div>
+
+            {/* P2P Multiplayer */}
+            <div>
+              <div className="text-[10px] font-mono tracking-widest uppercase mb-2.5" style={{ color: "#10b981" }}>// P2P MULTIPLAYER</div>
+              <button
+                onClick={() => setGameState(gs => ({ ...gs, mode: "online", phase: "online_name" as GamePhase }))}
+                className="w-full py-2.5 text-xs font-mono tracking-wider transition-all duration-150 flex items-center justify-center gap-2"
+                style={{ border: "1px solid rgba(16,185,129,0.45)", color: "#10b981", background: "rgba(16,185,129,0.06)" }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(16,185,129,0.8)"; (e.currentTarget as HTMLElement).style.background = "rgba(16,185,129,0.12)"; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(16,185,129,0.45)"; (e.currentTarget as HTMLElement).style.background = "rgba(16,185,129,0.06)"; }}
+              >
+                <span>⚡</span> ONLINE LOBBY
+              </button>
             </div>
 
             {/* Color */}
@@ -1103,6 +1396,8 @@ export default function MonixChess() {
             <span className="text-[9px] font-mono px-1.5 py-0.5 border" style={{ borderColor: diff.hex + "80", color: diff.hex }}>
               {diff.name.toUpperCase()}
             </span>
+          ) : gameState.mode === "online" ? (
+            <span className="text-[9px] font-mono px-1.5 py-0.5 border" style={{ borderColor: "rgba(16,185,129,0.5)", color: "#10b981" }}>ONLINE</span>
           ) : (
             <span className="text-[9px] font-mono px-1.5 py-0.5 border" style={{ borderColor: th.accentBorder, color: th.accentText }}>2P</span>
           )}
@@ -1162,6 +1457,11 @@ export default function MonixChess() {
               <div className="text-[9px] font-mono uppercase tracking-widest" style={{ color: th.textMuted }}>◼ BLACK</div>
               {gameState.mode === "pvp" && (
                 <div className="text-[9px] font-mono" style={{ color: th.textMuted }}>Player 2</div>
+              )}
+              {gameState.mode === "online" && (
+                <div className="text-[9px] font-mono" style={{ color: "#10b981" }}>
+                  {isOnlineBlack ? onlineAlias : "Opponent"}
+                </div>
               )}
             </div>
             <div className="text-sm font-mono font-bold tabular-nums" style={{ color: playerTimerColor("b") }}>

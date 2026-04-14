@@ -1,0 +1,37 @@
+@workspace We need to clean up a bad AURA UI, upgrade game notifications, and cleanly ADD a new "P2P Online Multiplayer" mode to the existing Chess application without altering the local/AI modes. Execute these exact steps flawlessly:
+
+1. Revert & Clean AURA UI:
+
+Completely remove the floating text box and circular mic button from the bottom right of the screen (in AuraBall.tsx or related desktop overlays).
+
+Keep the continuous wake-word logic active in the background. The UI must remain completely invisible until triggered.
+
+Greeting: When AURA wakes up, use window.speechSynthesis to say: "System online. Awaiting your command, Sir." in a premium, clear voice.
+
+2. Premium Game Notifications (4-second delay):
+
+Upgrade the notification/toast system in the OS (specifically the ones triggered after game launch).
+
+Aesthetic: Use a dark glassmorphism container: <div className="bg-black/80 backdrop-blur-md border border-[#10b981] shadow-[0_0_15px_rgba(16,185,129,0.3)] rounded-lg p-4 text-white flex items-center gap-3">.
+
+Add smooth framer-motion slide-in/out animations.
+
+3. Add "ONLINE P2P" Mode to ChessApp:
+
+UI Update: In the initial main menu (shown in the image), retain "vs COMPUTER" and "LOCAL 2P". Add a new section below them: // P2P MULTIPLAYER with a button [ ONLINE LOBBY ].
+
+Multiplayer Flow & Supabase Realtime:
+
+Name Entry: Clicking [ ONLINE LOBBY ] opens a view asking the user to "Enter Alias/Name". Save this to state.
+
+The Lobby (Presence): Connect to a Supabase channel chess_global_lobby. Use channel.track({ alias: userName }) to show an "Online Players" list (Friends Tab).
+
+Matchmaking: Clicking an online player sends a direct broadcast event play_request to their UUID. The target sees a premium toast: "[Alias] challenged you! [Accept] [Decline]".
+
+Instant Gameplay: Upon acceptance, both players subscribe to a unique private channel chess_match_[id].
+
+Ultra-Fast Sync: When a valid move occurs via chess.js, immediately broadcast it. The receiver applies it instantly using chess.move().
+
+Board Orientation: Ensure the player who accepted the request (Player 2) sees the board flipped (Black pieces at the bottom).
+
+Ensure the Supabase realtime logic is highly optimized for instant speed, with strict cleanup (channel.unsubscribe()) on unmount to prevent ghost connections. Do not break existing local modes.

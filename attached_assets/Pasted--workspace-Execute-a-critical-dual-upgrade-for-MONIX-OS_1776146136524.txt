@@ -1,0 +1,43 @@
+@workspace Execute a critical dual-upgrade for MONIX OS: Implement an offline wake-word engine for AURA and build a native, bug-free Notepad application. Execute these steps strictly:
+
+PART 1: AURA Offline Wake-Word (Picovoice Porcupine)
+
+Objective: Replace the continuous, resource-heavy Web Speech API listening state with a lightweight, offline wake-word detector using @picovoice/porcupine-web-react.
+
+Implementation:
+
+Install the necessary dependencies: @picovoice/porcupine-web-react and @picovoice/web-voice-processor.
+
+Update AuraService.ts (or the component managing the mic). Initialize Porcupine using the access key from import.meta.env.VITE_PICOVOICE_ACCESS_KEY.
+
+Configure it to listen exclusively for the built-in wake word "Hey Buddy" (or use the default "Porcupine" if custom training is unavailable).
+
+State Logic: The microphone should remain in this low-resource state. Only upon detecting the wake word, trigger setIsAwake(true), start the full-screen neon cyan glow, and switch to the window.SpeechRecognition API (or Pollinations API) to capture the actual command.
+
+Click Behavior: Change the manual mic button behavior in the taskbar. A single click should now manually wake AURA (triggering the glow and listening state), completely replacing the old double-click logic.
+
+PART 2: Advanced Native Notepad Application
+
+Objective: Build src/components/apps/NotepadApp.tsx strictly adhering to the comprehensive specification provided.
+
+Core Architecture:
+
+Window Manager: Integrate it as a native draggable/resizable window. Register "Notepad" in Store.ts.
+
+Storage Engine: Implement the robust localStorage schema (webos_notepad_files, prefs, session). Ensure all file saves check for the 4.5MB quota limit.
+
+UI Layout: Build the 5 stacked sections: Title Bar (with unsaved * indicator), Menu Bar (File, Edit, View, Format, Help), Toolbar, Editor Canvas, and Status Bar (Line/Col, Word count).
+
+Editor Canvas: Use <textarea> for .txt. For .md, implement a split-pane layout using marked.js (lazy-loaded if possible) for real-time preview. Ensure the Tab key inserts spaces/tabs instead of losing focus.
+
+Critical Features & Edge Cases:
+
+Save As Modal: Implement the 3-path save modal (LocalStorage, Download Blob, Upload to Drive).
+
+File Manager Integration: Add a "Notepad Files" tab in the existing File Manager that reads/writes directly to localStorage["webos_notepad_files"].
+
+Unsaved Changes: Track the dirty state. Prompt the user with a "Save before closing?" dialog if they try to close a modified file.
+
+Clean up: Ensure all intervals (auto-save) and event listeners are cleared when the app unmounts.
+
+Please generate the code for both the Porcupine integration and the complete Notepad application, ensuring strict adherence to the Web-OS dark/cyberpunk aesthetic.

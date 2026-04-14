@@ -1,0 +1,33 @@
+@workspace I have limited AI quota, so execute this in a single, flawless run without exploratory steps. We need to upgrade the Start Menu to an advanced Linux desktop style and completely overhaul the AURA Voice Engine to act like a real-time conversational AI.
+
+1. Advanced Linux-Style Start Menu (StartMenu.tsx):
+
+Redesign Aesthetic: Transform the basic start menu into a KDE Plasma / Kali Linux style layout.
+
+Layout Structure:
+
+Left Sidebar (Categories): All Apps, Internet, System, Accessories. (Filter apps based on these categories).
+
+Main Area (App Grid): Display apps belonging to the selected category with their icons and names.
+
+Bottom Bar: A search input ([🔍 Search apps...]) on the left, and Power Buttons (Log Out, Restart, Shutdown) on the right.
+
+Styling: Dark translucent background (bg-[#0a0a0a]/90 backdrop-blur-md), strict left-aligned app drawer, with neon cyan hover states. Ensure it opens cleanly above the taskbar.
+
+2. AURA "Real-Time Conversational" Voice Engine:
+
+Language & Recognition (AuraService.ts or Store): Set recognition.lang = 'en-IN'. This is strictly required to capture English, Tamil, and Tanglish mixed audio perfectly.
+
+Trigger System: Ensure both the "Hey Buddy" wake-word and the Taskbar Microphone onDoubleClick / onClick point to the exact same wakeUpAura() function.
+
+AI Persona (Pollinations Prompt): Update the system prompt sent to the LLM: "You are AURA, an elite AI of MONIX-OS. Address the user as 'Sir'. You MUST respond in the exact same language the user speaks (English, Tamil, or Tanglish). Keep responses extremely brief, highly conversational, and realistic—like a human on a phone call. Do not use markdown, emojis, or lists."
+
+Speech Synthesis Tuning: In your speak(text) function, dynamically select a premium voice. Filter window.speechSynthesis.getVoices() for 'Google US English', 'Google UK English Female', or native local voices if Tamil is detected. Set rate = 1.05 and pitch = 1.1 to eliminate the robotic drone and make it sound natural and instant.
+
+3. Execution:
+
+Update StartMenu.tsx for the UI change.
+
+Update the global store or AuraService.ts for the Voice API & LLM prompt tuning.
+
+Ensure zero layout shifts when the new start menu opens.

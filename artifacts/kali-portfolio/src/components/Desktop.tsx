@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback, lazy, Suspense, memo } from "react";
+import { useState, useRef, useEffect, useCallback, lazy, Suspense, memo, useTransition } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import TopPanel from "./TopPanel";
 import DesktopIcons from "./DesktopIcons";
@@ -168,12 +168,17 @@ export default function Desktop() {
   const [selectionBox, setSelectionBox] = useState<SelectionBox>({
     startX: 0, startY: 0, endX: 0, endY: 0, isVisible: false,
   });
+  const [refreshCount, setRefreshCount] = useState(0);
+
+  const [, startTransition] = useTransition();
 
   const nextZ = useRef(20);
   const desktopRef = useRef<HTMLDivElement>(null);
   const isDraggingSelection = useRef(false);
   // RAF ref for throttling selection box updates
   const selectionRafRef = useRef<number | null>(null);
+  // GamesTip hide-timer ref (prevents memory leak on early unmount)
+  const gamestipHideRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const currentWallpaper = useOSStore((s) => s.currentWallpaper);
   const cursorStyle = useOSStore((s) => s.cursorStyle);
@@ -225,10 +230,42 @@ export default function Desktop() {
   useEffect(() => {
     const showT = setTimeout(() => {
       setShowGamesTip(true);
-      const hideT = setTimeout(() => setShowGamesTip(false), 8000);
-      return () => clearTimeout(hideT);
+      gamestipHideRef.current = setTimeout(() => setShowGamesTip(false), 8000);
     }, 10000);
-    return () => clearTimeout(showT);
+    return () => {
+      clearTimeout(showT);
+      if (gamestipHideRef.current) clearTimeout(gamestipHideRef.current);
+    };
+  }, []);
+
+  // ── Preload all lazy chunks ~1.5 s after boot ────────────────────────────
+  // Ensures first-open of every app is instant (chunks already in browser cache)
+  useEffect(() => {
+    const t = setTimeout(() => {
+      import("./Terminal");
+      import("./FileExplorer");
+      import("./Trash");
+      import("./GitHubApp");
+      import("./PortfolioApp");
+      import("./BrowserApp");
+      import("./WallpaperPicker");
+      import("./SentinelApp");
+      import("./AuraApp");
+      import("./CyberChefApp");
+      import("./CodeStudioApp");
+      import("./ThreatModelerApp");
+      import("./ChessApp");
+      import("./CykryptApp");
+      import("./TaskManagerApp");
+      import("./SettingsApp");
+      import("./ThreatMapApp");
+      import("./CodePadApp");
+      import("./apps/NotepadApp");
+      import("./SecureCommApp");
+      import("./DossierApp");
+      import("./MediaViewerApp");
+    }, 1500);
+    return () => clearTimeout(t);
   }, []);
 
   useEffect(() => {

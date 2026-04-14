@@ -70,6 +70,7 @@ function pickFemaleVoice(): SpeechSynthesisVoice | null {
   if (!voices.length) return null;
   const priority = [
     'Google US English',
+    'Google UK English Female',
     'Microsoft Jenny Online (Natural) - English (United States)',
     'Microsoft Ana Online (Natural) - English (United States)',
     'Microsoft Zira - English (United States)',
@@ -213,11 +214,11 @@ export function speak(text: string, preference: 'female' | 'male' = 'male') {
       if (voice) u.voice = voice;
       u.lang = 'en-IN';
       if (preference === 'male') {
-        u.rate  = 0.92;
-        u.pitch = 0.65;
+        u.rate  = 1.05;
+        u.pitch = 1.1;
       } else {
         u.rate  = 1.05;
-        u.pitch = 1.25;
+        u.pitch = 1.1;
       }
     }
     u.volume = 1.0;
@@ -306,8 +307,9 @@ async function queryGeminiBrain(text: string, history: AuraMessage[]): Promise<G
 
 async function pollinationsFallback(text: string): Promise<GeminiCommand> {
   try {
-    const prompt =
-      'You are AURA, the AI of MONIX Web OS. Reply in max 2 sentences, no markdown. Query: ' + text;
+    const systemPrompt =
+      'You are AURA, an elite AI of MONIX-OS. Address the user as "Sir". You MUST respond in the exact same language the user speaks (English, Tamil, or Tanglish). Keep responses extremely brief, highly conversational, and realistic—like a human on a phone call. Do not use markdown, emojis, or lists.';
+    const prompt = systemPrompt + ' User says: ' + text;
     const res = await fetch('https://text.pollinations.ai/' + encodeURIComponent(prompt));
     if (!res.ok) throw new Error('Pollinations fail');
     const reply = (await res.text()).slice(0, 300);
@@ -315,7 +317,7 @@ async function pollinationsFallback(text: string): Promise<GeminiCommand> {
   } catch {
     return {
       action: 'answer', target: '', query: '',
-      reply: 'Mainframe connection failed. Standing by.',
+      reply: 'Mainframe connection failed. Standing by, Sir.',
     };
   }
 }

@@ -285,6 +285,11 @@
   }
 }
 
+/* ── Utility keyframes ── */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
 /* ── AURA markdown prose ── */
 .aura-markdown {
   @apply prose prose-invert max-w-none prose-sm;

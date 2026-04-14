@@ -1,34 +1,55 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, lazy, Suspense, memo } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import TopPanel from "./TopPanel";
 import DesktopIcons from "./DesktopIcons";
-import Terminal from "./Terminal";
-import FileExplorer from "./FileExplorer";
-import Trash from "./Trash";
-import GitHubApp from "./GitHubApp";
-import PortfolioApp from "./PortfolioApp";
-import BrowserApp from "./BrowserApp";
-import WallpaperPicker from "./WallpaperPicker";
-import SentinelApp from "./SentinelApp";
-import AuraApp from "./AuraApp";
-import CyberChefApp from "./CyberChefApp";
-import CodeStudioApp from "./CodeStudioApp";
-import ThreatModelerApp from "./ThreatModelerApp";
-import ChessApp from "./ChessApp";
-import CykryptApp from "./CykryptApp";
-import TaskManagerApp from "./TaskManagerApp";
-import SettingsApp from "./SettingsApp";
-import ThreatMapApp from "./ThreatMapApp";
-import CodePadApp from "./CodePadApp";
-import NotepadApp from "./apps/NotepadApp";
-import SecureCommApp from "./SecureCommApp";
-import DossierApp from "./DossierApp";
 import RightClickMenu from "./RightClickMenu";
 import { playClickSound, playCloseSound } from "@/utils/SoundEngine";
-import MediaViewerApp, { type MediaType } from "./MediaViewerApp";
 import { useOSStore } from "@/lib/store";
 import AuraListenGlow from "@/components/ui/AuraListenGlow";
 import { preCacheWakeAudio } from "@/lib/AuraService";
+
+// ── Lazy-loaded app components (loaded on first open, never at boot) ──────────
+const Terminal        = lazy(() => import("./Terminal"));
+const FileExplorer    = lazy(() => import("./FileExplorer"));
+const Trash           = lazy(() => import("./Trash"));
+const GitHubApp       = lazy(() => import("./GitHubApp"));
+const PortfolioApp    = lazy(() => import("./PortfolioApp"));
+const BrowserApp      = lazy(() => import("./BrowserApp"));
+const WallpaperPicker = lazy(() => import("./WallpaperPicker"));
+const SentinelApp     = lazy(() => import("./SentinelApp"));
+const AuraApp         = lazy(() => import("./AuraApp"));
+const CyberChefApp    = lazy(() => import("./CyberChefApp"));
+const CodeStudioApp   = lazy(() => import("./CodeStudioApp"));
+const ThreatModelerApp= lazy(() => import("./ThreatModelerApp"));
+const ChessApp        = lazy(() => import("./ChessApp"));
+const CykryptApp      = lazy(() => import("./CykryptApp"));
+const TaskManagerApp  = lazy(() => import("./TaskManagerApp"));
+const SettingsApp     = lazy(() => import("./SettingsApp"));
+const ThreatMapApp    = lazy(() => import("./ThreatMapApp"));
+const CodePadApp      = lazy(() => import("./CodePadApp"));
+const NotepadApp      = lazy(() => import("./apps/NotepadApp"));
+const SecureCommApp   = lazy(() => import("./SecureCommApp"));
+const DossierApp      = lazy(() => import("./DossierApp"));
+const MediaViewerApp  = lazy(() => import("./MediaViewerApp"));
+import type { MediaType } from "./MediaViewerApp";
+
+// ── Minimal Suspense fallback — invisible, zero-layout-shift ─────────────────
+function AppFallback() {
+  return (
+    <div style={{
+      position: "absolute", inset: 0, display: "flex",
+      alignItems: "center", justifyContent: "center",
+      background: "rgba(8,8,16,0.85)", backdropFilter: "blur(8px)",
+      zIndex: 1,
+    }}>
+      <div style={{
+        width: 28, height: 28, border: "2px solid rgba(0,229,255,0.3)",
+        borderTop: "2px solid #00e5ff", borderRadius: "50%",
+        animation: "spin 0.7s linear infinite",
+      }} />
+    </div>
+  );
+}
 
 // ── Process info registry ─────────────────────────────────────────────────────
 const PROCESS_INFO: Record<string, { name: string; icon: string }> = {
@@ -98,6 +119,44 @@ interface SelectionBox {
   isVisible: boolean;
 }
 
+// ── Memoized GamesTip notification ──────────────────────────────────────────
+const GamesTip = memo(function GamesTip({
+  onOpen, onDismiss,
+}: { onOpen: () => void; onDismiss: () => void }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: 60 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: 60 }}
+      transition={{ duration: 0.3, ease: "easeOut" }}
+      onClick={onOpen}
+      className="bg-black/80 backdrop-blur-md border border-[#10b981] rounded-lg p-4 text-white flex items-center gap-3"
+      style={{
+        position: "fixed", bottom: 62, right: 16, zIndex: 400,
+        cursor: "pointer",
+        boxShadow: "0 0 15px rgba(16,185,129,0.3), 0 8px 32px rgba(0,0,0,0.7)",
+        minWidth: 240, maxWidth: 290,
+      }}
+    >
+      <span style={{ fontSize: 22, lineHeight: 1, flexShrink: 0 }}>♟</span>
+      <div style={{ flex: 1 }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: "#10b981", fontFamily: "monospace", letterSpacing: "0.05em" }}>
+          MONIX CHESS
+        </div>
+        <div style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", marginTop: 2, fontFamily: "monospace" }}>
+          Play online · vs AI · local 2P
+        </div>
+      </div>
+      <button
+        onClick={(e) => { e.stopPropagation(); onDismiss(); }}
+        style={{ background: "none", border: "none", color: "rgba(255,255,255,0.35)", cursor: "pointer", fontSize: 16, lineHeight: 1, padding: 2, flexShrink: 0 }}
+      >
+        ×
+      </button>
+    </motion.div>
+  );
+});
+
 export default function Desktop() {
   const [windows, setWindows] = useState<WindowEntry[]>([]);
   const [activeWindow, setActiveWindow] = useState<string>("");
@@ -113,46 +172,45 @@ export default function Desktop() {
   const nextZ = useRef(20);
   const desktopRef = useRef<HTMLDivElement>(null);
   const isDraggingSelection = useRef(false);
+  // RAF ref for throttling selection box updates
+  const selectionRafRef = useRef<number | null>(null);
 
   const currentWallpaper = useOSStore((s) => s.currentWallpaper);
   const cursorStyle = useOSStore((s) => s.cursorStyle);
-  const cursorColor = useOSStore((s) => s.cursorColor);
-  const preloadLocalFS       = useOSStore((s) => s.preloadLocalFS);
+  const preloadLocalFS        = useOSStore((s) => s.preloadLocalFS);
   const setOpenWindowCallback = useOSStore((s) => s.setOpenWindowCallback);
-  const registerProcess = useOSStore((s) => s.registerProcess);
-  const unregisterProcess = useOSStore((s) => s.unregisterProcess);
-  const updateProcessMinimized = useOSStore((s) => s.updateProcessMinimized);
-  const focusWindow = useOSStore((s) => s.focusWindow);
-  const toggleMinimize = useOSStore((s) => s.toggleMinimize);
-  const setKillCallback = useOSStore((s) => s.setKillCallback);
-  const startAuraListening = useOSStore((s) => s.startAuraListening);
-  const isMicGranted     = useOSStore((s) => s.isMicGranted);
-  const setMicGlowActive = useOSStore((s) => s.setMicGlowActive);
+  const registerProcess       = useOSStore((s) => s.registerProcess);
+  const unregisterProcess     = useOSStore((s) => s.unregisterProcess);
+  const updateProcessMinimized= useOSStore((s) => s.updateProcessMinimized);
+  const focusWindow           = useOSStore((s) => s.focusWindow);
+  const toggleMinimize        = useOSStore((s) => s.toggleMinimize);
+  const setKillCallback       = useOSStore((s) => s.setKillCallback);
+  const startAuraListening    = useOSStore((s) => s.startAuraListening);
+  const isMicGranted          = useOSStore((s) => s.isMicGranted);
+  const setMicGlowActive      = useOSStore((s) => s.setMicGlowActive);
+
   const computedCursor =
     cursorStyle === "crosshair" || cursorStyle === "target" ? "crosshair" : "default";
 
   // Stable refs so callbacks never close over stale state
   const handleCloseWindowRef = useRef<(id: string) => void>(() => {});
   const handleOpenWindowRef  = useRef<(id: string) => void>(() => {});
+  // Keep windows ref in sync for stale-closure-safe reads
+  const windowsRef = useRef<WindowEntry[]>(windows);
+  useEffect(() => { windowsRef.current = windows; }, [windows]);
 
-  // Preload the static VFS once on desktop mount (synchronous — zero UI delay)
-  useEffect(() => {
-    preloadLocalFS();
-  }, [preloadLocalFS]);
+  useEffect(() => { preloadLocalFS(); }, [preloadLocalFS]);
 
-  // Pre-warm TTS engine so AURA's first spoken response is instant
   useEffect(() => {
     const t = setTimeout(() => preCacheWakeAudio(), 1500);
     return () => clearTimeout(t);
   }, []);
 
-  // Auto-start AURA wake-word listening silently in background
   useEffect(() => {
     const t = setTimeout(() => startAuraListening(), 800);
     return () => clearTimeout(t);
   }, [startAuraListening]);
 
-  // Register the kill callback once so TaskManager can force-close windows
   useEffect(() => {
     setKillCallback((id: string) => handleCloseWindowRef.current(id));
   }, [setKillCallback]);
@@ -177,14 +235,13 @@ export default function Desktop() {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.ctrlKey && e.shiftKey && e.key === "Escape") {
         e.preventDefault();
-        handleOpenWindow("taskmanager");
+        handleOpenWindowRef.current("taskmanager");
       }
     };
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  // ── Register openWindow callback with the store (for AURA voice commands) ──
   useEffect(() => {
     setOpenWindowCallback((id: string) => handleOpenWindowRef.current(id));
 
@@ -194,7 +251,6 @@ export default function Desktop() {
     };
     window.addEventListener("aura-close-all", handleCloseAll);
 
-    // AURA voice "Type [text]" — inject text into focused input
     const handleTypeText = (e: Event) => {
       const text = (e as CustomEvent<{ text: string }>).detail?.text;
       if (!text) return;
@@ -220,87 +276,82 @@ export default function Desktop() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const bringToFront = (id: string) => {
+  const bringToFront = useCallback((id: string) => {
     const z = nextZ.current++;
     setWindows((prev) => prev.map((w) => (w.id === id ? { ...w, zIndex: z, minimized: false } : w)));
     setActiveWindow(id);
     updateProcessMinimized(id, false);
     focusWindow(id);
-  };
+  }, [updateProcessMinimized, focusWindow]);
 
-  const handleOpenWindow = (id: string) => {
+  const handleOpenWindow = useCallback((id: string) => {
     playClickSound();
-    // Check before setWindows so we don't rely on setter callback side-effects
-    const isNew = !windows.some((w) => w.id === id);
+    const isNew = !windowsRef.current.some((w) => w.id === id);
     setWindows((prev) => {
       const existing = prev.find((w) => w.id === id);
       const z = nextZ.current++;
       if (existing) return prev.map((w) => (w.id === id ? { ...w, minimized: false, zIndex: z } : w));
       return [...prev, { id, minimized: false, zIndex: z }];
     });
-    // Register or un-minimize in process store
     const info = PROCESS_INFO[id] ?? { name: id, icon: "⬜" };
     if (isNew) {
       registerProcess({
-        id,
-        name: info.name,
-        icon: info.icon,
-        pid: genPID(),
-        isMinimized: false,
-        launchedAt: Date.now(),
+        id, name: info.name, icon: info.icon,
+        pid: genPID(), isMinimized: false, launchedAt: Date.now(),
       });
     } else {
       updateProcessMinimized(id, false);
     }
     setActiveWindow(id);
     setContextMenu(null);
-  };
+  }, [registerProcess, updateProcessMinimized]);
 
-  const handleCloseWindow = (id: string) => {
+  const handleCloseWindow = useCallback((id: string) => {
     playCloseSound();
     setWindows((prev) => prev.filter((w) => w.id !== id));
     setActiveWindow((prev) => {
       if (prev !== id) return prev;
-      const remaining = windows.filter((w) => w.id !== id && !w.minimized);
+      const remaining = windowsRef.current.filter((w) => w.id !== id && !w.minimized);
       return remaining.length > 0 ? remaining[remaining.length - 1].id : "";
     });
     unregisterProcess(id);
-  };
+  }, [unregisterProcess]);
 
   // Keep refs in sync so callbacks are never stale
   handleCloseWindowRef.current = handleCloseWindow;
   handleOpenWindowRef.current  = handleOpenWindow;
 
-  const handleMinimizeWindow = (id: string) => {
+  const handleMinimizeWindow = useCallback((id: string) => {
     setWindows((prev) => prev.map((w) => (w.id === id ? { ...w, minimized: true } : w)));
     updateProcessMinimized(id, true);
     toggleMinimize(id);
-    if (activeWindow === id) {
-      const visible = windows.filter((w) => w.id !== id && !w.minimized);
-      setActiveWindow(visible.length > 0 ? visible[visible.length - 1].id : "");
-    }
-  };
+    setActiveWindow((prev) => {
+      if (prev !== id) return prev;
+      const visible = windowsRef.current.filter((w) => w.id !== id && !w.minimized);
+      return visible.length > 0 ? visible[visible.length - 1].id : "";
+    });
+  }, [updateProcessMinimized, toggleMinimize]);
 
-  const handleTaskbarClick = (id: string) => {
-    const win = windows.find((w) => w.id === id);
+  const handleTaskbarClick = useCallback((id: string) => {
+    const win = windowsRef.current.find((w) => w.id === id);
     if (!win) return;
     if (win.minimized) bringToFront(id);
     else if (activeWindow === id) handleMinimizeWindow(id);
     else bringToFront(id);
-  };
+  }, [bringToFront, handleMinimizeWindow, activeWindow]);
 
-  const handleDesktopClick = () => {
+  const handleDesktopClick = useCallback(() => {
     if (!isDraggingSelection.current) {
       setContextMenu(null);
       setSelectedIcon(null);
     }
-  };
+  }, []);
 
-  const handleRightClick = (e: React.MouseEvent) => {
+  const handleRightClick = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     setContextMenu({ x: e.clientX, y: e.clientY });
     setSelectedIcon(null);
-  };
+  }, []);
 
   const handleRefresh = useCallback(() => {
     setIsRefreshing(true);
@@ -320,15 +371,12 @@ export default function Desktop() {
       id,
       name: fileName.length > 20 ? fileName.slice(0, 18) + "…" : fileName,
       icon: fileType === "image" ? "🖼️" : fileType === "video" ? "🎬" : fileType === "audio" ? "🎵" : "📄",
-      pid: genPID(),
-      isMinimized: false,
-      launchedAt: Date.now(),
+      pid: genPID(), isMinimized: false, launchedAt: Date.now(),
     });
   }, [registerProcess]);
 
-  // ── Selection Box handlers ──
-  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-    // Only on left click directly on the desktop background
+  // ── Selection Box — RAF-throttled to prevent main-thread jank ──────────────
+  const handleMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     if (e.button !== 0) return;
     if (e.target !== e.currentTarget) return;
 
@@ -338,30 +386,47 @@ export default function Desktop() {
 
     const startX = e.clientX - rect.left;
     const startY = e.clientY - rect.top;
+    let pendingEndX = startX;
+    let pendingEndY = startY;
+    let rafScheduled = false;
 
     setSelectionBox({ startX, startY, endX: startX, endY: startY, isVisible: false });
 
     const onMouseMove = (me: MouseEvent) => {
-      const endX = me.clientX - rect.left;
-      const endY = me.clientY - rect.top;
-      const moved = Math.abs(endX - startX) > 4 || Math.abs(endY - startY) > 4;
+      pendingEndX = me.clientX - rect.left;
+      pendingEndY = me.clientY - rect.top;
+      const moved = Math.abs(pendingEndX - startX) > 4 || Math.abs(pendingEndY - startY) > 4;
       if (moved) isDraggingSelection.current = true;
-      setSelectionBox({ startX, startY, endX, endY, isVisible: moved });
+
+      if (!rafScheduled) {
+        rafScheduled = true;
+        selectionRafRef.current = requestAnimationFrame(() => {
+          rafScheduled = false;
+          setSelectionBox({
+            startX, startY,
+            endX: pendingEndX, endY: pendingEndY,
+            isVisible: isDraggingSelection.current,
+          });
+        });
+      }
     };
 
     const onMouseUp = () => {
+      if (selectionRafRef.current !== null) {
+        cancelAnimationFrame(selectionRafRef.current);
+        selectionRafRef.current = null;
+      }
       setSelectionBox((prev) => ({ ...prev, isVisible: false }));
       document.removeEventListener("mousemove", onMouseMove);
       document.removeEventListener("mouseup", onMouseUp);
-      // Small delay so the click handler can check the flag
       setTimeout(() => { isDraggingSelection.current = false; }, 50);
     };
 
     document.addEventListener("mousemove", onMouseMove);
     document.addEventListener("mouseup", onMouseUp);
-  };
+  }, []);
 
-  const getInitialPosition = (type: string) => {
+  const getInitialPosition = useCallback((type: string) => {
     if (typeof window === "undefined") return { x: 100, y: 100 };
     const offsets: Record<string, { x: number; y: number }> = {
       terminal:        { x: window.innerWidth / 2 - 350, y: window.innerHeight / 2 - 240 },
@@ -388,7 +453,29 @@ export default function Desktop() {
       dossier:         { x: window.innerWidth / 2 - 380, y: window.innerHeight / 2 - 280 },
     };
     return offsets[type] ?? { x: 120, y: 60 };
-  };
+  }, []);
+
+  // ── Long-press (touch right-click) ─────────────────────────────────────────
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const longPressFired = useRef(false);
+
+  const handleTouchStart = useCallback((e: React.TouchEvent<HTMLDivElement>) => {
+    if (e.target !== e.currentTarget) return;
+    longPressFired.current = false;
+    const touch = e.touches[0];
+    longPressTimer.current = setTimeout(() => {
+      longPressFired.current = true;
+      setContextMenu({ x: touch.clientX, y: touch.clientY });
+    }, 500);
+  }, []);
+
+  const handleTouchEnd = useCallback(() => {
+    if (longPressTimer.current) clearTimeout(longPressTimer.current);
+  }, []);
+
+  const handleTouchMove = useCallback(() => {
+    if (longPressTimer.current) clearTimeout(longPressTimer.current);
+  }, []);
 
   const openWindowList = windows.map((w) => ({
     id: w.id,
@@ -400,33 +487,18 @@ export default function Desktop() {
 
   const getWin = (id: string) => windows.find((w) => w.id === id);
 
-  // Compute selection rect
   const selLeft   = Math.min(selectionBox.startX, selectionBox.endX);
   const selTop    = Math.min(selectionBox.startY, selectionBox.endY);
   const selWidth  = Math.abs(selectionBox.endX - selectionBox.startX);
   const selHeight = Math.abs(selectionBox.endY - selectionBox.startY);
 
-  // ── Long-press (touch right-click) on the desktop background ──────────────
-  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const longPressFired = useRef(false);
+  // Stable icon callbacks — never recreated unless deps change
+  const handleSelectIcon = useCallback((id: string | null) => setSelectedIcon(id), []);
+  const handleLongPress  = useCallback((x: number, y: number) => setContextMenu({ x, y }), []);
 
-  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
-    if (e.target !== e.currentTarget) return;
-    longPressFired.current = false;
-    const touch = e.touches[0];
-    longPressTimer.current = setTimeout(() => {
-      longPressFired.current = true;
-      setContextMenu({ x: touch.clientX, y: touch.clientY });
-    }, 500);
-  };
-
-  const handleTouchEnd = () => {
-    if (longPressTimer.current) clearTimeout(longPressTimer.current);
-  };
-
-  const handleTouchMove = () => {
-    if (longPressTimer.current) clearTimeout(longPressTimer.current);
-  };
+  // Stable GamesTip callbacks
+  const openChessAndDismiss = useCallback(() => { handleOpenWindow("chess"); setShowGamesTip(false); }, [handleOpenWindow]);
+  const dismissTip = useCallback(() => setShowGamesTip(false), []);
 
   return (
     <div className="w-full h-screen flex flex-col overflow-hidden bg-black text-white">
@@ -449,30 +521,22 @@ export default function Desktop() {
         onTouchMove={handleTouchMove}
       >
 
-      {/* Desktop icons — absolutely isolated layer (z-0), never affected by windows */}
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          zIndex: 0,
-          pointerEvents: "none",   // let clicks fall through to desktop bg
-        }}
-      >
+      {/* Desktop icons — absolutely isolated layer */}
+      <div style={{ position: "absolute", inset: 0, zIndex: 0, pointerEvents: "none" }}>
         <div
           className={isRefreshing ? "cyber-glitch-refresh" : undefined}
           style={{
             transformOrigin: "center center",
-            position: "absolute",
-            inset: 0,
+            position: "absolute", inset: 0,
             pointerEvents: isRefreshing ? "none" : "auto",
           }}
         >
           <DesktopIcons
             onOpenWindow={handleOpenWindow}
             selectedIcon={selectedIcon}
-            onSelectIcon={setSelectedIcon}
+            onSelectIcon={handleSelectIcon}
             dragConstraintsRef={desktopRef}
-            onLongPress={(x, y) => setContextMenu({ x, y })}
+            onLongPress={handleLongPress}
           />
         </div>
       </div>
@@ -482,21 +546,18 @@ export default function Desktop() {
         <div
           style={{
             position: "absolute",
-            left: selLeft,
-            top: selTop,
-            width: selWidth,
-            height: selHeight,
+            left: selLeft, top: selTop,
+            width: selWidth, height: selHeight,
             background: "rgba(54,123,240,0.15)",
             border: "1px solid rgba(54,123,240,0.7)",
-            pointerEvents: "none",
-            zIndex: 40,
-            borderRadius: 2,
+            pointerEvents: "none", zIndex: 40, borderRadius: 2,
           }}
         />
       )}
 
-      {/* App windows — separate layer above icons, never interferes with icon flex layout */}
+      {/* App windows */}
       <div style={{ position: "absolute", inset: 0, zIndex: 10, pointerEvents: "none" }}>
+      <Suspense fallback={null}>
       <AnimatePresence>
         {getWin("terminal") && !getWin("terminal")!.minimized && (
           <Terminal
@@ -694,6 +755,7 @@ export default function Desktop() {
             zIndex={getWin("taskmanager")!.zIndex}
           />
         )}
+
         {getWin("settings") && !getWin("settings")!.minimized && (
           <SettingsApp
             key="settings"
@@ -789,7 +851,8 @@ export default function Desktop() {
           />
         ))}
       </AnimatePresence>
-      </div>{/* end windows layer */}
+      </Suspense>
+      </div>
 
       <AnimatePresence>
         {contextMenu && (
@@ -804,49 +867,16 @@ export default function Desktop() {
         )}
       </AnimatePresence>
 
-      {/* Games tip notification — bottom-right, above taskbar */}
+      {/* Games tip notification */}
       <AnimatePresence>
         {showGamesTip && (
-          <motion.div
-            initial={{ opacity: 0, x: 60 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 60 }}
-            transition={{ duration: 0.3, ease: "easeOut" }}
-            onClick={() => { handleOpenWindow("chess"); setShowGamesTip(false); }}
-            className="bg-black/80 backdrop-blur-md border border-[#10b981] rounded-lg p-4 text-white flex items-center gap-3"
-            style={{
-              position: "fixed",
-              bottom: 62,
-              right: 16,
-              zIndex: 400,
-              cursor: "pointer",
-              boxShadow: "0 0 15px rgba(16,185,129,0.3), 0 8px 32px rgba(0,0,0,0.7)",
-              minWidth: 240,
-              maxWidth: 290,
-            }}
-          >
-            <span style={{ fontSize: 22, lineHeight: 1, flexShrink: 0 }}>♟</span>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: "#10b981", fontFamily: "monospace", letterSpacing: "0.05em" }}>
-                MONIX CHESS
-              </div>
-              <div style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", marginTop: 2, fontFamily: "monospace" }}>
-                Play online · vs AI · local 2P
-              </div>
-            </div>
-            <button
-              onClick={(e) => { e.stopPropagation(); setShowGamesTip(false); }}
-              style={{ background: "none", border: "none", color: "rgba(255,255,255,0.35)", cursor: "pointer", fontSize: 16, lineHeight: 1, padding: 2, flexShrink: 0 }}
-            >
-              ×
-            </button>
-          </motion.div>
+          <GamesTip key="games-tip" onOpen={openChessAndDismiss} onDismiss={dismissTip} />
         )}
       </AnimatePresence>
 
       </main>
 
-      {/* AURA Listening Glow — full-screen animated border overlay */}
+      {/* AURA Listening Glow */}
       <AuraListenGlow />
 
       <footer className="h-12 shrink-0 z-[9999]">

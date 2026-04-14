@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, memo } from "react";
 import { motion } from "framer-motion";
 
 interface DesktopIconsProps {
@@ -589,7 +589,7 @@ function IconItem({
   );
 }
 
-export default function DesktopIcons({
+const DesktopIcons = memo(function DesktopIcons({
   onOpenWindow,
   selectedIcon,
   onSelectIcon,
@@ -642,4 +642,6 @@ export default function DesktopIcons({
       </div>
     </div>
   );
-}
+});
+
+export default DesktopIcons;

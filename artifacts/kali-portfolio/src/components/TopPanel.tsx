@@ -426,8 +426,30 @@ export default function TopPanel({ openWindows: _openWindows = [], onOpenWindow,
               50% { opacity: 0.4; transform: scale(0.75); }
             }
             @keyframes micGlowPulse {
-              0%, 100% { box-shadow: 0 0 6px 2px rgba(0,240,255,0.55), 0 0 14px 4px rgba(0,240,255,0.25); }
-              50%       { box-shadow: 0 0 14px 5px rgba(0,240,255,0.9), 0 0 28px 8px rgba(0,240,255,0.45); }
+              0%, 100% {
+                box-shadow:
+                  0 0 0 1px rgba(6,182,212,0.75),
+                  0 0 10px 2px rgba(6,182,212,0.55),
+                  0 0 22px 5px rgba(168,85,247,0.34),
+                  0 0 36px 8px rgba(236,72,153,0.18),
+                  inset 0 0 8px rgba(6,182,212,0.18);
+              }
+              45% {
+                box-shadow:
+                  0 0 0 1px rgba(236,72,153,0.85),
+                  0 0 14px 3px rgba(236,72,153,0.5),
+                  0 0 30px 8px rgba(168,85,247,0.55),
+                  0 0 52px 12px rgba(6,182,212,0.32),
+                  inset 0 0 14px rgba(168,85,247,0.26);
+              }
+              70% {
+                box-shadow:
+                  0 0 0 1px rgba(168,85,247,0.8),
+                  0 0 12px 2px rgba(168,85,247,0.48),
+                  0 0 28px 7px rgba(6,182,212,0.45),
+                  0 0 44px 10px rgba(236,72,153,0.24),
+                  inset 0 0 12px rgba(236,72,153,0.22);
+              }
             }
           `}</style>
 

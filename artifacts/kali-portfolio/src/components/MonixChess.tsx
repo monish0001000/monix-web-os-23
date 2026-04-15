@@ -581,14 +581,6 @@ export default function MonixChess() {
   const reviewInitialFen = useRef<string>("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 
 
-  useEffect(() => {
-    return () => {
-      if (aiWorker.current) aiWorker.current.terminate();
-      lobbyChannelRef.current?.unsubscribe();
-      matchChannelRef.current?.unsubscribe();
-    };
-  }, []);
-
   // Timers (seconds)
   const [timers, setTimers] = useState({ w: 600, b: 600 }); // 10 min each
   const timerIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -618,6 +610,11 @@ export default function MonixChess() {
   const [opponentHudAlias, setOpponentHudAlias] = useState("");
   const [pingMs, setPingMs] = useState<number | null>(null);
   const [isDisconnected, setIsDisconnected] = useState(false);
+  const activeOnlineMatchRef = useRef<{ mode: GameMode; phase: GamePhase; isOnlineBlack: boolean }>({
+    mode: "pve",
+    phase: "setup",
+    isOnlineBlack: false,
+  });
   const pingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const pongTimeoutRef  = useRef<ReturnType<typeof setTimeout>  | null>(null);
   const pingStartRef    = useRef<number>(0);
@@ -639,6 +636,41 @@ export default function MonixChess() {
   const files = isFlipped ? ["h","g","f","e","d","c","b","a"] : ["a","b","c","d","e","f","g","h"];
   const ranks = isFlipped ? [1,2,3,4,5,6,7,8] : [8,7,6,5,4,3,2,1];
   const currentTurn = chess.turn();
+  const opponentDisplayName = gameState.mode === "pve" ? "Computer" : (opponentHudAlias || "Opponent");
+
+  activeOnlineMatchRef.current = {
+    mode: gameState.mode,
+    phase: gameState.phase,
+    isOnlineBlack,
+  };
+
+  const broadcastPlayerDisconnected = useCallback(() => {
+    const active = activeOnlineMatchRef.current;
+    if (active.mode !== "online" || active.phase !== "playing" || !matchChannelRef.current) return;
+    matchChannelRef.current.send({
+      type: "broadcast",
+      event: "player_disconnected",
+      payload: { uid: myUid },
+    });
+  }, [myUid]);
+
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      broadcastPlayerDisconnected();
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      broadcastPlayerDisconnected();
+      if (aiWorker.current) aiWorker.current.terminate();
+      if (pingIntervalRef.current) clearInterval(pingIntervalRef.current);
+      if (pongTimeoutRef.current) clearTimeout(pongTimeoutRef.current);
+      lobbyChannelRef.current?.unsubscribe();
+      matchChannelRef.current?.unsubscribe();
+    };
+  }, [broadcastPlayerDisconnected]);
 
   // Board to display during review (derived, not stored as state)
   const reviewBoard = useMemo(() => {
@@ -930,6 +962,7 @@ export default function MonixChess() {
   }, [chess, syncBoard]);
 
   const handleQuit = useCallback(() => {
+    broadcastPlayerDisconnected();
     lobbyChannelRef.current?.unsubscribe(); lobbyChannelRef.current = null;
     matchChannelRef.current?.unsubscribe(); matchChannelRef.current = null;
     setOnlinePlayers([]); setIncomingChallenge(null); setWaitingFor(null);
@@ -937,7 +970,7 @@ export default function MonixChess() {
     setSelected(null); setLegalMoves([]); setHint(null); setLastMove(null);
     setReviewSnaps([]); setReviewIdx(-1); setTimers({ w: 600, b: 600 });
     setGameState({ phase: "setup", mode: "pve", playerColor: "w", diffIdx: 0, winner: null, endReason: null });
-  }, [chess, syncBoard]);
+  }, [broadcastPlayerDisconnected, chess, syncBoard]);
 
   // ── Review navigation ─────────────────────────────────────────────────────
   const enterReview = useCallback(() => {
@@ -1045,6 +1078,14 @@ export default function MonixChess() {
       const myColor = playAsBlack ? "b" : "w";
       setGameState(gs => ({ ...gs, phase: "over", winner: myColor === "w" ? "WHITE" : "BLACK", endReason: "resign" }));
       toast.success("Opponent resigned. YOU WIN!");
+    });
+
+    ch.on("broadcast", { event: "player_disconnected" }, ({ payload }: any) => {
+      if (payload?.uid === myUid) return;
+      const myColor = playAsBlack ? "b" : "w";
+      setIsDisconnected(true);
+      setGameState(gs => ({ ...gs, phase: "over", winner: myColor === "w" ? "WHITE" : "BLACK", endReason: "resign" }));
+      toast.success("Opponent left the match. You Win!");
     });
 
     // ── Subscribe + start ping loop ───────────────────────────────────────
@@ -1622,7 +1663,7 @@ export default function MonixChess() {
               )}
               {gameState.mode === "online" && (
                 <div className="text-[9px] font-mono" style={{ color: "#10b981" }}>
-                  {isOnlineBlack ? onlineAlias : "Opponent"}
+                  {isOnlineBlack ? onlineAlias : opponentDisplayName}
                 </div>
               )}
             </div>
@@ -1653,7 +1694,7 @@ export default function MonixChess() {
               <div className="flex items-center gap-2">
                 <span className="text-[9px] font-mono uppercase tracking-widest" style={{ color: "rgba(0,229,255,0.5)" }}>OPP</span>
                 <span className="text-[11px] font-mono font-bold" style={{ color: "#e0f0ff" }}>
-                  {opponentHudAlias || "Opponent"}
+                  {opponentDisplayName}
                 </span>
               </div>
               <div className="flex items-center gap-2">
@@ -1754,7 +1795,7 @@ export default function MonixChess() {
                   </button>
                 </Tip>
               </>
-            ) : (
+            ) : gameState.mode !== "online" ? (
               <>
                 <Tip label="Undo last move">
                   <button
@@ -1806,7 +1847,7 @@ export default function MonixChess() {
                   </button>
                 </Tip>
               </>
-            )}
+            ) : null}
           </div>
 
           {/* ── Online Cooperative Actions ── */}
@@ -2014,10 +2055,10 @@ export default function MonixChess() {
             >
               <div className="text-3xl mb-4" style={{ filter: "drop-shadow(0 0 12px rgba(239,68,68,0.8))" }}>⚡</div>
               <div className="text-sm font-mono font-bold tracking-widest mb-2" style={{ color: "#ef4444" }}>
-                OPPONENT DISCONNECTED
+                OPPONENT LEFT THE MATCH
               </div>
               <div className="text-[10px] font-mono mb-6" style={{ color: "rgba(255,255,255,0.4)" }}>
-                Match Ended.
+                Opponent left the match. You Win!
               </div>
               <button
                 onClick={handleQuit}

@@ -114,6 +114,7 @@ function pickMaleVoice(): SpeechSynthesisVoice | null {
 let _cachedYesSirUtterance: SpeechSynthesisUtterance | null = null;
 
 export function preCacheWakeAudio() {
+  if (typeof window === 'undefined') return;
   if (!window.speechSynthesis || _cachedYesSirUtterance) return;
   // Warm the engine: a zero-volume silent utterance forces browser to load voices
   const silence = new SpeechSynthesisUtterance(' ');
@@ -145,6 +146,7 @@ export function preCacheWakeAudio() {
 // ─── sayInstant() — zero-latency wake response using pre-cached utterance ─────
 // Fix #2: always cancels first (no overlap). Fix #5: uses male voice cache.
 export function sayInstant(text: string) {
+  if (typeof window === 'undefined') return;
   if (!window.speechSynthesis) return;
   window.speechSynthesis.cancel();
   // Use pre-cached utterance if available and text matches, else build fresh
@@ -192,6 +194,7 @@ function pickTamilVoice(): SpeechSynthesisVoice | null {
 // ─── speak() — full quality TTS with preferred voice ─────────────────────────
 // Bug #3 fix: detects Tamil text and uses ta-IN lang + Tamil voice.
 export function speak(text: string, preference: 'female' | 'male' = 'male') {
+  if (typeof window === 'undefined') return;
   if (!window.speechSynthesis) return;
   // Fix #2 (overlap): always cancel before speaking
   window.speechSynthesis.cancel();
@@ -237,6 +240,7 @@ export function speak(text: string, preference: 'female' | 'male' = 'male') {
 
 // ─── Wake chime (dual-tone) ───────────────────────────────────────────────────
 export function playWakeSound() {
+  if (typeof window === 'undefined') return;
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
@@ -525,6 +529,7 @@ export function createAuraService(cb: AuraServiceCallbacks): AuraServiceHandle {
   let aiDebounce:   ReturnType<typeof setTimeout> | null = null;
   let commandBuffer = '';
   let pauseTimer:   ReturnType<typeof setTimeout> | null = null;
+  let restartTimer: ReturnType<typeof setTimeout> | null = null;
 
   // Porcupine engine handle — populated asynchronously at start()
   let porcupineHandle: { stop: () => void } | null = null;
@@ -639,9 +644,10 @@ export function createAuraService(cb: AuraServiceCallbacks): AuraServiceHandle {
 
   // ── Recognition lifecycle ──────────────────────────────────────────────────
   function startRecognition() {
+    if (restartTimer) { clearTimeout(restartTimer); restartTimer = null; }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const API = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!API || recognition) return;
+    if (!API || recognition || !running) return;
 
     const rec = new API();
     rec.continuous      = true;
@@ -720,7 +726,7 @@ export function createAuraService(cb: AuraServiceCallbacks): AuraServiceHandle {
       cb.setHearingSound(false);
       if (running && !cb.isMuted()) {
         // Brief pause before restart so browser doesn't rate-limit us
-        setTimeout(startRecognition, 250);
+        restartTimer = setTimeout(startRecognition, 250);
       } else {
         cb.setArmed(false);
       }
@@ -744,7 +750,7 @@ export function createAuraService(cb: AuraServiceCallbacks): AuraServiceHandle {
       if (running && !cb.isMuted()) {
         // no-speech = short retry; everything else = slightly longer
         const delay = event.error === 'no-speech' ? 100 : 400;
-        setTimeout(startRecognition, delay);
+        restartTimer = setTimeout(startRecognition, delay);
       }
     };
 
@@ -753,7 +759,7 @@ export function createAuraService(cb: AuraServiceCallbacks): AuraServiceHandle {
       rec.start();
     } catch (_) {
       recognition = null;
-      if (running) setTimeout(startRecognition, 800);
+      if (running) restartTimer = setTimeout(startRecognition, 800);
     }
   }
 
@@ -778,10 +784,17 @@ export function createAuraService(cb: AuraServiceCallbacks): AuraServiceHandle {
           porcupineActive = false;
           startRecognition();
         }
+      }).catch(() => {
+        porcupineActive = false;
+        startRecognition();
       });
     },
     stop() {
       running = false;
+      if (restartTimer) { clearTimeout(restartTimer); restartTimer = null; }
+      if (wakeTimer) { clearTimeout(wakeTimer); wakeTimer = null; }
+      if (aiDebounce) { clearTimeout(aiDebounce); aiDebounce = null; }
+      if (pauseTimer) { clearTimeout(pauseTimer); pauseTimer = null; }
       // Tear down Porcupine if active
       porcupineHandle?.stop();
       porcupineHandle = null;

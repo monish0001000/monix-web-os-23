@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
-import { supabase } from '@/lib/supabaseClient';
+import { supabase, supabaseReady } from '@/lib/supabaseClient';
 import WindowChrome from './WindowChrome';
 import CommLogin from './comm/CommLogin';
 import CommSidebar from './comm/CommSidebar';
 import CommChat from './comm/CommChat';
 import CommVideoCall from './comm/CommVideoCall';
 import { Peer, Message, CallSignal, CallHistoryEntry, CallParticipant, CallSession } from './comm/CommTypes';
+import { toast } from 'sonner';
 
 interface SecureCommAppProps {
   onClose: () => void;
@@ -99,6 +100,10 @@ export default function SecureCommApp({
 
   useEffect(() => {
     if (!localPeer) return;
+    if (!supabaseReady) {
+      toast.error('MONIX-COMM P2P offline: Supabase secrets missing.');
+      return;
+    }
 
     const channel = supabase.channel('monix-secure-comm', {
       config: { presence: { key: localPeer.id }, broadcast: { self: false } }
@@ -109,9 +114,20 @@ export default function SecureCommApp({
       dc.bufferedAmountLowThreshold = 512 * 1024;
       dataChannelsRef.current.set(peerId, dc);
       dc.onopen = () => console.log('Data channel open with', peerId);
-      dc.onclose = () => { dataChannelsRef.current.delete(peerId); dataPcsRef.current.delete(peerId); };
+      dc.onerror = () => toast.error('Secure file channel failed.');
+      dc.onclose = () => {
+        dataChannelsRef.current.delete(peerId);
+        const pc = dataPcsRef.current.get(peerId);
+        if (pc) pc.close();
+        dataPcsRef.current.delete(peerId);
+      };
       dc.onmessage = (event) => {
-        const data = JSON.parse(event.data);
+        let data: any;
+        try {
+          data = JSON.parse(event.data);
+        } catch {
+          return;
+        }
         if (data.type === 'file-start') {
           incomingFilesRef.current[data.fileId] = { chunks: new Array(data.totalChunks).fill(''), received: 0, total: data.totalChunks, fileName: data.fileName, fileType: data.fileType, from: peerId };
         } else if (data.type === 'file-chunk') {
@@ -134,15 +150,24 @@ export default function SecureCommApp({
 
     channel
       .on('presence', { event: 'sync' }, () => {
-        const state = channel.presenceState();
-        const onlinePeers: Peer[] = [];
-        for (const id in state) {
-          if (id !== localPeer.id) {
-            // @ts-ignore
-            onlinePeers.push({ id, alias: state[id][0].alias });
-          }
-        }
-        setPeers(onlinePeers);
+        const state = channel.presenceState<{ alias?: string; userName?: string; status?: string }>();
+        const byId = new Map<string, Peer>();
+
+        Object.entries(state).forEach(([presenceKey, presences]) => {
+          presences.forEach((presence: any) => {
+            const id = String(presenceKey);
+            const alias = String(presence?.alias || presence?.userName || 'Anonymous').trim();
+            if (!id || id === localPeer.id || presence?.status === 'offline') return;
+            byId.set(id, { id, alias });
+          });
+        });
+
+        const onlinePeers = Array.from(byId.values()).sort((a, b) => a.alias.localeCompare(b.alias));
+        setPeers(prev => (
+          prev.length === onlinePeers.length && prev.every((p, i) => p.id === onlinePeers[i].id && p.alias === onlinePeers[i].alias)
+            ? prev
+            : onlinePeers
+        ));
       })
       .on('broadcast', { event: 'private_msg' }, ({ payload }) => {
         const msg = payload as Message;
@@ -198,15 +223,37 @@ export default function SecureCommApp({
       })
       .subscribe(async (status) => {
         if (status === 'SUBSCRIBED') {
-          await channel.track({ alias: localPeer.alias, online_at: new Date().toISOString() });
+          try {
+            await channel.track({
+              alias: localPeer.alias,
+              userName: localPeer.alias,
+              status: 'online',
+              online_at: new Date().toISOString(),
+            });
+          } catch {
+            toast.error('MONIX-COMM presence failed.');
+          }
+        }
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+          toast.error('MONIX-COMM P2P connection failed. Reopen Comm.');
         }
       });
 
     return () => {
       channel.unsubscribe();
+      if (channelRef.current === channel) channelRef.current = null;
       localStreamRef.current?.getTracks().forEach(t => t.stop());
       pcsRef.current.forEach(pc => pc.close());
       pcsRef.current.clear();
+      dataChannelsRef.current.forEach(dc => dc.close());
+      dataChannelsRef.current.clear();
+      dataPcsRef.current.forEach(pc => pc.close());
+      dataPcsRef.current.clear();
+      iceCandidateTimerRef.current.forEach(timer => clearTimeout(timer));
+      iceCandidateTimerRef.current.clear();
+      iceCandidateBatchRef.current.clear();
+      iceCandidateQueueRef.current.clear();
+      incomingFilesRef.current = {};
       remoteStreamsRef.current.clear();
     };
   }, [localPeer]);

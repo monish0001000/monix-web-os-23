@@ -7,5 +7,11 @@ if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KE
   console.warn("[MONIX OS] Supabase credentials missing — cloud features disabled. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to enable.");
 }
 
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  realtime: {
+    params: {
+      eventsPerSecond: 20,
+    },
+  },
+});
 export const supabaseReady = !!(import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY);

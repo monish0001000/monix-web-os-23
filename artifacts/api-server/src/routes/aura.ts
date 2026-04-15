@@ -49,6 +49,39 @@ User: "close all" → {"action":"close_all","target":"","reply":"All windows cle
 
 CRITICAL: Return ONLY the JSON object. No markdown, no explanation, no code blocks. Pure JSON.`;
 
+const AURA_MODELS = [
+  "gemini-2.0-flash",
+  "gemini-1.5-flash",
+  "gemini-2.5-flash",
+];
+
+function fallbackAuraCommand(message: string) {
+  const lower = message.toLowerCase().trim();
+  const openMatch = lower.match(/(?:open|launch|start)\s+([a-z ]+)/);
+  const target = openMatch?.[1]?.trim().replace(/\s+/g, "") ?? "";
+  const knownTargets = new Set([
+    "browser", "terminal", "files", "github", "portfolio", "settings", "sentinel", "aura",
+    "cyberchef", "codestudio", "chess", "cykrypt", "taskmanager", "securecomm", "dossier",
+    "trash", "threatmap", "codepad",
+  ]);
+
+  if (target && knownTargets.has(target)) {
+    return { action: "open", target, reply: `Opening ${target}.`, query: "" };
+  }
+  if (lower.startsWith("search ")) {
+    return { action: "search", target: "browser", reply: "Searching now.", query: message.replace(/^search\s+/i, "").trim() };
+  }
+  if (/(close all|clear windows)/.test(lower)) {
+    return { action: "close_all", target: "", reply: "All windows cleared.", query: "" };
+  }
+  return {
+    action: "answer",
+    target: "",
+    reply: "Neural link degraded, but core commands are still online.",
+    query: "",
+  };
+}
+
 router.post("/aura/chat", async (req, res) => {
   const { message, history = [] } = req.body as {
     message: string;
@@ -69,15 +102,28 @@ router.post("/aura/chat", async (req, res) => {
       { role: "user", parts: [{ text: message }] },
     ];
 
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents,
-      config: {
-        systemInstruction: SYSTEM_PROMPT,
-        maxOutputTokens: 512,
-        temperature: 0.7,
-      },
-    });
+    let response: Awaited<ReturnType<typeof ai.models.generateContent>> | null = null;
+    let lastError: unknown = null;
+
+    for (const model of AURA_MODELS) {
+      try {
+        response = await ai.models.generateContent({
+          model,
+          contents,
+          config: {
+            systemInstruction: SYSTEM_PROMPT,
+            maxOutputTokens: 512,
+            temperature: 0.7,
+          },
+        });
+        break;
+      } catch (err: any) {
+        lastError = err;
+        if (err?.status !== 404) break;
+      }
+    }
+
+    if (!response) throw lastError;
 
     const raw = response.text ?? "";
     const cleaned = raw.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
@@ -96,13 +142,7 @@ router.post("/aura/chat", async (req, res) => {
 
     res.json(parsed);
   } catch (err) {
-    console.error("[AURA Gemini]", err);
-    res.status(500).json({
-      action: "answer",
-      target: "",
-      reply: "Mainframe interference detected. Neural link degraded.",
-      query: "",
-    });
+    res.json(fallbackAuraCommand(message));
   }
 });
 

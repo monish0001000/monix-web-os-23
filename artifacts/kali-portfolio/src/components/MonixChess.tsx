@@ -1109,11 +1109,28 @@ export default function MonixChess() {
   const joinLobby = useCallback((alias: string) => {
     lobbyChannelRef.current?.unsubscribe();
     lobbyChannelRef.current = null;
-    const ch = supabase.channel("chess_global_lobby", { config: { presence: { key: myUid } } });
+    const ch = supabase.channel("chess_global_lobby", {
+      config: { presence: { key: myUid }, broadcast: { self: false } },
+    });
     ch.on("presence", { event: "sync" }, () => {
-      const state = ch.presenceState<{ alias: string; uid: string }>();
-      const players = Object.values(state).flat().filter((p: any) => p.uid !== myUid).map((p: any) => ({ alias: p.alias, uid: p.uid }));
-      setOnlinePlayers(players);
+      const state = ch.presenceState<{ alias?: string; uid?: string; status?: string }>();
+      const byUid = new Map<string, { alias: string; uid: string }>();
+
+      Object.entries(state).forEach(([presenceKey, presences]) => {
+        presences.forEach((presence: any) => {
+          const uid = String(presence?.uid || presenceKey);
+          const playerAlias = String(presence?.alias || "Anonymous").trim();
+          if (!uid || uid === myUid || presence?.status === "offline") return;
+          byUid.set(uid, { alias: playerAlias, uid });
+        });
+      });
+
+      const players = Array.from(byUid.values()).sort((a, b) => a.alias.localeCompare(b.alias));
+      setOnlinePlayers(prev => (
+        prev.length === players.length && prev.every((p, i) => p.uid === players[i].uid && p.alias === players[i].alias)
+          ? prev
+          : players
+      ));
     });
     ch.on("broadcast", { event: "play_request" }, ({ payload }: any) => {
       if (payload.target_uid === myUid) {
@@ -1130,7 +1147,16 @@ export default function MonixChess() {
       if (payload.target_uid === myUid) setWaitingFor(null);
     });
     ch.subscribe(async (status: string) => {
-      if (status === "SUBSCRIBED") await ch.track({ alias, uid: myUid });
+      if (status === "SUBSCRIBED") {
+        try {
+          await ch.track({ alias, uid: myUid, status: "online", online_at: new Date().toISOString() });
+        } catch {
+          toast.error("Chess P2P presence failed.");
+        }
+      }
+      if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
+        toast.error("Chess P2P connection failed. Rejoin the lobby.");
+      }
     });
     lobbyChannelRef.current = ch;
     setGameState(gs => ({ ...gs, phase: "online_lobby" as GamePhase, mode: "online" }));

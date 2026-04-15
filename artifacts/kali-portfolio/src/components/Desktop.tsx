@@ -190,7 +190,6 @@ export default function Desktop() {
   const focusWindow           = useOSStore((s) => s.focusWindow);
   const toggleMinimize        = useOSStore((s) => s.toggleMinimize);
   const setKillCallback       = useOSStore((s) => s.setKillCallback);
-  const startAuraListening    = useOSStore((s) => s.startAuraListening);
   const isMicGranted          = useOSStore((s) => s.isMicGranted);
   const setMicGlowActive      = useOSStore((s) => s.setMicGlowActive);
 
@@ -211,10 +210,6 @@ export default function Desktop() {
     return () => clearTimeout(t);
   }, []);
 
-  useEffect(() => {
-    const t = setTimeout(() => startAuraListening(), 800);
-    return () => clearTimeout(t);
-  }, [startAuraListening]);
 
   useEffect(() => {
     setKillCallback((id: string) => handleCloseWindowRef.current(id));

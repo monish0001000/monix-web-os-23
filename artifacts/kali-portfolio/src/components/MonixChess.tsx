@@ -664,11 +664,12 @@ export default function MonixChess() {
     return () => {
       window.removeEventListener("beforeunload", handleBeforeUnload);
       broadcastPlayerDisconnected();
-      if (aiWorker.current) aiWorker.current.terminate();
-      if (pingIntervalRef.current) clearInterval(pingIntervalRef.current);
-      if (pongTimeoutRef.current) clearTimeout(pongTimeoutRef.current);
-      lobbyChannelRef.current?.unsubscribe();
-      matchChannelRef.current?.unsubscribe();
+      if (aiWorker.current) { aiWorker.current.terminate(); aiWorker.current = null; }
+      if (timerIntervalRef.current) { clearInterval(timerIntervalRef.current); timerIntervalRef.current = null; }
+      if (pingIntervalRef.current) { clearInterval(pingIntervalRef.current); pingIntervalRef.current = null; }
+      if (pongTimeoutRef.current) { clearTimeout(pongTimeoutRef.current); pongTimeoutRef.current = null; }
+      lobbyChannelRef.current?.unsubscribe(); lobbyChannelRef.current = null;
+      matchChannelRef.current?.unsubscribe(); matchChannelRef.current = null;
     };
   }, [broadcastPlayerDisconnected]);
 
@@ -682,10 +683,8 @@ export default function MonixChess() {
 
   // ── Timer tick ─────────────────────────────────────────────────────────────
   useEffect(() => {
-    if (gameState.phase !== "playing") {
-      if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
-      return;
-    }
+    if (timerIntervalRef.current) { clearInterval(timerIntervalRef.current); timerIntervalRef.current = null; }
+    if (gameState.phase !== "playing") return;
     timerIntervalRef.current = setInterval(() => {
       setTimers((t) => {
         const side = currentTurn;
@@ -696,7 +695,7 @@ export default function MonixChess() {
         return next;
       });
     }, 1000);
-    return () => { if (timerIntervalRef.current) clearInterval(timerIntervalRef.current); };
+    return () => { if (timerIntervalRef.current) { clearInterval(timerIntervalRef.current); timerIntervalRef.current = null; } };
   }, [gameState.phase, currentTurn]);
 
   // ── Sync after every chess mutation ────────────────────────────────────────

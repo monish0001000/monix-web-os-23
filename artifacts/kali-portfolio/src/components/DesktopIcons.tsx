@@ -538,7 +538,9 @@ function IconItem({
         cursor: "grab",
         padding: "5px 7px 4px",
         userSelect: "none",
-        width: 66,
+        width: 78,
+        height: 90,
+        justifyContent: "center",
         background: isSelected ? "rgba(54,123,240,0.28)" : "transparent",
         border: isSelected
           ? "1px solid rgba(54,123,240,0.55)"
@@ -607,14 +609,15 @@ const DesktopIcons = memo(function DesktopIcons({
         left: 10,
         right: 10,
         bottom: 10,
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fill, minmax(68px, 68px))",
-        gridAutoRows: "minmax(70px, max-content)",
-        gridAutoFlow: "column",
-        gridTemplateRows: "repeat(auto-fill, minmax(70px, max-content))",
-        gap: 2,
-        alignContent: "start",
-        justifyContent: "start",
+        display: "flex",
+        flexDirection: "column",
+        flexWrap: "wrap",
+        alignContent: "flex-start",
+        alignItems: "center",
+        gap: 8,
+        height: "calc(100dvh - 4rem)",
+        padding: 8,
+        overflow: "hidden",
         pointerEvents: "none",
       }}
     >
@@ -623,13 +626,13 @@ const DesktopIcons = memo(function DesktopIcons({
           .desktop-icons-grid {
             top: 52px !important;
             bottom: 12px !important;
-            grid-auto-flow: row !important;
-            grid-template-columns: repeat(auto-fit, minmax(66px, 1fr)) !important;
-            grid-template-rows: none !important;
-            grid-auto-rows: minmax(70px, max-content) !important;
+            flex-direction: row !important;
+            flex-wrap: wrap !important;
+            align-content: flex-start !important;
+            align-items: flex-start !important;
             overflow-y: auto !important;
-            align-content: start !important;
-            justify-content: stretch !important;
+            overflow-x: hidden !important;
+            height: auto !important;
             padding-bottom: 12px;
             scrollbar-width: none;
           }

@@ -538,9 +538,10 @@ function IconItem({
         cursor: "grab",
         padding: "5px 7px 4px",
         userSelect: "none",
-        width: 78,
-        height: 90,
+        width: 80,
+        height: 96,
         justifyContent: "center",
+        flexShrink: 0,
         background: isSelected ? "rgba(54,123,240,0.28)" : "transparent",
         border: isSelected
           ? "1px solid rgba(54,123,240,0.55)"
@@ -579,13 +580,17 @@ function IconItem({
           fontSize: 11,
           color: "#ffffff",
           textAlign: "center",
-          lineHeight: 1.2,
+          lineHeight: 1.25,
           textShadow:
             "1px 1px 3px rgba(0,0,0,0.95), 0 0 8px rgba(0,0,0,1), -1px -1px 3px rgba(0,0,0,0.9)",
           wordBreak: "break-word",
-          maxWidth: 60,
+          width: "100%",
           fontWeight: 500,
           pointerEvents: "none",
+          overflow: "hidden",
+          display: "-webkit-box",
+          WebkitLineClamp: 2,
+          WebkitBoxOrient: "vertical",
         }}
       >
         {item.label}
@@ -603,44 +608,13 @@ const DesktopIcons = memo(function DesktopIcons({
 }: DesktopIconsProps) {
   return (
     <div
-      className="absolute z-10 font-sans desktop-icons-grid"
-      style={{
-        top: 40,
-        left: 10,
-        right: 10,
-        bottom: 10,
-        display: "flex",
-        flexDirection: "column",
-        flexWrap: "wrap",
-        alignContent: "flex-start",
-        alignItems: "center",
-        gap: 8,
-        height: "calc(100dvh - 4rem)",
-        padding: 8,
-        overflow: "hidden",
-        pointerEvents: "none",
-      }}
+      className="absolute inset-0 overflow-x-auto overflow-y-hidden"
+      style={{ pointerEvents: "none" }}
     >
-      <style>{`
-        @media (max-width: 767px) {
-          .desktop-icons-grid {
-            top: 52px !important;
-            bottom: 12px !important;
-            flex-direction: row !important;
-            flex-wrap: wrap !important;
-            align-content: flex-start !important;
-            align-items: flex-start !important;
-            overflow-y: auto !important;
-            overflow-x: hidden !important;
-            height: auto !important;
-            padding-bottom: 12px;
-            scrollbar-width: none;
-          }
-          .desktop-icons-grid::-webkit-scrollbar {
-            display: none;
-          }
-        }
-      `}</style>
+      <div
+        className="flex flex-col flex-wrap content-start items-start gap-x-1 gap-y-1 h-full w-max p-2 font-sans"
+        style={{ pointerEvents: "none" }}
+      >
         {ALL_ICONS.map((item) => (
           <IconItem
             key={item.id}
@@ -652,6 +626,7 @@ const DesktopIcons = memo(function DesktopIcons({
             dragConstraintsRef={dragConstraintsRef}
           />
         ))}
+      </div>
     </div>
   );
 });

@@ -554,7 +554,10 @@ export default function Desktop() {
       >
 
       {/* Desktop icons — absolutely isolated layer */}
-      <div style={{ position: "absolute", inset: 0, zIndex: 0, pointerEvents: "none" }}>
+      <div
+        className="absolute top-0 left-0 right-0 bottom-0 overflow-x-auto overflow-y-hidden"
+        style={{ zIndex: 0, pointerEvents: "none" }}
+      >
         <div
           className={isRefreshing ? "cyber-glitch-refresh" : undefined}
           style={{

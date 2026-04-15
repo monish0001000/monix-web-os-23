@@ -1278,7 +1278,7 @@ export default function MonixChess() {
   // ─── ONLINE NAME ENTRY SCREEN ─────────────────────────────────────────────
   if (gameState.phase === "online_name") {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-4" style={{ background: th.bg }}>
+      <div className="min-h-[100dvh] flex flex-col items-center justify-center p-4" style={{ background: th.bg }}>
         <div className="w-full max-w-sm">
           <div className="text-center mb-8">
             <div className="text-4xl font-black tracking-[0.2em] mb-1" style={{ color: th.accent }}>MONIX</div>
@@ -1322,7 +1322,7 @@ export default function MonixChess() {
   // ─── ONLINE LOBBY SCREEN ──────────────────────────────────────────────────
   if (gameState.phase === "online_lobby") {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-4" style={{ background: th.bg }}>
+      <div className="min-h-[100dvh] flex flex-col items-center justify-center p-4" style={{ background: th.bg }}>
         <div className="w-full max-w-sm">
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
@@ -1423,7 +1423,7 @@ export default function MonixChess() {
   if (gameState.phase === "setup") {
     return (
       <div
-        className="min-h-screen flex flex-col items-center justify-center p-4 relative overflow-hidden"
+        className="min-h-[100dvh] flex flex-col items-center justify-center p-4 relative overflow-hidden"
         style={{ background: th.bg }}
       >
         {/* Background grid lines */}
@@ -1605,7 +1605,7 @@ export default function MonixChess() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: th.bg }}>
+    <div className="min-h-[100dvh] flex flex-col" style={{ background: th.bg }}>
       {/* Background grid */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         {theme === "dark" && Array.from({ length: 30 }).map((_, i) => (

@@ -538,7 +538,7 @@ export default function Desktop() {
   const dismissTip = useCallback(() => setShowGamesTip(false), []);
 
   return (
-    <div className="w-full h-screen flex flex-col overflow-hidden bg-black text-white">
+    <div className="w-full h-[100dvh] flex flex-col overflow-hidden bg-black text-white">
       <main
         ref={desktopRef}
         className="flex-1 relative overflow-hidden select-none"

@@ -64,3 +64,9 @@ A pixel-perfect Kali Linux OS desktop environment simulation as a portfolio web 
 - `src/components/Trash.tsx` — Trash window
 - `src/components/RightClickMenu.tsx` — Desktop context menu
 - `src/components/WindowChrome.tsx` — Shared draggable window frame
+
+**Responsive behavior:**
+- The OS shell uses dynamic viewport height (`100dvh`) so mobile browser chrome does not crop the desktop.
+- `WindowChrome` auto-maximizes windows below 768px wide for phone/tablet usability.
+- Desktop icons collapse from desktop-style vertical columns into a scrollable responsive grid on mobile.
+- The Start menu uses viewport-bounded sizing and an auto-fit app grid for narrow screens.

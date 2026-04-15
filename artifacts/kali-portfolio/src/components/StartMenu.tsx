@@ -198,7 +198,8 @@ export default function StartMenu({ open, onClose, onOpenWindow }: StartMenuProp
               position: "fixed",
               bottom: 52,
               left: 8,
-              width: 520,
+              width: "min(520px, calc(100vw - 16px))",
+              maxHeight: "calc(100dvh - 64px)",
               zIndex: 500,
               background: "rgba(8, 8, 14, 0.92)",
               backdropFilter: "blur(28px)",
@@ -297,7 +298,7 @@ export default function StartMenu({ open, onClose, onOpenWindow }: StartMenuProp
                   <div
                     style={{
                       display: "grid",
-                      gridTemplateColumns: "repeat(4, 1fr)",
+                      gridTemplateColumns: "repeat(auto-fit, minmax(72px, 1fr))",
                       gap: 6,
                     }}
                   >
@@ -315,6 +316,7 @@ export default function StartMenu({ open, onClose, onOpenWindow }: StartMenuProp
                           border: "1px solid rgba(255,255,255,0.06)",
                           borderRadius: 8,
                           cursor: "pointer",
+                          minWidth: 0,
                           transition: "background 0.13s, border-color 0.13s, transform 0.1s, box-shadow 0.13s",
                         }}
                         onMouseEnter={(e) => {

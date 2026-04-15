@@ -19,7 +19,7 @@ export default function BootScreen({ onComplete }: BootScreenProps) {
       {!hasInteracted ? (
         <>
           <div
-            className="w-screen h-screen bg-black bg-cover bg-center bg-no-repeat cursor-pointer"
+            className="w-screen h-[100dvh] bg-black bg-cover bg-center bg-no-repeat cursor-pointer"
             style={{ backgroundImage: "url('/grub_loader.svg')" }}
             onClick={() => setHasInteracted(true)}
           />

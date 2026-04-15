@@ -24,7 +24,7 @@ export default function NetworkHandler() {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.3 }}
-          className="fixed inset-0 w-screen h-screen flex flex-col items-center justify-center"
+          className="fixed inset-0 w-screen h-[100dvh] flex flex-col items-center justify-center"
           style={{
             zIndex: 99999,
             background: "rgba(0,0,0,0.93)",

@@ -235,6 +235,7 @@ export default function TopPanel({ openWindows: _openWindows = [], onOpenWindow,
       title: "AURA AI",
     },
   ];
+  const visibleAppLaunchers = isMobile ? [] : appLaunchers;
 
   const now = time;
   const monthName = format(now, "MMMM yyyy");
@@ -292,7 +293,7 @@ export default function TopPanel({ openWindows: _openWindows = [], onOpenWindow,
         }}
       >
         {/* ── LEFT ── */}
-        <div className="flex items-center h-full gap-0">
+        <div className="flex items-center h-full gap-0 min-w-0 flex-1 overflow-hidden">
 
           {/* Logo — MONIX "M" */}
           <div
@@ -325,7 +326,7 @@ export default function TopPanel({ openWindows: _openWindows = [], onOpenWindow,
           <div style={{ width: 1, height: 22, background: "rgba(255,255,255,0.1)" }} />
 
           {/* App launchers */}
-          {appLaunchers.map((launcher) => (
+          {visibleAppLaunchers.map((launcher) => (
             <div
               key={launcher.id}
               className={btnClass}
@@ -419,7 +420,7 @@ export default function TopPanel({ openWindows: _openWindows = [], onOpenWindow,
         </div>
 
         {/* ── RIGHT: System Tray ── */}
-        <div className="flex items-center h-full" ref={trayRef}>
+        <div className="flex items-center h-full shrink-0" ref={trayRef}>
           <style>{`
             @keyframes fpsPulse {
               0%, 100% { opacity: 1; transform: scale(1); }

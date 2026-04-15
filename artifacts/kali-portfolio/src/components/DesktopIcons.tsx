@@ -490,6 +490,8 @@ const ICONS_COL3 = [
   { id: "dossier",      label: "Dossier",       icon: <DossierIcon />,        window: "dossier"      },
 ];
 
+const ALL_ICONS = [...ICONS_COL1, ...ICONS_COL2, ...ICONS_COL3];
+
 function IconItem({
   item,
   selectedIcon,
@@ -545,6 +547,7 @@ function IconItem({
         transition: "background 0.1s, border-color 0.1s",
         position: "relative",
         borderRadius: 3,
+        pointerEvents: "auto",
       }}
       onClick={(e) => {
         e.stopPropagation();
@@ -598,11 +601,44 @@ const DesktopIcons = memo(function DesktopIcons({
 }: DesktopIconsProps) {
   return (
     <div
-      className="absolute flex flex-row z-10 font-sans"
-      style={{ top: 40, left: 10, gap: 4, alignItems: "flex-start" }}
+      className="absolute z-10 font-sans desktop-icons-grid"
+      style={{
+        top: 40,
+        left: 10,
+        right: 10,
+        bottom: 10,
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fill, minmax(68px, 68px))",
+        gridAutoRows: "minmax(70px, max-content)",
+        gridAutoFlow: "column",
+        gridTemplateRows: "repeat(auto-fill, minmax(70px, max-content))",
+        gap: 2,
+        alignContent: "start",
+        justifyContent: "start",
+        pointerEvents: "none",
+      }}
     >
-      <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-        {ICONS_COL1.map((item) => (
+      <style>{`
+        @media (max-width: 767px) {
+          .desktop-icons-grid {
+            top: 52px !important;
+            bottom: 12px !important;
+            grid-auto-flow: row !important;
+            grid-template-columns: repeat(auto-fit, minmax(66px, 1fr)) !important;
+            grid-template-rows: none !important;
+            grid-auto-rows: minmax(70px, max-content) !important;
+            overflow-y: auto !important;
+            align-content: start !important;
+            justify-content: stretch !important;
+            padding-bottom: 12px;
+            scrollbar-width: none;
+          }
+          .desktop-icons-grid::-webkit-scrollbar {
+            display: none;
+          }
+        }
+      `}</style>
+        {ALL_ICONS.map((item) => (
           <IconItem
             key={item.id}
             item={item}
@@ -613,33 +649,6 @@ const DesktopIcons = memo(function DesktopIcons({
             dragConstraintsRef={dragConstraintsRef}
           />
         ))}
-      </div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-        {ICONS_COL2.map((item) => (
-          <IconItem
-            key={item.id}
-            item={item}
-            selectedIcon={selectedIcon}
-            onSelectIcon={onSelectIcon}
-            onOpenWindow={onOpenWindow}
-            onLongPress={onLongPress}
-            dragConstraintsRef={dragConstraintsRef}
-          />
-        ))}
-      </div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-        {ICONS_COL3.map((item) => (
-          <IconItem
-            key={item.id}
-            item={item}
-            selectedIcon={selectedIcon}
-            onSelectIcon={onSelectIcon}
-            onOpenWindow={onOpenWindow}
-            onLongPress={onLongPress}
-            dragConstraintsRef={dragConstraintsRef}
-          />
-        ))}
-      </div>
     </div>
   );
 });

@@ -24,7 +24,7 @@ export default function PortfolioApp({
 
   return (
     <WindowChrome
-      title="Portfolio — monishsrmportfolio.netlify.app"
+      title="Portfolio — monishsrmportfolio.vercel.app"
       onClose={onClose}
       onMinimize={onMinimize}
       isActive={isActive}
@@ -68,7 +68,7 @@ export default function PortfolioApp({
           </div>
         )}
         <iframe
-          src="https://monishsrmportfolio.netlify.app"
+          src="https://monishsrmportfolio.vercel.app"
           title="Portfolio"
           onLoad={() => setLoaded(true)}
           style={{
